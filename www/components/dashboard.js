@@ -1,4 +1,4 @@
-import { getAllRoutines } from '../db.js';
+import { getAllRoutines, deleteRoutine } from '../db.js';
 
 export default {
   props: {
@@ -23,7 +23,13 @@ export default {
       emit('navigate', 'routine-builder', { routineId: routine.id });
     }
 
-    return { routines, openRoutine, editRoutine, emit };
+    async function removeRoutine(routine) {
+      if (!confirm(`Delete "${routine.name}"? This cannot be undone.`)) return;
+      await deleteRoutine(routine.id);
+      await loadRoutines();
+    }
+
+    return { routines, openRoutine, editRoutine, removeRoutine, emit };
   },
   template: `
     <div class="min-h-screen bg-slate-950 text-slate-100 pb-24">
@@ -74,7 +80,7 @@ export default {
         >
           <button
             @click="openRoutine(routine)"
-            class="w-full text-left pl-5 pr-16 py-4 active:bg-slate-800 rounded-2xl"
+            class="w-full text-left pl-5 pr-28 py-4 active:bg-slate-800 rounded-2xl"
           >
             <div class="text-lg font-semibold">{{ routine.name }}</div>
             <div class="text-sm text-slate-400 mt-1">{{ routine.exerciseIds.length }} exercises</div>
@@ -82,10 +88,19 @@ export default {
           <button
             @click="editRoutine(routine)"
             :aria-label="'Edit ' + routine.name"
-            class="absolute top-1/2 -translate-y-1/2 right-3 w-11 h-11 flex items-center justify-center rounded-full bg-slate-800 active:bg-slate-700"
+            class="absolute top-1/2 -translate-y-1/2 right-16 w-11 h-11 flex items-center justify-center rounded-full bg-slate-800 active:bg-slate-700"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 112.914 2.914L7.5 19.675l-4 1 1-4L16.862 4.487z" />
+            </svg>
+          </button>
+          <button
+            @click="removeRoutine(routine)"
+            :aria-label="'Delete ' + routine.name"
+            class="absolute top-1/2 -translate-y-1/2 right-3 w-11 h-11 flex items-center justify-center rounded-full bg-rose-950 text-rose-400 active:bg-rose-900"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0l1 13a2 2 0 002 2h4a2 2 0 002-2l1-13" />
             </svg>
           </button>
         </div>
