@@ -7,7 +7,7 @@ export default {
   },
   emits: ['navigate'],
   setup(props, { emit }) {
-    const { ref, computed, watch, onMounted } = Vue;
+    const { ref, computed, watch, onMounted, onUnmounted } = Vue;
 
     const editingRoutineId = ref(props.navParams.routineId || null);
     const routineName = ref('');
@@ -15,6 +15,52 @@ export default {
     const searchResults = ref([]);
     const selectedExercises = ref([]);
     const linkModeExerciseId = ref(null);
+
+    const draggingIndex = ref(null);
+    const dragOffset = ref(0);
+    const rowEls = [];
+    let pointerStartY = 0;
+    let rowStep = 0;
+
+    function onRowPointerDown(event, index) {
+      event.preventDefault();
+      draggingIndex.value = index;
+      dragOffset.value = 0;
+      pointerStartY = event.clientY;
+      const rect = rowEls[index]?.getBoundingClientRect();
+      rowStep = (rect?.height || 56) + 8; // row height + space-y-2 gap
+      window.addEventListener('pointermove', onRowPointerMove);
+      window.addEventListener('pointerup', onRowPointerUp);
+    }
+
+    function onRowPointerMove(event) {
+      if (draggingIndex.value === null) return;
+      dragOffset.value = event.clientY - pointerStartY;
+      const from = draggingIndex.value;
+      const maxIndex = selectedExercises.value.length - 1;
+      let to = from + Math.round(dragOffset.value / rowStep);
+      to = Math.max(0, Math.min(maxIndex, to));
+      if (to !== from) {
+        const arr = selectedExercises.value;
+        const [item] = arr.splice(from, 1);
+        arr.splice(to, 0, item);
+        pointerStartY += (to - from) * rowStep;
+        dragOffset.value = event.clientY - pointerStartY;
+        draggingIndex.value = to;
+      }
+    }
+
+    function onRowPointerUp() {
+      draggingIndex.value = null;
+      dragOffset.value = 0;
+      window.removeEventListener('pointermove', onRowPointerMove);
+      window.removeEventListener('pointerup', onRowPointerUp);
+    }
+
+    onUnmounted(() => {
+      window.removeEventListener('pointermove', onRowPointerMove);
+      window.removeEventListener('pointerup', onRowPointerUp);
+    });
 
     onMounted(async () => {
       if (!editingRoutineId.value) return;
@@ -138,6 +184,10 @@ export default {
       canSave,
       save,
       emit,
+      draggingIndex,
+      dragOffset,
+      rowEls,
+      onRowPointerDown,
     };
   },
   template: `
@@ -198,11 +248,28 @@ export default {
           </label>
           <div class="space-y-2">
             <div
-              v-for="exercise in selectedExercises"
+              v-for="(exercise, index) in selectedExercises"
               :key="exercise.id"
-              class="flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-900 border"
-              :class="exercise.supersetWith ? 'border-emerald-700' : 'border-slate-800'"
+              :ref="(el) => (rowEls[index] = el)"
+              class="flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-900 border select-none"
+              :class="[exercise.supersetWith ? 'border-emerald-700' : 'border-slate-800', draggingIndex === index ? 'relative z-10 shadow-xl' : '']"
+              :style="draggingIndex === index ? { transform: 'translateY(' + dragOffset + 'px)' } : {}"
             >
+              <button
+                @pointerdown="onRowPointerDown($event, index)"
+                :aria-label="'Drag to reorder ' + exercise.name"
+                style="touch-action: none"
+                class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-800 text-slate-400 cursor-grab active:cursor-grabbing"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="9" cy="6" r="1.5" />
+                  <circle cx="15" cy="6" r="1.5" />
+                  <circle cx="9" cy="12" r="1.5" />
+                  <circle cx="15" cy="12" r="1.5" />
+                  <circle cx="9" cy="18" r="1.5" />
+                  <circle cx="15" cy="18" r="1.5" />
+                </svg>
+              </button>
               <span class="flex-1">{{ exercise.name }}</span>
               <button
                 @click="toggleLink(exercise)"
