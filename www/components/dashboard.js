@@ -31,6 +31,17 @@ export default {
         <h1 class="text-xl font-bold tracking-tight">IronTrack</h1>
         <div class="flex items-center gap-3">
           <button
+            @click="emit('navigate', 'body-metrics')"
+            aria-label="Body metrics"
+            class="w-11 h-11 flex items-center justify-center rounded-full bg-slate-800 active:bg-slate-700"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="4" y="4" width="16" height="16" rx="3" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="12" cy="13" r="1" fill="currentColor" stroke="none" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 13l2.5-2M9 7h6" />
+            </svg>
+          </button>
+          <button
             @click="emit('navigate', 'progress-chart')"
             aria-label="Progress charts"
             class="w-11 h-11 flex items-center justify-center rounded-full bg-slate-800 active:bg-slate-700"

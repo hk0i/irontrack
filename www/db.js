@@ -6,12 +6,21 @@
 // an ES module, so we reference the global `Dexie` here.
 
 const KG_TO_LBS = 2.20462262;
+const CM_TO_IN = 0.39370078;
 
 const db = new Dexie('IronTrackDB');
 db.version(1).stores({
   routines: 'id, name',
   exercises: 'id, name, supersetWith',
   sets: 'id, exerciseId, date, weightInLbs',
+});
+
+// Only new tables need to be listed here — Dexie carries forward any table
+// not mentioned in a later version() call unchanged, so this doesn't touch
+// existing routines/exercises/sets data or require a migration step.
+db.version(2).stores({
+  metric_blueprints: 'id, name',
+  metric_logs: 'id, blueprintId, date',
 });
 
 // ---------- Unit conversion ----------
@@ -28,6 +37,24 @@ export function lbsToKg(lbs) {
 // never drifts between the ghost text, chart tooltips, and set rows.
 export function formatWeight(weightInLbs, preferredUnit) {
   const value = preferredUnit === 'kg' ? lbsToKg(weightInLbs) : weightInLbs;
+  return Math.round(value * 10) / 10;
+}
+
+export function cmToIn(cm) {
+  return cm * CM_TO_IN;
+}
+
+export function inToCm(inches) {
+  return inches / CM_TO_IN;
+}
+
+// Single source for displaying a metric_logs.valueBaseline in whichever unit
+// the caller wants, across both metric types (mass baseline = lbs, length
+// baseline = inches).
+export function formatMetricValue(valueBaseline, type, preferredUnit) {
+  let value = valueBaseline;
+  if (type === 'mass' && preferredUnit === 'kg') value = lbsToKg(valueBaseline);
+  if (type === 'length' && preferredUnit === 'cm') value = inToCm(valueBaseline);
   return Math.round(value * 10) / 10;
 }
 
@@ -144,33 +171,104 @@ export function deleteSet(id) {
   return db.sets.delete(id);
 }
 
+// ---------- Body metrics ----------
+
+const DEFAULT_METRIC_BLUEPRINTS = [
+  { id: 'm-weight', name: 'Body Weight', type: 'mass' },
+  { id: 'm-waist', name: 'Waist Size', type: 'length' },
+  { id: 'm-arms', name: 'Arm Size', type: 'length' },
+  { id: 'm-calves', name: 'Calf Size', type: 'length' },
+  { id: 'm-quads', name: 'Thigh Size', type: 'length' },
+];
+
+// Idempotent — only seeds if the table is empty, so it's safe to call on
+// every app start without duplicating rows on subsequent loads.
+export async function ensureMetricBlueprintsSeeded() {
+  const count = await db.metric_blueprints.count();
+  if (count > 0) return;
+  await db.metric_blueprints.bulkAdd(DEFAULT_METRIC_BLUEPRINTS);
+}
+
+export async function createMetricBlueprint({ name, type }) {
+  const blueprint = { id: crypto.randomUUID(), name, type };
+  await db.metric_blueprints.add(blueprint);
+  return blueprint;
+}
+
+export function getAllMetricBlueprints() {
+  return db.metric_blueprints.toArray();
+}
+
+export function getMetricBlueprintById(id) {
+  return db.metric_blueprints.get(id);
+}
+
+// The only place a metric log's valueBaseline gets computed: mass blueprints
+// store lbs, length blueprints store inches, per the same
+// convert-at-write-time pattern as logSet's weightInLbs.
+export async function logMetric({ blueprintId, date, valueEntered, unit }) {
+  const blueprint = await db.metric_blueprints.get(blueprintId);
+  if (!blueprint) throw new Error('Unknown metric blueprint: ' + blueprintId);
+  let valueBaseline = valueEntered;
+  if (blueprint.type === 'mass' && unit === 'kg') valueBaseline = kgToLbs(valueEntered);
+  if (blueprint.type === 'length' && unit === 'cm') valueBaseline = cmToIn(valueEntered);
+  const log = {
+    id: crypto.randomUUID(),
+    blueprintId,
+    date,
+    valueEntered,
+    unit,
+    valueBaseline,
+  };
+  await db.metric_logs.add(log);
+  return log;
+}
+
+// Chronologically-ascending last `limit` entries for a blueprint — directly
+// plottable left-to-right on a chart with no further sorting needed.
+export async function getRecentLogsForBlueprint(blueprintId, limit = 8) {
+  const logs = await db.metric_logs.where('blueprintId').equals(blueprintId).toArray();
+  logs.sort((a, b) => a.date.localeCompare(b.date));
+  return logs.slice(-limit);
+}
+
 // ---------- Backup / restore ----------
 
 export async function exportAllData() {
-  const [routines, exercises, sets] = await Promise.all([
+  const [routines, exercises, sets, metricBlueprints, metricLogs] = await Promise.all([
     db.routines.toArray(),
     db.exercises.toArray(),
     db.sets.toArray(),
+    db.metric_blueprints.toArray(),
+    db.metric_logs.toArray(),
   ]);
   return {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     routines,
     exercises,
     sets,
+    metricBlueprints,
+    metricLogs,
   };
 }
 
 // bulkPut (not bulkAdd) so re-importing the same file is idempotent. Wrapped
 // in a transaction so a failure partway through can't leave mixed state.
+// metricBlueprints/metricLogs are optional so older (version 1) backups —
+// taken before body metrics existed — still import cleanly.
 export async function importAllData(payload) {
   if (!payload || !Array.isArray(payload.routines) || !Array.isArray(payload.exercises) || !Array.isArray(payload.sets)) {
     throw new Error('Invalid backup file: missing routines/exercises/sets arrays.');
   }
-  await db.transaction('rw', db.routines, db.exercises, db.sets, async () => {
+  const metricBlueprints = Array.isArray(payload.metricBlueprints) ? payload.metricBlueprints : [];
+  const metricLogs = Array.isArray(payload.metricLogs) ? payload.metricLogs : [];
+  await db.transaction('rw', db.routines, db.exercises, db.sets, db.metric_blueprints, db.metric_logs, async () => {
     await db.routines.bulkPut(payload.routines);
     await db.exercises.bulkPut(payload.exercises);
     await db.sets.bulkPut(payload.sets);
+    await db.metric_blueprints.bulkPut(metricBlueprints);
+    await db.metric_logs.bulkPut(metricLogs);
   });
 }
 

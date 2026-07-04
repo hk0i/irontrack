@@ -3,6 +3,8 @@ import RoutineBuilder from './components/routine-builder.js';
 import ActiveWorkout from './components/active-workout.js';
 import ProgressChart from './components/progress-chart.js';
 import Settings from './components/settings.js';
+import BodyMetrics from './components/body-metrics.js';
+import { ensureMetricBlueprintsSeeded } from './db.js';
 
 const screens = {
   dashboard: Dashboard,
@@ -10,7 +12,12 @@ const screens = {
   'active-workout': ActiveWorkout,
   'progress-chart': ProgressChart,
   settings: Settings,
+  'body-metrics': BodyMetrics,
 };
+
+// Top-level await in a module script: guarantees the default metric
+// blueprints exist before any screen (including Body Metrics) can render.
+await ensureMetricBlueprintsSeeded();
 
 const App = {
   components: screens,

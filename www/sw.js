@@ -2,7 +2,7 @@
 // first visit. Bump CACHE_NAME whenever www/ contents change to invalidate
 // the old cache. ASSET_LIST must be kept in sync manually — there's no glob
 // in a hand-written service worker.
-const CACHE_NAME = 'irontrack-v2';
+const CACHE_NAME = 'irontrack-v3';
 
 const ASSET_LIST = [
   './',
@@ -17,6 +17,7 @@ const ASSET_LIST = [
   './components/active-workout.js',
   './components/progress-chart.js',
   './components/settings.js',
+  './components/body-metrics.js',
   './vendor/vue.global.prod.js',
   './vendor/dexie.min.js',
   './vendor/tailwind-browser.js',
