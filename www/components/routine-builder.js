@@ -1,4 +1,5 @@
 import { searchExercises, createExercise, createRoutine, updateRoutine, getRoutineById, getExerciseById, setSupersetLink, clearSupersetLink } from '../db.js';
+import { COMMON_EXERCISES } from '../common-exercises.js';
 
 export default {
   props: {
@@ -32,17 +33,37 @@ export default {
       searchResults.value = await searchExercises(query);
     }, { immediate: true });
 
+    // Merges the user's own saved exercises with the common-exercise
+    // suggestion list, so autocomplete works even before any exercise has
+    // ever been created. Common suggestions with no DB record yet are
+    // represented with id: null and get created on first selection.
+    const mergedResults = computed(() => {
+      const query = searchQuery.value.trim().toLowerCase();
+      if (!query) return [];
+      const dbNames = new Set(searchResults.value.map((e) => e.name.toLowerCase()));
+      const commonMatches = COMMON_EXERCISES
+        .filter((name) => name.toLowerCase().includes(query) && !dbNames.has(name.toLowerCase()))
+        .map((name) => ({ id: null, name }));
+      return [...searchResults.value, ...commonMatches];
+    });
+
     const exactMatchExists = computed(() =>
-      searchResults.value.some((e) => e.name.toLowerCase() === searchQuery.value.trim().toLowerCase())
+      mergedResults.value.some((e) => e.name.toLowerCase() === searchQuery.value.trim().toLowerCase())
     );
 
     function isSelected(exercise) {
-      return selectedExercises.value.some((e) => e.id === exercise.id);
+      if (exercise.id) return selectedExercises.value.some((e) => e.id === exercise.id);
+      return selectedExercises.value.some((e) => e.name.toLowerCase() === exercise.name.toLowerCase());
     }
 
-    function addExercise(exercise) {
+    async function addExercise(exercise) {
       if (isSelected(exercise)) return;
-      selectedExercises.value.push(exercise);
+      if (exercise.id) {
+        selectedExercises.value.push(exercise);
+        return;
+      }
+      const created = await createExercise({ name: exercise.name });
+      selectedExercises.value.push(created);
     }
 
     async function createAndAddExercise() {
@@ -105,7 +126,7 @@ export default {
       editingRoutineId,
       routineName,
       searchQuery,
-      searchResults,
+      mergedResults,
       selectedExercises,
       linkModeExerciseId,
       exactMatchExists,
@@ -152,20 +173,20 @@ export default {
 
           <div v-if="searchQuery.trim()" class="mt-2 space-y-1">
             <button
-              v-for="exercise in searchResults"
-              :key="exercise.id"
-              @click="addExercise(exercise)"
-              :disabled="isSelected(exercise)"
-              class="w-full text-left px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 disabled:opacity-40"
-            >
-              {{ exercise.name }}
-            </button>
-            <button
               v-if="!exactMatchExists"
               @click="createAndAddExercise"
               class="w-full text-left px-4 py-3 rounded-xl bg-emerald-950 border border-emerald-800 text-emerald-300"
             >
               + Create "{{ searchQuery }}" as new exercise
+            </button>
+            <button
+              v-for="exercise in mergedResults"
+              :key="exercise.id || exercise.name"
+              @click="addExercise(exercise)"
+              :disabled="isSelected(exercise)"
+              class="w-full text-left px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 disabled:opacity-40"
+            >
+              {{ exercise.name }}
             </button>
           </div>
         </div>
