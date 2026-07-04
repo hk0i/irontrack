@@ -45,6 +45,21 @@ export default {
         exercises.push(await getExerciseById(id));
       }
 
+      // Populate every exercise's row array and ghost text *before* exposing
+      // blocks to the template. pairedRows() reads straight from
+      // setRowsByExercise for both sides of a superset without a null-check,
+      // so blocks must never become visible while a partner's rows haven't
+      // been seeded yet — otherwise a render could land in that gap (this
+      // loop awaits getLastSetForExercise per exercise) and throw.
+      for (const exercise of exercises) {
+        if (!exercise) continue;
+        setRowsByExercise[exercise.id] = reactive([makeEmptyRow()]);
+        const lastSet = await getLastSetForExercise(exercise.id);
+        ghostTextByExercise[exercise.id] = lastSet
+          ? `${formatWeight(lastSet.weightInLbs, lastSet.unit)} ${lastSet.unit} x ${lastSet.reps}`
+          : null;
+      }
+
       const seen = new Set();
       const builtBlocks = [];
       for (const exercise of exercises) {
@@ -59,15 +74,6 @@ export default {
         }
       }
       blocks.value = builtBlocks;
-
-      for (const exercise of exercises) {
-        if (!exercise) continue;
-        setRowsByExercise[exercise.id] = reactive([makeEmptyRow()]);
-        const lastSet = await getLastSetForExercise(exercise.id);
-        ghostTextByExercise[exercise.id] = lastSet
-          ? `${formatWeight(lastSet.weightInLbs, lastSet.unit)} ${lastSet.unit} x ${lastSet.reps}`
-          : null;
-      }
     }
 
     onMounted(loadWorkout);
@@ -77,6 +83,32 @@ export default {
 
     function addRow(exerciseId) {
       setRowsByExercise[exerciseId].push(makeEmptyRow());
+    }
+
+    // Supersets always add a set to both exercises together, keeping their
+    // row arrays index-synced so "Set N" always pairs the right two rows.
+    function addSupersetRow(exerciseIdA, exerciseIdB) {
+      setRowsByExercise[exerciseIdA].push(makeEmptyRow());
+      setRowsByExercise[exerciseIdB].push(makeEmptyRow());
+    }
+
+    function getRow(exerciseId, index) {
+      const rows = setRowsByExercise[exerciseId];
+      return rows ? rows[index] : undefined;
+    }
+
+    // Zips a superset pair's two row arrays into { index, rowA, rowB } tuples
+    // so the template can render Set 1 of A immediately above Set 1 of B,
+    // then Set 2 of A above Set 2 of B, etc. rowA/rowB are references to the
+    // same reactive row objects the arrays hold, so v-model bindings on them
+    // still mutate the real state.
+    function pairedRows(block) {
+      const [exerciseA, exerciseB] = block.exercises;
+      const rowsA = setRowsByExercise[exerciseA.id];
+      if (!rowsA) return [];
+      return rowsA
+        .map((rowA, index) => ({ index, rowA, rowB: getRow(exerciseB.id, index) }))
+        .filter((pair) => pair.rowB);
     }
 
     function toggleUnit(row) {
@@ -103,7 +135,12 @@ export default {
       restBannerVisible.value = false;
     }
 
-    async function checkRow(exerciseId, row) {
+    // partnerRow is only passed for superset rows. The rest banner should
+    // fire once per superset pair, after whichever exercise is checked off
+    // last — not after each individual component set — so it only starts
+    // here when there's no partner (standalone exercise) or the partner's
+    // matching row is already checked.
+    async function checkRow(exerciseId, row, partnerRow = null) {
       if (row.checked) return;
       const weightEntered = parseFloat(row.weightEntered);
       const reps = parseInt(row.reps, 10);
@@ -118,7 +155,10 @@ export default {
       row.checked = true;
       const weightInLbs = row.unit === 'kg' ? kgToLbs(weightEntered) : weightEntered;
       ghostTextByExercise[exerciseId] = `${formatWeight(weightInLbs, row.unit)} ${row.unit} x ${reps}`;
-      startRestBanner();
+
+      if (!partnerRow || partnerRow.checked) {
+        startRestBanner();
+      }
     }
 
     function viewHistory(exerciseId) {
@@ -132,6 +172,8 @@ export default {
       restBannerVisible,
       restBannerSecondsLeft,
       addRow,
+      addSupersetRow,
+      pairedRows,
       toggleUnit,
       checkRow,
       dismissRestBanner,
@@ -151,25 +193,21 @@ export default {
       </header>
 
       <main class="px-4 py-4 space-y-6">
-        <div
-          v-for="block in blocks"
-          :key="block.exercises[0].id"
-          class="relative"
-          :class="block.exercises.length > 1 ? 'pl-4 border-l-4 border-emerald-600 space-y-4' : ''"
-        >
-          <div v-for="exercise in block.exercises" :key="exercise.id" class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+        <div v-for="block in blocks" :key="block.exercises[0].id">
+          <!-- Standalone exercise -->
+          <div v-if="block.exercises.length === 1" class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
             <div class="flex items-center justify-between mb-1">
-              <h2 class="font-semibold text-base">{{ exercise.name }}</h2>
-              <button @click="viewHistory(exercise.id)" class="px-3 py-2 rounded-lg bg-slate-800 text-xs font-semibold text-emerald-400 active:bg-slate-700">History</button>
+              <h2 class="font-semibold text-base">{{ block.exercises[0].name }}</h2>
+              <button @click="viewHistory(block.exercises[0].id)" class="px-3 py-2 rounded-lg bg-slate-800 text-xs font-semibold text-emerald-400 active:bg-slate-700">History</button>
             </div>
             <div class="text-sm text-slate-400 mb-3">
-              <span v-if="ghostTextByExercise[exercise.id]">Last: [{{ ghostTextByExercise[exercise.id] }}]</span>
+              <span v-if="ghostTextByExercise[block.exercises[0].id]">Last: [{{ ghostTextByExercise[block.exercises[0].id] }}]</span>
               <span v-else>No history yet</span>
             </div>
 
             <div class="space-y-2">
               <div
-                v-for="(row, index) in setRowsByExercise[exercise.id]"
+                v-for="(row, index) in setRowsByExercise[block.exercises[0].id]"
                 :key="index"
                 class="flex items-center gap-2"
               >
@@ -198,7 +236,7 @@ export default {
                   {{ row.unit }}
                 </button>
                 <button
-                  @click="checkRow(exercise.id, row)"
+                  @click="checkRow(block.exercises[0].id, row)"
                   :aria-label="row.checked ? 'Set logged' : 'Log set'"
                   class="w-11 h-11 rounded-lg border-2 flex items-center justify-center flex-shrink-0"
                   :class="row.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-700'"
@@ -208,7 +246,100 @@ export default {
               </div>
             </div>
 
-            <button @click="addRow(exercise.id)" class="mt-3 w-full py-2.5 rounded-lg bg-slate-800 text-sm font-semibold text-emerald-400 active:bg-slate-700">+ Add set</button>
+            <button @click="addRow(block.exercises[0].id)" class="mt-3 w-full py-2.5 rounded-lg bg-slate-800 text-sm font-semibold text-emerald-400 active:bg-slate-700">+ Add set</button>
+          </div>
+
+          <!-- Superset pair: one high-contrast bounding box, sets interleaved A1/B1/A2/B2/... -->
+          <div v-else class="bg-slate-900 border-2 border-emerald-600 rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="font-semibold text-base">{{ block.exercises[0].name }} + {{ block.exercises[1].name }}</h2>
+              <span class="text-xs uppercase tracking-wide text-emerald-400 font-semibold flex-shrink-0">Superset</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-xs text-slate-400 mb-4">
+              <div v-for="exercise in block.exercises" :key="exercise.id">
+                <div class="flex items-center justify-between gap-2 mb-1">
+                  <span class="text-slate-300 font-medium truncate">{{ exercise.name }}</span>
+                  <button @click="viewHistory(exercise.id)" class="px-2 py-1.5 rounded-lg bg-slate-800 text-xs font-semibold text-emerald-400 active:bg-slate-700 flex-shrink-0">History</button>
+                </div>
+                <span v-if="ghostTextByExercise[exercise.id]">Last: [{{ ghostTextByExercise[exercise.id] }}]</span>
+                <span v-else>No history yet</span>
+              </div>
+            </div>
+
+            <div class="space-y-3">
+              <div v-for="pair in pairedRows(block)" :key="pair.index" class="rounded-xl bg-slate-800/60 p-2 space-y-2">
+                <div class="text-xs text-slate-500 px-1">Set {{ pair.index + 1 }}</div>
+
+                <div class="flex items-center gap-1.5">
+                  <span class="w-12 flex-shrink-0 text-xs text-slate-400 truncate">{{ block.exercises[0].name }}</span>
+                  <input
+                    v-model="pair.rowA.weightEntered"
+                    :disabled="pair.rowA.checked"
+                    inputmode="decimal"
+                    type="text"
+                    placeholder="Wt"
+                    class="w-16 h-11 rounded-lg bg-slate-800 border border-slate-700 px-2 text-center disabled:opacity-50"
+                  />
+                  <input
+                    v-model="pair.rowA.reps"
+                    :disabled="pair.rowA.checked"
+                    inputmode="numeric"
+                    type="text"
+                    placeholder="Reps"
+                    class="w-14 h-11 rounded-lg bg-slate-800 border border-slate-700 px-2 text-center disabled:opacity-50"
+                  />
+                  <button
+                    @click="toggleUnit(pair.rowA)"
+                    :disabled="pair.rowA.checked"
+                    class="w-14 h-11 flex-shrink-0 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold uppercase disabled:opacity-50"
+                  >{{ pair.rowA.unit }}</button>
+                  <button
+                    @click="checkRow(block.exercises[0].id, pair.rowA, pair.rowB)"
+                    :aria-label="pair.rowA.checked ? 'Set logged' : 'Log set'"
+                    class="w-11 h-11 flex-shrink-0 rounded-lg border-2 flex items-center justify-center"
+                    :class="pair.rowA.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-700'"
+                  >
+                    <span v-if="pair.rowA.checked">&#10003;</span>
+                  </button>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                  <span class="w-12 flex-shrink-0 text-xs text-slate-400 truncate">{{ block.exercises[1].name }}</span>
+                  <input
+                    v-model="pair.rowB.weightEntered"
+                    :disabled="pair.rowB.checked"
+                    inputmode="decimal"
+                    type="text"
+                    placeholder="Wt"
+                    class="w-16 h-11 rounded-lg bg-slate-800 border border-slate-700 px-2 text-center disabled:opacity-50"
+                  />
+                  <input
+                    v-model="pair.rowB.reps"
+                    :disabled="pair.rowB.checked"
+                    inputmode="numeric"
+                    type="text"
+                    placeholder="Reps"
+                    class="w-14 h-11 rounded-lg bg-slate-800 border border-slate-700 px-2 text-center disabled:opacity-50"
+                  />
+                  <button
+                    @click="toggleUnit(pair.rowB)"
+                    :disabled="pair.rowB.checked"
+                    class="w-14 h-11 flex-shrink-0 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold uppercase disabled:opacity-50"
+                  >{{ pair.rowB.unit }}</button>
+                  <button
+                    @click="checkRow(block.exercises[1].id, pair.rowB, pair.rowA)"
+                    :aria-label="pair.rowB.checked ? 'Set logged' : 'Log set'"
+                    class="w-11 h-11 flex-shrink-0 rounded-lg border-2 flex items-center justify-center"
+                    :class="pair.rowB.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-700'"
+                  >
+                    <span v-if="pair.rowB.checked">&#10003;</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button @click="addSupersetRow(block.exercises[0].id, block.exercises[1].id)" class="mt-3 w-full py-2.5 rounded-lg bg-slate-800 text-sm font-semibold text-emerald-400 active:bg-slate-700">+ Add set</button>
           </div>
         </div>
       </main>
