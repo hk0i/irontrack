@@ -1,0 +1,16 @@
+{
+  "name": "irontrack",
+  "version": "1.0.0",
+  "description": "Zero-build, offline-first PWA workout tracker.",
+  "private": true,
+  "scripts": {
+    "vendor": "node scripts/vendor.mjs",
+    "postinstall": "node scripts/vendor.mjs",
+    "dev": "node scripts/dev-server.mjs"
+  },
+  "devDependencies": {
+    "vue": "3.5.39",
+    "dexie": "4.4.4",
+    "@tailwindcss/browser": "4.3.2"
+  }
+}
