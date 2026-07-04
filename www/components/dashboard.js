@@ -57,6 +57,16 @@ export default {
             </svg>
           </button>
           <button
+            @click="emit('navigate', 'workout-history')"
+            aria-label="Workout history"
+            class="w-11 h-11 flex items-center justify-center rounded-full bg-slate-800 active:bg-slate-700"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="9" stroke-linecap="round" stroke-linejoin="round" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3.5 2" />
+            </svg>
+          </button>
+          <button
             @click="emit('navigate', 'settings')"
             aria-label="Settings"
             class="w-11 h-11 flex items-center justify-center rounded-full bg-slate-800 active:bg-slate-700"

@@ -4,6 +4,7 @@ import ActiveWorkout from './components/active-workout.js';
 import ProgressChart from './components/progress-chart.js';
 import Settings from './components/settings.js';
 import BodyMetrics from './components/body-metrics.js';
+import WorkoutHistory from './components/workout-history.js';
 import { ensureMetricBlueprintsSeeded } from './db.js';
 
 const screens = {
@@ -13,6 +14,7 @@ const screens = {
   'progress-chart': ProgressChart,
   settings: Settings,
   'body-metrics': BodyMetrics,
+  'workout-history': WorkoutHistory,
 };
 
 // Top-level await in a module script: guarantees the default metric

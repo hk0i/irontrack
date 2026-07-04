@@ -344,6 +344,15 @@ export default {
         </div>
       </main>
 
+      <div class="px-4">
+        <button
+          @click="emit('navigate', 'dashboard')"
+          class="w-full py-4 rounded-xl bg-emerald-500 text-slate-950 font-semibold text-base active:bg-emerald-400"
+        >
+          Finish Workout
+        </button>
+      </div>
+
       <div
         v-if="restBannerVisible"
         class="fixed inset-x-0 bottom-0 bg-emerald-600 text-slate-950 px-4 py-4 flex items-center justify-between font-semibold"

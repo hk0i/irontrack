@@ -149,6 +149,13 @@ export async function logSet({ exerciseId, date, reps, weightEntered, unit }) {
   return set;
 }
 
+// Every logged set, most recent day first — the source for the workout
+// history screen, which groups these by date then by exercise.
+export async function getAllSets() {
+  const sets = await db.sets.toArray();
+  return sets.sort((a, b) => b.date.localeCompare(a.date));
+}
+
 export function getSetsForExercise(exerciseId) {
   return db.sets
     .where('exerciseId')
