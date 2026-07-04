@@ -142,7 +142,7 @@ export default {
   template: `
     <div class="min-h-screen bg-slate-950 text-slate-100 pb-32">
       <header class="flex items-center gap-3 px-4 py-5 sticky top-0 bg-slate-950/95 backdrop-blur border-b border-slate-800 z-10">
-        <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-800">
+        <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full bg-slate-800 active:bg-slate-700">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
@@ -160,7 +160,7 @@ export default {
           <div v-for="exercise in block.exercises" :key="exercise.id" class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
             <div class="flex items-center justify-between mb-1">
               <h2 class="font-semibold text-base">{{ exercise.name }}</h2>
-              <button @click="viewHistory(exercise.id)" class="text-xs text-emerald-400">History</button>
+              <button @click="viewHistory(exercise.id)" class="px-3 py-2 rounded-lg bg-slate-800 text-xs font-semibold text-emerald-400 active:bg-slate-700">History</button>
             </div>
             <div class="text-sm text-slate-400 mb-3">
               <span v-if="ghostTextByExercise[exercise.id]">Last: [{{ ghostTextByExercise[exercise.id] }}]</span>
@@ -180,7 +180,7 @@ export default {
                   inputmode="decimal"
                   type="text"
                   placeholder="Weight"
-                  class="w-20 rounded-lg bg-slate-800 border border-slate-700 px-2 py-2 text-center disabled:opacity-50"
+                  class="w-20 h-11 rounded-lg bg-slate-800 border border-slate-700 px-2 text-center disabled:opacity-50"
                 />
                 <input
                   v-model="row.reps"
@@ -188,12 +188,12 @@ export default {
                   inputmode="numeric"
                   type="text"
                   placeholder="Reps"
-                  class="w-16 rounded-lg bg-slate-800 border border-slate-700 px-2 py-2 text-center disabled:opacity-50"
+                  class="w-16 h-11 rounded-lg bg-slate-800 border border-slate-700 px-2 text-center disabled:opacity-50"
                 />
                 <button
                   @click="toggleUnit(row)"
                   :disabled="row.checked"
-                  class="w-14 rounded-full bg-slate-800 border border-slate-700 py-2 text-xs font-semibold uppercase disabled:opacity-50"
+                  class="w-14 h-11 flex-shrink-0 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold uppercase disabled:opacity-50"
                 >
                   {{ row.unit }}
                 </button>
@@ -208,7 +208,7 @@ export default {
               </div>
             </div>
 
-            <button @click="addRow(exercise.id)" class="mt-3 text-sm text-emerald-400">+ Add set</button>
+            <button @click="addRow(exercise.id)" class="mt-3 w-full py-2.5 rounded-lg bg-slate-800 text-sm font-semibold text-emerald-400 active:bg-slate-700">+ Add set</button>
           </div>
         </div>
       </main>
@@ -218,7 +218,7 @@ export default {
         class="fixed inset-x-0 bottom-0 bg-emerald-600 text-slate-950 px-4 py-4 flex items-center justify-between font-semibold"
       >
         <span>Rest: {{ restBannerSecondsLeft }}s</span>
-        <button @click="dismissRestBanner" class="underline">Skip</button>
+        <button @click="dismissRestBanner" class="px-4 py-2 rounded-lg bg-slate-950/25 active:bg-slate-950/40">Skip</button>
       </div>
     </div>
   `,

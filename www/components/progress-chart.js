@@ -79,7 +79,7 @@ export default {
   template: `
     <div class="min-h-screen bg-slate-950 text-slate-100 pb-10">
       <header class="flex items-center gap-3 px-4 py-5 sticky top-0 bg-slate-950/95 backdrop-blur border-b border-slate-800">
-        <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-800">
+        <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full bg-slate-800 active:bg-slate-700">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
@@ -102,16 +102,10 @@ export default {
         <div v-else class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
           <svg :viewBox="'0 0 ' + CHART_WIDTH + ' ' + CHART_HEIGHT" class="w-full h-auto">
             <polyline :points="polylinePoints" fill="none" stroke="#10b981" stroke-width="2" />
-            <circle
-              v-for="(point, i) in points"
-              :key="i"
-              :cx="point.x"
-              :cy="point.y"
-              r="5"
-              fill="#10b981"
-              class="cursor-pointer"
-              @click="openModal(point)"
-            />
+            <g v-for="(point, i) in points" :key="i" @click="openModal(point)" class="cursor-pointer">
+              <circle :cx="point.x" :cy="point.y" r="14" fill="transparent" />
+              <circle :cx="point.x" :cy="point.y" r="5" fill="#10b981" />
+            </g>
           </svg>
         </div>
       </main>

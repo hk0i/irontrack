@@ -19,7 +19,11 @@ export default {
       emit('navigate', 'active-workout', { routineId: routine.id });
     }
 
-    return { routines, openRoutine, emit };
+    function editRoutine(routine) {
+      emit('navigate', 'routine-builder', { routineId: routine.id });
+    }
+
+    return { routines, openRoutine, editRoutine, emit };
   },
   template: `
     <div class="min-h-screen bg-slate-950 text-slate-100 pb-24">
@@ -52,15 +56,28 @@ export default {
         <div v-if="routines.length === 0" class="text-slate-400 text-center mt-16">
           No routines yet. Tap + to build your first one.
         </div>
-        <button
+        <div
           v-for="routine in routines"
           :key="routine.id"
-          @click="openRoutine(routine)"
-          class="w-full text-left bg-slate-900 border border-slate-800 rounded-2xl px-5 py-4 active:bg-slate-800"
+          class="relative bg-slate-900 border border-slate-800 rounded-2xl"
         >
-          <div class="text-lg font-semibold">{{ routine.name }}</div>
-          <div class="text-sm text-slate-400 mt-1">{{ routine.exerciseIds.length }} exercises</div>
-        </button>
+          <button
+            @click="openRoutine(routine)"
+            class="w-full text-left pl-5 pr-16 py-4 active:bg-slate-800 rounded-2xl"
+          >
+            <div class="text-lg font-semibold">{{ routine.name }}</div>
+            <div class="text-sm text-slate-400 mt-1">{{ routine.exerciseIds.length }} exercises</div>
+          </button>
+          <button
+            @click="editRoutine(routine)"
+            :aria-label="'Edit ' + routine.name"
+            class="absolute top-1/2 -translate-y-1/2 right-3 w-11 h-11 flex items-center justify-center rounded-full bg-slate-800 active:bg-slate-700"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 112.914 2.914L7.5 19.675l-4 1 1-4L16.862 4.487z" />
+            </svg>
+          </button>
+        </div>
       </main>
 
       <button

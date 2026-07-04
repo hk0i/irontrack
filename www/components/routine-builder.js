@@ -1,4 +1,4 @@
-import { searchExercises, createExercise, createRoutine, setSupersetLink, clearSupersetLink } from '../db.js';
+import { searchExercises, createExercise, createRoutine, updateRoutine, getRoutineById, getExerciseById, setSupersetLink, clearSupersetLink } from '../db.js';
 
 export default {
   props: {
@@ -6,13 +6,27 @@ export default {
   },
   emits: ['navigate'],
   setup(props, { emit }) {
-    const { ref, computed, watch } = Vue;
+    const { ref, computed, watch, onMounted } = Vue;
 
+    const editingRoutineId = ref(props.navParams.routineId || null);
     const routineName = ref('');
     const searchQuery = ref('');
     const searchResults = ref([]);
     const selectedExercises = ref([]);
     const linkModeExerciseId = ref(null);
+
+    onMounted(async () => {
+      if (!editingRoutineId.value) return;
+      const routine = await getRoutineById(editingRoutineId.value);
+      if (!routine) return;
+      routineName.value = routine.name;
+      const exercises = [];
+      for (const id of routine.exerciseIds) {
+        const exercise = await getExerciseById(id);
+        if (exercise) exercises.push(exercise);
+      }
+      selectedExercises.value = exercises;
+    });
 
     watch(searchQuery, async (query) => {
       searchResults.value = await searchExercises(query);
@@ -75,14 +89,20 @@ export default {
 
     async function save() {
       if (!canSave.value) return;
-      await createRoutine({
+      const payload = {
         name: routineName.value.trim(),
         exerciseIds: selectedExercises.value.map((e) => e.id),
-      });
+      };
+      if (editingRoutineId.value) {
+        await updateRoutine(editingRoutineId.value, payload);
+      } else {
+        await createRoutine(payload);
+      }
       emit('navigate', 'dashboard');
     }
 
     return {
+      editingRoutineId,
       routineName,
       searchQuery,
       searchResults,
@@ -102,12 +122,12 @@ export default {
   template: `
     <div class="min-h-screen bg-slate-950 text-slate-100 pb-10">
       <header class="flex items-center gap-3 px-4 py-5 sticky top-0 bg-slate-950/95 backdrop-blur border-b border-slate-800">
-        <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-800">
+        <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full bg-slate-800 active:bg-slate-700">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 class="text-lg font-bold">New Routine</h1>
+        <h1 class="text-lg font-bold">{{ editingRoutineId ? 'Edit Routine' : 'New Routine' }}</h1>
       </header>
 
       <main class="px-4 py-4 space-y-6">
@@ -166,14 +186,14 @@ export default {
               <button
                 @click="toggleLink(exercise)"
                 :aria-label="exercise.supersetWith ? 'Unlink superset' : 'Link as superset'"
-                class="w-9 h-9 flex items-center justify-center rounded-full"
+                class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full"
                 :class="exercise.supersetWith || linkModeExerciseId === exercise.id ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300'"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" />
                 </svg>
               </button>
-              <button @click="removeExercise(exercise)" aria-label="Remove" class="w-9 h-9 flex items-center justify-center rounded-full bg-slate-800 text-slate-400">
+              <button @click="removeExercise(exercise)" aria-label="Remove" class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-800 text-slate-400 text-lg">
                 &times;
               </button>
             </div>
