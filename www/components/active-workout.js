@@ -298,8 +298,8 @@ export default {
                       :disabled="pair.rowA.checked"
                       inputmode="decimal"
                       type="text"
-                      placeholder="Wt"
-                      class="w-16 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
+                      placeholder="Weight"
+                      class="w-20 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
                       :class="pair.rowA.weightInvalid ? 'border-rose-500' : 'border-slate-700'"
                     />
                     <input
@@ -337,8 +337,8 @@ export default {
                       :disabled="pair.rowB.checked"
                       inputmode="decimal"
                       type="text"
-                      placeholder="Wt"
-                      class="w-16 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
+                      placeholder="Weight"
+                      class="w-20 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
                       :class="pair.rowB.weightInvalid ? 'border-rose-500' : 'border-slate-700'"
                     />
                     <input
