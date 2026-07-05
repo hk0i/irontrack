@@ -1,8 +1,12 @@
-// Cache-first service worker so the app shell loads fully offline after the
-// first visit. Bump CACHE_NAME whenever www/ contents change to invalidate
-// the old cache. ASSET_LIST must be kept in sync manually — there's no glob
-// in a hand-written service worker.
-const CACHE_NAME = 'irontrack-v5';
+// Network-first service worker: every request tries the network first so an
+// online visit always gets the latest deployed files, and only falls back to
+// the cache when the network is unreachable — that's what makes the app
+// still usable offline. Every successful network response overwrites the
+// cache, so the offline fallback is always the most recently seen version,
+// not whatever happened to be cached at install time.
+// ASSET_LIST (used only for the install-time baseline cache) must be kept in
+// sync manually — there's no glob in a hand-written service worker.
+const CACHE_NAME = 'irontrack-v6';
 
 const ASSET_LIST = [
   './',
@@ -18,6 +22,7 @@ const ASSET_LIST = [
   './components/progress-chart.js',
   './components/settings.js',
   './components/body-metrics.js',
+  './components/workout-history.js',
   './vendor/vue.global.prod.js',
   './vendor/dexie.min.js',
   './vendor/tailwind-browser.js',
@@ -43,6 +48,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request))
+    fetch(event.request)
+      .then((response) => {
+        if (response.ok) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });

@@ -47,7 +47,16 @@ const App = {
 Vue.createApp(App).mount('#app');
 
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch((err) => {
-    console.warn('Service worker registration failed:', err);
-  });
+  // updateViaCache: 'none' stops the browser from serving sw.js itself out of
+  // the HTTP cache when checking for updates — without this, a stale cached
+  // copy of sw.js can make the browser think there's nothing new to install
+  // even when www/ has genuinely changed. registration.update() then forces
+  // that check to happen immediately on every load, instead of waiting on
+  // the browser's own (up to 24h) update heuristic.
+  navigator.serviceWorker
+    .register('sw.js', { updateViaCache: 'none' })
+    .then((registration) => registration.update())
+    .catch((err) => {
+      console.warn('Service worker registration failed:', err);
+    });
 }
