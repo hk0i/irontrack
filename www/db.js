@@ -149,6 +149,15 @@ export async function logSet({ exerciseId, date, reps, weightEntered, unit }) {
   return set;
 }
 
+// Same write-time conversion rule as logSet, for correcting an existing
+// entry from the workout history screen rather than creating a new one.
+export async function updateSet(id, { reps, weightEntered, unit }) {
+  const weightInLbs = unit === 'kg' ? kgToLbs(weightEntered) : weightEntered;
+  const patch = { reps, weightEntered, unit, weightInLbs };
+  await db.sets.update(id, patch);
+  return patch;
+}
+
 // Every logged set, most recent day first — the source for the workout
 // history screen, which groups these by date then by exercise.
 export async function getAllSets() {
