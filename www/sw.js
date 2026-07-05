@@ -6,7 +6,7 @@
 // not whatever happened to be cached at install time.
 // ASSET_LIST (used only for the install-time baseline cache) must be kept in
 // sync manually — there's no glob in a hand-written service worker.
-const CACHE_NAME = 'irontrack-v7';
+const CACHE_NAME = 'irontrack-v8';
 
 const ASSET_LIST = [
   './',

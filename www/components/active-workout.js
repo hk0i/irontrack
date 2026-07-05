@@ -274,14 +274,14 @@ export default {
               <span class="text-xs uppercase tracking-wide text-emerald-400 font-semibold flex-shrink-0">Superset</span>
             </div>
 
-            <div class="grid grid-cols-2 gap-3 text-xs text-slate-400 mb-4">
-              <div v-for="exercise in block.exercises" :key="exercise.id">
-                <div class="flex items-center justify-between gap-2 mb-1">
-                  <span class="text-slate-300 font-medium truncate">{{ exercise.name }}</span>
-                  <button @click="viewHistory(exercise.id)" class="px-2 py-1.5 rounded-lg bg-slate-800 text-xs font-semibold text-emerald-400 active:bg-slate-700 flex-shrink-0">History</button>
+            <div class="space-y-3 text-xs text-slate-400 mb-4">
+              <div v-for="exercise in block.exercises" :key="exercise.id" class="flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="text-slate-300 font-medium text-sm">{{ exercise.name }}</div>
+                  <span v-if="ghostTextByExercise[exercise.id]">Last: [{{ ghostTextByExercise[exercise.id] }}]</span>
+                  <span v-else>No history yet</span>
                 </div>
-                <span v-if="ghostTextByExercise[exercise.id]">Last: [{{ ghostTextByExercise[exercise.id] }}]</span>
-                <span v-else>No history yet</span>
+                <button @click="viewHistory(exercise.id)" class="px-2 py-1.5 rounded-lg bg-slate-800 text-xs font-semibold text-emerald-400 active:bg-slate-700 flex-shrink-0">History</button>
               </div>
             </div>
 
@@ -289,78 +289,82 @@ export default {
               <div v-for="pair in pairedRows(block)" :key="pair.index" class="rounded-xl bg-slate-800/60 p-2 space-y-2">
                 <div class="text-xs text-slate-500 px-1">Set {{ pair.index + 1 }}</div>
 
-                <div class="flex items-center gap-1.5">
-                  <span class="w-12 flex-shrink-0 text-xs text-slate-400 truncate">{{ block.exercises[0].name }}</span>
-                  <input
-                    v-model="pair.rowA.weightEntered"
-                    @input="pair.rowA.weightInvalid = false"
-                    :disabled="pair.rowA.checked"
-                    inputmode="decimal"
-                    type="text"
-                    placeholder="Wt"
-                    class="w-16 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
-                    :class="pair.rowA.weightInvalid ? 'border-rose-500' : 'border-slate-700'"
-                  />
-                  <input
-                    v-model="pair.rowA.reps"
-                    @input="pair.rowA.repsInvalid = false"
-                    :disabled="pair.rowA.checked"
-                    inputmode="numeric"
-                    type="text"
-                    placeholder="Reps"
-                    class="w-14 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
-                    :class="pair.rowA.repsInvalid ? 'border-rose-500' : 'border-slate-700'"
-                  />
-                  <button
-                    @click="toggleUnit(pair.rowA)"
-                    :disabled="pair.rowA.checked"
-                    class="w-14 h-11 flex-shrink-0 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold uppercase disabled:opacity-50"
-                  >{{ pair.rowA.unit }}</button>
-                  <button
-                    @click="checkRow(block.exercises[0].id, pair.rowA, pair.rowB)"
-                    :aria-label="pair.rowA.checked ? 'Set logged' : 'Log set'"
-                    class="w-11 h-11 flex-shrink-0 rounded-lg border-2 flex items-center justify-center"
-                    :class="pair.rowA.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-700'"
-                  >
-                    <span v-if="pair.rowA.checked">&#10003;</span>
-                  </button>
+                <div>
+                  <div class="text-xs text-slate-400 mb-1">{{ block.exercises[0].name }}</div>
+                  <div class="flex items-center gap-1.5">
+                    <input
+                      v-model="pair.rowA.weightEntered"
+                      @input="pair.rowA.weightInvalid = false"
+                      :disabled="pair.rowA.checked"
+                      inputmode="decimal"
+                      type="text"
+                      placeholder="Wt"
+                      class="w-16 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
+                      :class="pair.rowA.weightInvalid ? 'border-rose-500' : 'border-slate-700'"
+                    />
+                    <input
+                      v-model="pair.rowA.reps"
+                      @input="pair.rowA.repsInvalid = false"
+                      :disabled="pair.rowA.checked"
+                      inputmode="numeric"
+                      type="text"
+                      placeholder="Reps"
+                      class="w-14 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
+                      :class="pair.rowA.repsInvalid ? 'border-rose-500' : 'border-slate-700'"
+                    />
+                    <button
+                      @click="toggleUnit(pair.rowA)"
+                      :disabled="pair.rowA.checked"
+                      class="w-14 h-11 flex-shrink-0 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold uppercase disabled:opacity-50"
+                    >{{ pair.rowA.unit }}</button>
+                    <button
+                      @click="checkRow(block.exercises[0].id, pair.rowA, pair.rowB)"
+                      :aria-label="pair.rowA.checked ? 'Set logged' : 'Log set'"
+                      class="w-11 h-11 flex-shrink-0 rounded-lg border-2 flex items-center justify-center"
+                      :class="pair.rowA.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-700'"
+                    >
+                      <span v-if="pair.rowA.checked">&#10003;</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div class="flex items-center gap-1.5">
-                  <span class="w-12 flex-shrink-0 text-xs text-slate-400 truncate">{{ block.exercises[1].name }}</span>
-                  <input
-                    v-model="pair.rowB.weightEntered"
-                    @input="pair.rowB.weightInvalid = false"
-                    :disabled="pair.rowB.checked"
-                    inputmode="decimal"
-                    type="text"
-                    placeholder="Wt"
-                    class="w-16 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
-                    :class="pair.rowB.weightInvalid ? 'border-rose-500' : 'border-slate-700'"
-                  />
-                  <input
-                    v-model="pair.rowB.reps"
-                    @input="pair.rowB.repsInvalid = false"
-                    :disabled="pair.rowB.checked"
-                    inputmode="numeric"
-                    type="text"
-                    placeholder="Reps"
-                    class="w-14 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
-                    :class="pair.rowB.repsInvalid ? 'border-rose-500' : 'border-slate-700'"
-                  />
-                  <button
-                    @click="toggleUnit(pair.rowB)"
-                    :disabled="pair.rowB.checked"
-                    class="w-14 h-11 flex-shrink-0 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold uppercase disabled:opacity-50"
-                  >{{ pair.rowB.unit }}</button>
-                  <button
-                    @click="checkRow(block.exercises[1].id, pair.rowB, pair.rowA)"
-                    :aria-label="pair.rowB.checked ? 'Set logged' : 'Log set'"
-                    class="w-11 h-11 flex-shrink-0 rounded-lg border-2 flex items-center justify-center"
-                    :class="pair.rowB.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-700'"
-                  >
-                    <span v-if="pair.rowB.checked">&#10003;</span>
-                  </button>
+                <div>
+                  <div class="text-xs text-slate-400 mb-1">{{ block.exercises[1].name }}</div>
+                  <div class="flex items-center gap-1.5">
+                    <input
+                      v-model="pair.rowB.weightEntered"
+                      @input="pair.rowB.weightInvalid = false"
+                      :disabled="pair.rowB.checked"
+                      inputmode="decimal"
+                      type="text"
+                      placeholder="Wt"
+                      class="w-16 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
+                      :class="pair.rowB.weightInvalid ? 'border-rose-500' : 'border-slate-700'"
+                    />
+                    <input
+                      v-model="pair.rowB.reps"
+                      @input="pair.rowB.repsInvalid = false"
+                      :disabled="pair.rowB.checked"
+                      inputmode="numeric"
+                      type="text"
+                      placeholder="Reps"
+                      class="w-14 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
+                      :class="pair.rowB.repsInvalid ? 'border-rose-500' : 'border-slate-700'"
+                    />
+                    <button
+                      @click="toggleUnit(pair.rowB)"
+                      :disabled="pair.rowB.checked"
+                      class="w-14 h-11 flex-shrink-0 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold uppercase disabled:opacity-50"
+                    >{{ pair.rowB.unit }}</button>
+                    <button
+                      @click="checkRow(block.exercises[1].id, pair.rowB, pair.rowA)"
+                      :aria-label="pair.rowB.checked ? 'Set logged' : 'Log set'"
+                      class="w-11 h-11 flex-shrink-0 rounded-lg border-2 flex items-center justify-center"
+                      :class="pair.rowB.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-700'"
+                    >
+                      <span v-if="pair.rowB.checked">&#10003;</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
