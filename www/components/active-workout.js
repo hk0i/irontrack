@@ -9,12 +9,22 @@ function todayString() {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
+// Weight is optional (bodyweight/banded exercises), so a 0 weight is a
+// normal, common case — showing "0 lbs x 12" would read like a mistake, so
+// the weight portion is omitted entirely when there's none logged.
+function formatGhostText(weightInLbs, unit, reps) {
+  if (!weightInLbs) return `${reps} reps`;
+  return `${formatWeight(weightInLbs, unit)} ${unit} x ${reps}`;
+}
+
 function makeEmptyRow() {
   return Vue.reactive({
     weightEntered: '',
     reps: '',
     unit: settings.preferredUnit,
     checked: false,
+    weightInvalid: false,
+    repsInvalid: false,
   });
 }
 
@@ -55,9 +65,7 @@ export default {
         if (!exercise) continue;
         setRowsByExercise[exercise.id] = reactive([makeEmptyRow()]);
         const lastSet = await getLastSetForExercise(exercise.id);
-        ghostTextByExercise[exercise.id] = lastSet
-          ? `${formatWeight(lastSet.weightInLbs, lastSet.unit)} ${lastSet.unit} x ${lastSet.reps}`
-          : null;
+        ghostTextByExercise[exercise.id] = lastSet ? formatGhostText(lastSet.weightInLbs, lastSet.unit, lastSet.reps) : null;
       }
 
       const seen = new Set();
@@ -142,9 +150,15 @@ export default {
     // matching row is already checked.
     async function checkRow(exerciseId, row, partnerRow = null) {
       if (row.checked) return;
-      const weightEntered = parseFloat(row.weightEntered);
+      // Weight is optional — bodyweight/banded exercises (scapular wall
+      // slides, banded rows, etc.) have nothing to enter there. Reps is the
+      // only field that's always required.
+      const weightText = row.weightEntered.trim();
+      const weightEntered = weightText === '' ? 0 : parseFloat(weightText);
       const reps = parseInt(row.reps, 10);
-      if (Number.isNaN(weightEntered) || Number.isNaN(reps)) return;
+      row.weightInvalid = Number.isNaN(weightEntered);
+      row.repsInvalid = Number.isNaN(reps);
+      if (row.weightInvalid || row.repsInvalid) return;
       await logSet({
         exerciseId,
         date: todayString(),
@@ -154,7 +168,7 @@ export default {
       });
       row.checked = true;
       const weightInLbs = row.unit === 'kg' ? kgToLbs(weightEntered) : weightEntered;
-      ghostTextByExercise[exerciseId] = `${formatWeight(weightInLbs, row.unit)} ${row.unit} x ${reps}`;
+      ghostTextByExercise[exerciseId] = formatGhostText(weightInLbs, row.unit, reps);
 
       if (!partnerRow || partnerRow.checked) {
         startRestBanner();
@@ -214,19 +228,23 @@ export default {
                 <span class="w-5 text-sm text-slate-500 text-center">{{ index + 1 }}</span>
                 <input
                   v-model="row.weightEntered"
+                  @input="row.weightInvalid = false"
                   :disabled="row.checked"
                   inputmode="decimal"
                   type="text"
                   placeholder="Weight"
-                  class="w-20 h-11 rounded-lg bg-slate-800 border border-slate-700 px-2 text-center disabled:opacity-50"
+                  class="w-20 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
+                  :class="row.weightInvalid ? 'border-rose-500' : 'border-slate-700'"
                 />
                 <input
                   v-model="row.reps"
+                  @input="row.repsInvalid = false"
                   :disabled="row.checked"
                   inputmode="numeric"
                   type="text"
                   placeholder="Reps"
-                  class="w-16 h-11 rounded-lg bg-slate-800 border border-slate-700 px-2 text-center disabled:opacity-50"
+                  class="w-16 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
+                  :class="row.repsInvalid ? 'border-rose-500' : 'border-slate-700'"
                 />
                 <button
                   @click="toggleUnit(row)"
@@ -275,19 +293,23 @@ export default {
                   <span class="w-12 flex-shrink-0 text-xs text-slate-400 truncate">{{ block.exercises[0].name }}</span>
                   <input
                     v-model="pair.rowA.weightEntered"
+                    @input="pair.rowA.weightInvalid = false"
                     :disabled="pair.rowA.checked"
                     inputmode="decimal"
                     type="text"
                     placeholder="Wt"
-                    class="w-16 h-11 rounded-lg bg-slate-800 border border-slate-700 px-2 text-center disabled:opacity-50"
+                    class="w-16 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
+                    :class="pair.rowA.weightInvalid ? 'border-rose-500' : 'border-slate-700'"
                   />
                   <input
                     v-model="pair.rowA.reps"
+                    @input="pair.rowA.repsInvalid = false"
                     :disabled="pair.rowA.checked"
                     inputmode="numeric"
                     type="text"
                     placeholder="Reps"
-                    class="w-14 h-11 rounded-lg bg-slate-800 border border-slate-700 px-2 text-center disabled:opacity-50"
+                    class="w-14 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
+                    :class="pair.rowA.repsInvalid ? 'border-rose-500' : 'border-slate-700'"
                   />
                   <button
                     @click="toggleUnit(pair.rowA)"
@@ -308,19 +330,23 @@ export default {
                   <span class="w-12 flex-shrink-0 text-xs text-slate-400 truncate">{{ block.exercises[1].name }}</span>
                   <input
                     v-model="pair.rowB.weightEntered"
+                    @input="pair.rowB.weightInvalid = false"
                     :disabled="pair.rowB.checked"
                     inputmode="decimal"
                     type="text"
                     placeholder="Wt"
-                    class="w-16 h-11 rounded-lg bg-slate-800 border border-slate-700 px-2 text-center disabled:opacity-50"
+                    class="w-16 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
+                    :class="pair.rowB.weightInvalid ? 'border-rose-500' : 'border-slate-700'"
                   />
                   <input
                     v-model="pair.rowB.reps"
+                    @input="pair.rowB.repsInvalid = false"
                     :disabled="pair.rowB.checked"
                     inputmode="numeric"
                     type="text"
                     placeholder="Reps"
-                    class="w-14 h-11 rounded-lg bg-slate-800 border border-slate-700 px-2 text-center disabled:opacity-50"
+                    class="w-14 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
+                    :class="pair.rowB.repsInvalid ? 'border-rose-500' : 'border-slate-700'"
                   />
                   <button
                     @click="toggleUnit(pair.rowB)"
