@@ -1,4 +1,4 @@
-import { getAllSets, getAllExercises, updateSet, formatWeight } from '../db.js';
+import { getAllSets, getAllExercises, updateSet, deleteSet, formatWeight } from '../db.js';
 import { settings } from '../store.js';
 
 function formatDate(dateStr) {
@@ -91,6 +91,20 @@ export default {
       editingId.value = null;
     }
 
+    // Prunes empty exercise groups/days after a delete so the screen never
+    // shows a leftover heading with nothing under it.
+    async function deleteEntry(day, exercise, set) {
+      if (!confirm('Delete this set? This cannot be undone.')) return;
+      await deleteSet(set.id);
+      exercise.sets = exercise.sets.filter((s) => s.id !== set.id);
+      if (exercise.sets.length === 0) {
+        day.exercises = day.exercises.filter((e) => e !== exercise);
+      }
+      if (day.exercises.length === 0) {
+        days.value = days.value.filter((d) => d !== day);
+      }
+    }
+
     return {
       days,
       editingId,
@@ -100,6 +114,7 @@ export default {
       toggleEditUnit,
       editIsValid,
       saveEdit,
+      deleteEntry,
       emit,
     };
   },
@@ -142,6 +157,15 @@ export default {
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 112.914 2.914L7.5 19.675l-4 1 1-4L16.862 4.487z" />
+                      </svg>
+                    </button>
+                    <button
+                      @click="deleteEntry(day, exercise, set)"
+                      aria-label="Delete set"
+                      class="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-md text-rose-400 active:bg-slate-700"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0l1 13a2 2 0 002 2h4a2 2 0 002-2l1-13" />
                       </svg>
                     </button>
                   </div>
