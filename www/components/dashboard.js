@@ -1,4 +1,5 @@
 import { getAllRoutines, deleteRoutine, getAllSets } from '../db.js';
+import { APP_VERSION } from '../version.js';
 
 export default {
   props: {
@@ -46,7 +47,7 @@ export default {
       await loadRoutines();
     }
 
-    return { routines, suggestedRoutine, openRoutine, editRoutine, removeRoutine, emit };
+    return { routines, suggestedRoutine, APP_VERSION, openRoutine, editRoutine, removeRoutine, emit };
   },
   template: `
     <div class="min-h-screen bg-slate-950 text-slate-100 pb-24">
@@ -151,6 +152,8 @@ export default {
       >
         +
       </button>
+
+      <div class="fixed bottom-2 left-3 text-xs text-slate-600 select-none">v{{ APP_VERSION }}</div>
     </div>
   `,
 };
