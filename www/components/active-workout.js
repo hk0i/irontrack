@@ -36,6 +36,10 @@ export default {
   setup(props, { emit }) {
     const { ref, reactive, onMounted, onUnmounted } = Vue;
 
+    // Read once — navParams doesn't change over this screen's lifetime.
+    // Threaded through to logSet so history can be grouped by routine.
+    const routineId = props.navParams.routineId || null;
+
     const blocks = ref([]); // [{ exercises: [ex] } | { exercises: [exA, exB] }]
     const ghostTextByExercise = reactive({});
     const setRowsByExercise = reactive({});
@@ -45,7 +49,6 @@ export default {
     let restInterval = null;
 
     async function loadWorkout() {
-      const routineId = props.navParams.routineId;
       if (!routineId) return;
       const routine = await getRoutineById(routineId);
       if (!routine) return;
@@ -165,6 +168,7 @@ export default {
         reps,
         weightEntered,
         unit: row.unit,
+        routineId,
       });
       row.checked = true;
       const weightInLbs = row.unit === 'kg' ? kgToLbs(weightEntered) : weightEntered;

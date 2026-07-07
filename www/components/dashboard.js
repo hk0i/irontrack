@@ -1,4 +1,4 @@
-import { getAllRoutines, deleteRoutine } from '../db.js';
+import { getAllRoutines, deleteRoutine, getAllSets } from '../db.js';
 
 export default {
   props: {
@@ -8,9 +8,26 @@ export default {
   setup(props, { emit }) {
     const { ref, onMounted } = Vue;
     const routines = ref([]);
+    const suggestedRoutine = ref(null);
 
     async function loadRoutines() {
       routines.value = await getAllRoutines();
+      suggestedRoutine.value = await computeSuggestedRoutine(routines.value);
+    }
+
+    // Rotates through the routine list in whatever order it's displayed:
+    // find the routine the most recently logged set belonged to, and
+    // suggest the next one after it, wrapping back to the start. Completion
+    // -based rather than calendar-based, so rest days don't throw it off.
+    // Defaults to the first routine if there's no history yet, or the last
+    // one performed has since been deleted.
+    async function computeSuggestedRoutine(currentRoutines) {
+      if (currentRoutines.length === 0) return null;
+      const sets = await getAllSets();
+      const lastRoutineId = sets.find((s) => s.routineId)?.routineId || null;
+      const lastIndex = lastRoutineId ? currentRoutines.findIndex((r) => r.id === lastRoutineId) : -1;
+      const nextIndex = lastIndex === -1 ? 0 : (lastIndex + 1) % currentRoutines.length;
+      return currentRoutines[nextIndex];
     }
 
     onMounted(loadRoutines);
@@ -29,7 +46,7 @@ export default {
       await loadRoutines();
     }
 
-    return { routines, openRoutine, editRoutine, removeRoutine, emit };
+    return { routines, suggestedRoutine, openRoutine, editRoutine, removeRoutine, emit };
   },
   template: `
     <div class="min-h-screen bg-slate-950 text-slate-100 pb-24">
@@ -83,6 +100,17 @@ export default {
         <div v-if="routines.length === 0" class="text-slate-400 text-center mt-16">
           No routines yet. Tap + to build your first one.
         </div>
+
+        <button
+          v-if="suggestedRoutine"
+          @click="openRoutine(suggestedRoutine)"
+          class="w-full text-left bg-emerald-950/40 border-2 border-emerald-600 rounded-2xl px-5 py-4 active:bg-emerald-950/60"
+        >
+          <div class="text-xs uppercase tracking-wide text-emerald-400 font-semibold mb-1">Suggested</div>
+          <div class="text-lg font-semibold">{{ suggestedRoutine.name }}</div>
+          <div class="text-sm text-slate-400 mt-1">{{ suggestedRoutine.exerciseIds.length }} exercises</div>
+        </button>
+
         <div
           v-for="routine in routines"
           :key="routine.id"

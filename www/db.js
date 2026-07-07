@@ -134,7 +134,16 @@ export async function clearSupersetLink(exerciseId) {
 // ---------- Sets (history) ----------
 
 // The only place weightInLbs gets computed, per the spec's exact formula.
-export async function logSet({ exerciseId, date, reps, weightEntered, unit }) {
+// routineId is optional context (which routine the set was logged under) —
+// stored as a plain field, not a declared/indexed schema column, so it needs
+// no Dexie version bump. It powers the workout history screen's per-routine
+// grouping and the dashboard's "suggested routine" rotation.
+// createdAt is a plain (unindexed) precise timestamp, distinct from `date`
+// (a YYYY-MM-DD logical workout day). date alone can't order two sets logged
+// on the same calendar day — e.g. two different routines done today — so
+// createdAt is used as a tiebreaker anywhere sets are sorted "most recent
+// first".
+export async function logSet({ exerciseId, date, reps, weightEntered, unit, routineId = null }) {
   const weightInLbs = unit === 'kg' ? kgToLbs(weightEntered) : weightEntered;
   const set = {
     id: crypto.randomUUID(),
@@ -144,6 +153,8 @@ export async function logSet({ exerciseId, date, reps, weightEntered, unit }) {
     weightEntered,
     unit,
     weightInLbs,
+    routineId,
+    createdAt: Date.now(),
   };
   await db.sets.add(set);
   return set;
@@ -162,7 +173,7 @@ export async function updateSet(id, { reps, weightEntered, unit }) {
 // history screen, which groups these by date then by exercise.
 export async function getAllSets() {
   const sets = await db.sets.toArray();
-  return sets.sort((a, b) => b.date.localeCompare(a.date));
+  return sets.sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt || 0) - (a.createdAt || 0));
 }
 
 export function getSetsForExercise(exerciseId) {
@@ -170,17 +181,18 @@ export function getSetsForExercise(exerciseId) {
     .where('exerciseId')
     .equals(exerciseId)
     .toArray()
-    .then((sets) => sets.sort((a, b) => a.date.localeCompare(b.date)));
+    .then((sets) => sets.sort((a, b) => a.date.localeCompare(b.date) || (a.createdAt || 0) - (b.createdAt || 0)));
 }
 
 // Most recent logged set for an exercise, regardless of recency window — a
 // lift not trained in a while should still show its last weight, that's when
 // the hint is most useful. Dates are YYYY-MM-DD strings so lexicographic sort
-// equals chronological sort.
+// equals chronological sort; createdAt breaks ties between multiple sets
+// logged for the same exercise on the same day.
 export async function getLastSetForExercise(exerciseId) {
   const sets = await db.sets.where('exerciseId').equals(exerciseId).toArray();
   if (sets.length === 0) return null;
-  return sets.sort((a, b) => b.date.localeCompare(a.date))[0];
+  return sets.sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt || 0) - (a.createdAt || 0))[0];
 }
 
 export function deleteSet(id) {

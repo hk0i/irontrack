@@ -1,4 +1,4 @@
-import { getAllSets, getAllExercises, updateSet, deleteSet, formatWeight } from '../db.js';
+import { getAllSets, getAllExercises, getAllRoutines, updateSet, deleteSet, formatWeight } from '../db.js';
 import { settings } from '../store.js';
 
 function formatDate(dateStr) {
@@ -19,21 +19,29 @@ export default {
     const editingId = ref(null);
 
     onMounted(async () => {
-      const [sets, exercises] = await Promise.all([getAllSets(), getAllExercises()]);
+      const [sets, exercises, routines] = await Promise.all([getAllSets(), getAllExercises(), getAllRoutines()]);
       const exerciseById = new Map(exercises.map((e) => [e.id, e]));
+      const routineById = new Map(routines.map((r) => [r.id, r]));
 
-      const byDate = new Map();
+      // Grouped by date + routine, not just date — more than one routine can
+      // be logged on the same calendar day, and each should get its own
+      // card labeled with that routine's name.
+      const bySession = new Map();
       for (const set of sets) {
-        if (!byDate.has(set.date)) byDate.set(set.date, new Map());
-        const byExercise = byDate.get(set.date);
-        if (!byExercise.has(set.exerciseId)) byExercise.set(set.exerciseId, []);
-        byExercise.get(set.exerciseId).push(set);
+        const sessionKey = `${set.date}::${set.routineId || 'none'}`;
+        if (!bySession.has(sessionKey)) {
+          bySession.set(sessionKey, { date: set.date, routineId: set.routineId || null, byExercise: new Map() });
+        }
+        const session = bySession.get(sessionKey);
+        if (!session.byExercise.has(set.exerciseId)) session.byExercise.set(set.exerciseId, []);
+        session.byExercise.get(set.exerciseId).push(set);
       }
 
-      days.value = [...byDate.entries()].map(([date, byExercise]) => ({
-        date,
-        label: formatDate(date),
-        exercises: [...byExercise.entries()].map(([exerciseId, exerciseSets]) => ({
+      days.value = [...bySession.values()].map((session) => ({
+        date: session.date,
+        label: formatDate(session.date),
+        routineName: routineById.get(session.routineId)?.name || null,
+        exercises: [...session.byExercise.entries()].map(([exerciseId, exerciseSets]) => ({
           name: exerciseById.get(exerciseId)?.name || 'Unknown exercise',
           sets: exerciseSets,
         })),
@@ -136,10 +144,13 @@ export default {
 
         <div
           v-for="day in days"
-          :key="day.date"
+          :key="day.date + '::' + (day.routineName || '')"
           class="bg-slate-900 border border-slate-800 rounded-2xl p-4"
         >
-          <h2 class="font-semibold text-base mb-3">{{ day.label }}</h2>
+          <div class="mb-3">
+            <h2 class="font-semibold text-base">{{ day.routineName || 'Workout' }}</h2>
+            <div class="text-xs text-slate-400">{{ day.label }}</div>
+          </div>
           <div class="space-y-3">
             <div v-for="exercise in day.exercises" :key="exercise.name">
               <div class="text-sm font-medium text-slate-200 mb-1">{{ exercise.name }}</div>
