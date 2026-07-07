@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Zero-build, offline-first PWA workout tracker.",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "vendor": "node scripts/vendor.mjs",
     "postinstall": "node scripts/vendor.mjs",
