@@ -23,6 +23,10 @@ db.version(2).stores({
   metric_logs: 'id, blueprintId, date',
 });
 
+db.version(3).stores({
+  workouts: 'id, routineId, date',
+});
+
 // ---------- Unit conversion ----------
 
 export function kgToLbs(kg) {
@@ -199,6 +203,28 @@ export function deleteSet(id) {
   return db.sets.delete(id);
 }
 
+// ---------- Workout sessions (duration tracking) ----------
+
+// One row per finished workout. startedAt is captured and held in the active
+// workout screen's own state; this is only called once, when the user taps
+// Finish, so an abandoned session never leaves a partial row here.
+export async function logWorkoutSession({ routineId, date, startedAt, endedAt }) {
+  const session = {
+    id: crypto.randomUUID(),
+    routineId,
+    date,
+    startedAt,
+    endedAt,
+    durationMs: endedAt - startedAt,
+  };
+  await db.workouts.add(session);
+  return session;
+}
+
+export function getAllWorkoutSessions() {
+  return db.workouts.toArray();
+}
+
 // ---------- Body metrics ----------
 
 const DEFAULT_METRIC_BLUEPRINTS = [
@@ -263,41 +289,54 @@ export async function getRecentLogsForBlueprint(blueprintId, limit = 8) {
 // ---------- Backup / restore ----------
 
 export async function exportAllData() {
-  const [routines, exercises, sets, metricBlueprints, metricLogs] = await Promise.all([
+  const [routines, exercises, sets, metricBlueprints, metricLogs, workouts] = await Promise.all([
     db.routines.toArray(),
     db.exercises.toArray(),
     db.sets.toArray(),
     db.metric_blueprints.toArray(),
     db.metric_logs.toArray(),
+    db.workouts.toArray(),
   ]);
   return {
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     routines,
     exercises,
     sets,
     metricBlueprints,
     metricLogs,
+    workouts,
   };
 }
 
 // bulkPut (not bulkAdd) so re-importing the same file is idempotent. Wrapped
 // in a transaction so a failure partway through can't leave mixed state.
-// metricBlueprints/metricLogs are optional so older (version 1) backups —
-// taken before body metrics existed — still import cleanly.
+// metricBlueprints/metricLogs/workouts are optional so older backups — taken
+// before body metrics or duration tracking existed — still import cleanly.
 export async function importAllData(payload) {
   if (!payload || !Array.isArray(payload.routines) || !Array.isArray(payload.exercises) || !Array.isArray(payload.sets)) {
     throw new Error('Invalid backup file: missing routines/exercises/sets arrays.');
   }
   const metricBlueprints = Array.isArray(payload.metricBlueprints) ? payload.metricBlueprints : [];
   const metricLogs = Array.isArray(payload.metricLogs) ? payload.metricLogs : [];
-  await db.transaction('rw', db.routines, db.exercises, db.sets, db.metric_blueprints, db.metric_logs, async () => {
-    await db.routines.bulkPut(payload.routines);
-    await db.exercises.bulkPut(payload.exercises);
-    await db.sets.bulkPut(payload.sets);
-    await db.metric_blueprints.bulkPut(metricBlueprints);
-    await db.metric_logs.bulkPut(metricLogs);
-  });
+  const workouts = Array.isArray(payload.workouts) ? payload.workouts : [];
+  await db.transaction(
+    'rw',
+    db.routines,
+    db.exercises,
+    db.sets,
+    db.metric_blueprints,
+    db.metric_logs,
+    db.workouts,
+    async () => {
+      await db.routines.bulkPut(payload.routines);
+      await db.exercises.bulkPut(payload.exercises);
+      await db.sets.bulkPut(payload.sets);
+      await db.metric_blueprints.bulkPut(metricBlueprints);
+      await db.metric_logs.bulkPut(metricLogs);
+      await db.workouts.bulkPut(workouts);
+    }
+  );
 }
 
 export default db;
