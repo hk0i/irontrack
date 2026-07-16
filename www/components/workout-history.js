@@ -1,10 +1,19 @@
-import { getAllSets, getAllExercises, getAllRoutines, updateSet, deleteSet, formatWeight } from '../db.js';
+import { getAllSets, getAllExercises, getAllRoutines, getAllWorkoutSessions, updateSet, deleteSet, formatWeight } from '../db.js';
 import { settings } from '../store.js';
 
 function formatDate(dateStr) {
   const [year, month, day] = dateStr.split('-').map(Number);
   const date = new Date(year, month - 1, day);
   return date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Rounds up to the nearest minute so a very short test/real session still
+// reads as "1m" rather than a confusing "0m".
+function formatDuration(ms) {
+  const totalMinutes = Math.max(1, Math.round(ms / 60000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 }
 
 export default {
@@ -19,33 +28,65 @@ export default {
     const editingId = ref(null);
 
     onMounted(async () => {
-      const [sets, exercises, routines] = await Promise.all([getAllSets(), getAllExercises(), getAllRoutines()]);
+      const [sets, exercises, routines, workoutSessions] = await Promise.all([
+        getAllSets(),
+        getAllExercises(),
+        getAllRoutines(),
+        getAllWorkoutSessions(),
+      ]);
       const exerciseById = new Map(exercises.map((e) => [e.id, e]));
       const routineById = new Map(routines.map((r) => [r.id, r]));
+      const workoutById = new Map(workoutSessions.map((s) => [s.id, s]));
 
-      // Grouped by date + routine, not just date — more than one routine can
-      // be logged on the same calendar day, and each should get its own
-      // card labeled with that routine's name.
+      // Legacy fallback only: sets logged before sessionId existed have no
+      // way to tell two same-day sessions of the same routine apart, so they
+      // still merge onto one card, listing each matching duration as its own
+      // pill rather than picking one.
+      const legacySessionsByKey = new Map();
+      for (const session of workoutSessions) {
+        const key = `${session.date}::${session.routineId || 'none'}`;
+        if (!legacySessionsByKey.has(key)) legacySessionsByKey.set(key, []);
+        legacySessionsByKey.get(key).push(session);
+      }
+
+      // Grouped by sessionId when a set has one — that's what keeps two
+      // separate same-day sessions of the same routine as two separate
+      // cards instead of merging their sets together. Falls back to the old
+      // date+routine key for sets logged before sessionId existed.
       const bySession = new Map();
       for (const set of sets) {
-        const sessionKey = `${set.date}::${set.routineId || 'none'}`;
+        const sessionKey = set.sessionId ? `session::${set.sessionId}` : `legacy::${set.date}::${set.routineId || 'none'}`;
         if (!bySession.has(sessionKey)) {
-          bySession.set(sessionKey, { date: set.date, routineId: set.routineId || null, byExercise: new Map() });
+          bySession.set(sessionKey, { date: set.date, routineId: set.routineId || null, sessionId: set.sessionId || null, byExercise: new Map() });
         }
         const session = bySession.get(sessionKey);
         if (!session.byExercise.has(set.exerciseId)) session.byExercise.set(set.exerciseId, []);
         session.byExercise.get(set.exerciseId).push(set);
       }
 
-      days.value = [...bySession.values()].map((session) => ({
-        date: session.date,
-        label: formatDate(session.date),
-        routineName: routineById.get(session.routineId)?.name || null,
-        exercises: [...session.byExercise.entries()].map(([exerciseId, exerciseSets]) => ({
-          name: exerciseById.get(exerciseId)?.name || 'Unknown exercise',
-          sets: exerciseSets,
-        })),
-      }));
+      days.value = [...bySession.entries()].map(([key, session]) => {
+        let durations;
+        if (session.sessionId) {
+          const match = workoutById.get(session.sessionId);
+          durations = match ? [formatDuration(match.durationMs)] : [];
+        } else {
+          const legacyKey = `${session.date}::${session.routineId || 'none'}`;
+          durations = (legacySessionsByKey.get(legacyKey) || []).map((s) => formatDuration(s.durationMs));
+        }
+        return {
+          // Unique per card even when two sessions share a date+routine, so
+          // Vue's v-for :key never collides between them.
+          key,
+          date: session.date,
+          label: formatDate(session.date),
+          routineName: routineById.get(session.routineId)?.name || null,
+          durations,
+          exercises: [...session.byExercise.entries()].map(([exerciseId, exerciseSets]) => ({
+            name: exerciseById.get(exerciseId)?.name || 'Unknown exercise',
+            sets: exerciseSets,
+          })),
+        };
+      });
     });
 
     function formattedSet(set) {
@@ -144,11 +185,20 @@ export default {
 
         <div
           v-for="day in days"
-          :key="day.date + '::' + (day.routineName || '')"
+          :key="day.key"
           class="bg-slate-900 border border-slate-800 rounded-2xl p-4"
         >
           <div class="mb-3">
-            <h2 class="font-semibold text-base">{{ day.routineName || 'Workout' }}</h2>
+            <div class="flex items-start justify-between gap-2">
+              <h2 class="font-semibold text-base">{{ day.routineName || 'Workout' }}</h2>
+              <div v-if="day.durations.length" class="flex flex-wrap justify-end gap-1">
+                <span
+                  v-for="(duration, i) in day.durations"
+                  :key="i"
+                  class="text-xs font-semibold text-emerald-400 bg-emerald-950/40 px-2 py-1 rounded-full whitespace-nowrap"
+                >{{ duration }}</span>
+              </div>
+            </div>
             <div class="text-xs text-slate-400">{{ day.label }}</div>
           </div>
           <div class="space-y-3">

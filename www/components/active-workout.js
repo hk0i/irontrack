@@ -46,6 +46,12 @@ export default {
     // docs/edd-workout-duration.md.
     const startedAt = routineId ? Date.now() : null;
 
+    // Identifies this one workout instance. Tagged onto every set logged
+    // during this screen's lifetime and reused as the workouts row's id on
+    // Finish, so history can group this session's sets together instead of
+    // merging them with any other same-day session of the same routine.
+    const sessionId = routineId ? crypto.randomUUID() : null;
+
     const blocks = ref([]); // [{ exercises: [ex] } | { exercises: [exA, exB] }]
     const ghostTextByExercise = reactive({});
     const setRowsByExercise = reactive({});
@@ -175,6 +181,7 @@ export default {
         weightEntered,
         unit: row.unit,
         routineId,
+        sessionId,
       });
       row.checked = true;
       const weightInLbs = row.unit === 'kg' ? kgToLbs(weightEntered) : weightEntered;
@@ -192,9 +199,16 @@ export default {
     // The only path that records a session duration — the header back-arrow
     // still just navigates away with no write, since leaving mid-workout
     // isn't "finishing" it.
+    // finishing guards against a second tap landing before the first async
+    // write + navigation completes (no loading state on the button, so a
+    // double-tap or a device double-firing the click event would otherwise
+    // write duplicate session rows).
+    const finishing = ref(false);
     async function finishWorkout() {
+      if (finishing.value) return;
+      finishing.value = true;
       if (routineId && startedAt) {
-        await logWorkoutSession({ routineId, date: todayString(), startedAt, endedAt: Date.now() });
+        await logWorkoutSession({ id: sessionId, routineId, date: todayString(), startedAt, endedAt: Date.now() });
       }
       emit('navigate', 'dashboard');
     }
@@ -213,6 +227,7 @@ export default {
       dismissRestBanner,
       viewHistory,
       finishWorkout,
+      finishing,
       emit,
     };
   },
@@ -398,7 +413,8 @@ export default {
       <div class="px-4">
         <button
           @click="finishWorkout"
-          class="w-full py-4 rounded-xl bg-emerald-500 text-slate-950 font-semibold text-base active:bg-emerald-400"
+          :disabled="finishing"
+          class="w-full py-4 rounded-xl bg-emerald-500 text-slate-950 font-semibold text-base active:bg-emerald-400 disabled:opacity-60"
         >
           Finish Workout
         </button>

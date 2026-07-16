@@ -147,7 +147,13 @@ export async function clearSupersetLink(exerciseId) {
 // on the same calendar day — e.g. two different routines done today — so
 // createdAt is used as a tiebreaker anywhere sets are sorted "most recent
 // first".
-export async function logSet({ exerciseId, date, reps, weightEntered, unit, routineId = null }) {
+// sessionId ties a set to the specific workout instance it was logged
+// during (see logWorkoutSession) — it's what lets the history screen tell
+// two same-day sessions of the same routine apart instead of merging their
+// sets onto one card. Optional and unindexed, like routineId, so older sets
+// logged before this existed still import/display fine (grouped by
+// date+routineId as a fallback).
+export async function logSet({ exerciseId, date, reps, weightEntered, unit, routineId = null, sessionId = null }) {
   const weightInLbs = unit === 'kg' ? kgToLbs(weightEntered) : weightEntered;
   const set = {
     id: crypto.randomUUID(),
@@ -158,6 +164,7 @@ export async function logSet({ exerciseId, date, reps, weightEntered, unit, rout
     unit,
     weightInLbs,
     routineId,
+    sessionId,
     createdAt: Date.now(),
   };
   await db.sets.add(set);
@@ -208,9 +215,13 @@ export function deleteSet(id) {
 // One row per finished workout. startedAt is captured and held in the active
 // workout screen's own state; this is only called once, when the user taps
 // Finish, so an abandoned session never leaves a partial row here.
-export async function logWorkoutSession({ routineId, date, startedAt, endedAt }) {
+// id defaults to a fresh uuid, but the active workout screen passes the same
+// sessionId it tagged this session's logSet calls with, so this row's id
+// doubles as the join key the history screen uses to group a session's sets
+// together instead of merging same-day-same-routine sessions.
+export async function logWorkoutSession({ id = crypto.randomUUID(), routineId, date, startedAt, endedAt }) {
   const session = {
-    id: crypto.randomUUID(),
+    id,
     routineId,
     date,
     startedAt,
