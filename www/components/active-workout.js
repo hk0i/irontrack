@@ -1,4 +1,4 @@
-import { getRoutineById, getExerciseById, getLastSetForExercise, logSet, formatWeight, kgToLbs } from '../db.js';
+import { getRoutineById, getExerciseById, getLastSetForExercise, logSet, formatWeight, kgToLbs, logWorkoutSession } from '../db.js';
 import { settings } from '../store.js';
 
 const REST_SECONDS = 90;
@@ -39,6 +39,12 @@ export default {
     // Read once — navParams doesn't change over this screen's lifetime.
     // Threaded through to logSet so history can be grouped by routine.
     const routineId = props.navParams.routineId || null;
+
+    // Captured the moment this screen is entered (a workout "starting"), held
+    // in memory only until Finish Workout writes it out as a session. Lost if
+    // the tab is backgrounded/reclaimed mid-workout — accepted for v1, see
+    // docs/edd-workout-duration.md.
+    const startedAt = routineId ? Date.now() : null;
 
     const blocks = ref([]); // [{ exercises: [ex] } | { exercises: [exA, exB] }]
     const ghostTextByExercise = reactive({});
@@ -183,6 +189,16 @@ export default {
       emit('navigate', 'progress-chart', { initialExerciseId: exerciseId });
     }
 
+    // The only path that records a session duration — the header back-arrow
+    // still just navigates away with no write, since leaving mid-workout
+    // isn't "finishing" it.
+    async function finishWorkout() {
+      if (routineId && startedAt) {
+        await logWorkoutSession({ routineId, date: todayString(), startedAt, endedAt: Date.now() });
+      }
+      emit('navigate', 'dashboard');
+    }
+
     return {
       blocks,
       ghostTextByExercise,
@@ -196,6 +212,7 @@ export default {
       checkRow,
       dismissRestBanner,
       viewHistory,
+      finishWorkout,
       emit,
     };
   },
@@ -380,7 +397,7 @@ export default {
 
       <div class="px-4">
         <button
-          @click="emit('navigate', 'dashboard')"
+          @click="finishWorkout"
           class="w-full py-4 rounded-xl bg-emerald-500 text-slate-950 font-semibold text-base active:bg-emerald-400"
         >
           Finish Workout
