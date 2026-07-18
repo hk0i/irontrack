@@ -5,6 +5,7 @@ import SettingsScreen from './features/settings/SettingsScreen.vue';
 import RoutineBuilderScreen from './features/routines/RoutineBuilderScreen.vue';
 import ActiveWorkoutScreen from './features/workout/ActiveWorkoutScreen.vue';
 import WorkoutHistoryScreen from './features/history/WorkoutHistoryScreen.vue';
+import BodyMetricsScreen from './features/body-metrics/BodyMetricsScreen.vue';
 
 // Screens not yet converted from the old www/ app fall through to the
 // "not yet converted" placeholder below — added to this map as each one
@@ -15,6 +16,7 @@ const screens = {
   'routine-builder': RoutineBuilderScreen,
   'active-workout': ActiveWorkoutScreen,
   'workout-history': WorkoutHistoryScreen,
+  'body-metrics': BodyMetricsScreen,
 };
 
 const currentScreen = ref('dashboard');
