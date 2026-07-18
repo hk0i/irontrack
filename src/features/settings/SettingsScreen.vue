@@ -1,15 +1,18 @@
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
-import { exportAllData, importAllData } from '../../shared/db.js';
-import { settings, setPreferredUnit } from '../../shared/store.js';
+import { exportAllData, importAllData } from '../../shared/db';
+import { settings, setPreferredUnit } from '../../shared/store';
+import type { NavParams, ScreenName } from '../../shared/types';
 
-defineProps({
-  navParams: { type: Object, default: () => ({}) },
-});
-const emit = defineEmits(['navigate']);
+defineProps<{
+  navParams?: NavParams;
+}>();
+const emit = defineEmits<{
+  navigate: [screen: ScreenName, params?: NavParams];
+}>();
 
 const importStatus = ref('');
-const fileInput = ref(null);
+const fileInput = ref<HTMLInputElement | null>(null);
 
 async function doExport() {
   const payload = await exportAllData();
@@ -35,11 +38,12 @@ async function doExport() {
 }
 
 function triggerImport() {
-  fileInput.value.click();
+  fileInput.value?.click();
 }
 
-async function handleFileSelected(event) {
-  const file = event.target.files[0];
+async function handleFileSelected(event: Event) {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
   if (!file) return;
   try {
     const text = await file.text();
@@ -47,9 +51,9 @@ async function handleFileSelected(event) {
     await importAllData(payload);
     importStatus.value = 'Import successful.';
   } catch (err) {
-    importStatus.value = `Import failed: ${err.message}`;
+    importStatus.value = `Import failed: ${err instanceof Error ? err.message : String(err)}`;
   } finally {
-    event.target.value = '';
+    target.value = '';
   }
 }
 </script>
