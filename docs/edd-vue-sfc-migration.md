@@ -132,3 +132,21 @@ Proposed as separate, independently-committable steps, same pattern as the rest 
 - No router library — the existing hand-rolled `navigate(screen, params)` + `<component :is>` approach stays.
 - No state management library (Pinia) — `store.js`'s tiny reactive singleton is sufficient and stays as-is.
 - No UI/UX or data-model changes of any kind — this is a pure tooling and file-organization refactor.
+
+## Future consideration: TypeScript
+
+Not part of this migration — a separate, later phase, sequenced after Vite lands and the SFC conversion has settled, so only one thing is changing at a time. Recommendation: worth doing eventually, for reasons specific to this codebase rather than a generic "TS is good" stance.
+
+**Why it's worth it here.** Point to actual friction from this session, not hypotheticals: renaming `getLastSetForExercise` → `getLastWorkoutBestSetForExercise`, adding `sessionId` to both `logSet` and `logWorkoutSession`, threading `routineId` through several call sites — each of these was a "does every caller still pass the right shape" question answered by re-reading call sites and browser-testing, not by a compiler. `db.js` defines six implicit record shapes (routines, exercises, sets, workout sessions, metric blueprints, metric logs) enforced by nothing but Dexie's `.stores()` index string and code discipline — exactly the class of bug TypeScript catches at edit time instead of at runtime.
+
+**Why Vite first matters.** Doing TS before Vite means bolting on a separate transpilation step (ts-loader/Babel) just for that, cutting against the "one build tool" simplicity this migration is already trading zero-build for. Once on Vite, TS support is close to free — esbuild transpiles `.ts` and `<script setup lang="ts">` natively, no extra config. The one additional tool needed is `vue-tsc` (plain `tsc` can't type-check `.vue` files), run as a separate, non-blocking check — it doesn't hold up the dev server, only a dedicated `type-check` script or CI step.
+
+**What the migration would look like:**
+
+1. Add `typescript` + `vue-tsc` as devDependencies, a `tsconfig.json`, and a `type-check` script (`vue-tsc --noEmit`) — non-blocking at first, just visibility into how many errors exist.
+2. Convert `db.js` → `db.ts` first — highest leverage, since every screen depends on it. Define interfaces for `Routine`, `Exercise`, `Set`, `WorkoutSession`, `MetricBlueprint`, `MetricLog`, and give every exported function a typed signature. Dexie has first-class TS support (`Table<Set, string>`) that plugs in directly.
+3. `store.js`'s settings singleton gets a real type too — e.g. `unit: 'lbs' | 'kg'` as a literal union instead of a bare string, which would catch an accidental `'lb'`/`'kilograms'` typo at the source instead of silently failing a `=== 'kg'` comparison somewhere downstream.
+4. Convert `.vue` files to `<script setup lang="ts">` incrementally, one screen at a time — `defineProps<{ navParams: { routineId?: string } }>()` replaces the current loose `{ type: Object, default: () => ({}) }` prop declarations with an actual checked shape.
+5. JS and TS coexist throughout — `allowJs: true` keeps unconverted files valid, so this is genuinely one file at a time, no big-bang cutover.
+
+**Tradeoff.** More ceremony (type annotations, occasional friction with Dexie's looser query methods) for a project maintained solo, where the payoff is narrower than on a team — but still real here, given how much of this session was "change a shape in one place, manually verify every caller still agrees." Worth doing once the Vite migration has settled, not before.
