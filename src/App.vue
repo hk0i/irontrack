@@ -1,5 +1,5 @@
-<script setup>
-import { ref, shallowRef } from 'vue';
+<script setup lang="ts">
+import { ref, shallowRef, type Component } from 'vue';
 import DashboardScreen from './features/dashboard/DashboardScreen.vue';
 import SettingsScreen from './features/settings/SettingsScreen.vue';
 import RoutineBuilderScreen from './features/routines/RoutineBuilderScreen.vue';
@@ -7,8 +7,9 @@ import ActiveWorkoutScreen from './features/workout/ActiveWorkoutScreen.vue';
 import WorkoutHistoryScreen from './features/history/WorkoutHistoryScreen.vue';
 import BodyMetricsScreen from './features/body-metrics/BodyMetricsScreen.vue';
 import ProgressChartScreen from './features/progress/ProgressChartScreen.vue';
+import type { ScreenName, NavParams } from './shared/types';
 
-const screens = {
+const screens: Record<ScreenName, Component> = {
   dashboard: DashboardScreen,
   settings: SettingsScreen,
   'routine-builder': RoutineBuilderScreen,
@@ -18,10 +19,10 @@ const screens = {
   'progress-chart': ProgressChartScreen,
 };
 
-const currentScreen = ref('dashboard');
-const navParams = shallowRef({});
+const currentScreen = ref<ScreenName>('dashboard');
+const navParams = shallowRef<NavParams>({});
 
-function navigate(screen, params = {}) {
+function navigate(screen: ScreenName, params: NavParams = {}): void {
   currentScreen.value = screen;
   navParams.value = params;
 }

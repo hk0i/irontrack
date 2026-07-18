@@ -5,21 +5,27 @@
 // body metrics (waist, arm size, etc).
 
 import { reactive } from 'vue';
+import type { WeightUnit, LengthUnit } from './db';
 
 const STORAGE_KEY = 'preferredUnit';
 const LENGTH_STORAGE_KEY = 'preferredLengthUnit';
 
-export const settings = reactive({
-  preferredUnit: localStorage.getItem(STORAGE_KEY) || 'lbs',
-  preferredLengthUnit: localStorage.getItem(LENGTH_STORAGE_KEY) || 'in',
+interface Settings {
+  preferredUnit: WeightUnit;
+  preferredLengthUnit: LengthUnit;
+}
+
+export const settings: Settings = reactive({
+  preferredUnit: (localStorage.getItem(STORAGE_KEY) as WeightUnit) || 'lbs',
+  preferredLengthUnit: (localStorage.getItem(LENGTH_STORAGE_KEY) as LengthUnit) || 'in',
 });
 
-export function setPreferredUnit(unit) {
+export function setPreferredUnit(unit: WeightUnit): void {
   settings.preferredUnit = unit;
   localStorage.setItem(STORAGE_KEY, unit);
 }
 
-export function setPreferredLengthUnit(unit) {
+export function setPreferredLengthUnit(unit: LengthUnit): void {
   settings.preferredLengthUnit = unit;
   localStorage.setItem(LENGTH_STORAGE_KEY, unit);
 }

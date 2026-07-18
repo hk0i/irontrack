@@ -1,7 +1,7 @@
 // Curated list of common exercise names for search autocomplete in the
 // Routine Builder. These are just name suggestions — an Exercise record is
 // only created in IndexedDB once the user actually adds one to a routine.
-export const COMMON_EXERCISES = [
+export const COMMON_EXERCISES: string[] = [
   'Barbell Back Squat',
   'Front Squat',
   'Goblet Squat',
