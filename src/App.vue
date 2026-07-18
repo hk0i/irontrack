@@ -3,6 +3,7 @@ import { ref, shallowRef } from 'vue';
 import DashboardScreen from './features/dashboard/DashboardScreen.vue';
 import SettingsScreen from './features/settings/SettingsScreen.vue';
 import RoutineBuilderScreen from './features/routines/RoutineBuilderScreen.vue';
+import ActiveWorkoutScreen from './features/workout/ActiveWorkoutScreen.vue';
 
 // Screens not yet converted from the old www/ app fall through to the
 // "not yet converted" placeholder below — added to this map as each one
@@ -11,6 +12,7 @@ const screens = {
   dashboard: DashboardScreen,
   settings: SettingsScreen,
   'routine-builder': RoutineBuilderScreen,
+  'active-workout': ActiveWorkoutScreen,
 };
 
 const currentScreen = ref('dashboard');
