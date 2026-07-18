@@ -1,4 +1,4 @@
-import { getRoutineById, getExerciseById, getLastSetForExercise, logSet, formatWeight, kgToLbs, logWorkoutSession } from '../db.js';
+import { getRoutineById, getExerciseById, getLastSetForExercise, logSet, updateSet, formatWeight, kgToLbs, logWorkoutSession } from '../db.js';
 import { settings } from '../store.js';
 
 const REST_SECONDS = 90;
@@ -25,6 +25,7 @@ function makeEmptyRow() {
     checked: false,
     weightInvalid: false,
     repsInvalid: false,
+    loggedSetId: null,
   });
 }
 
@@ -162,7 +163,8 @@ export default {
     // fire once per superset pair, after whichever exercise is checked off
     // last — not after each individual component set — so it only starts
     // here when there's no partner (standalone exercise) or the partner's
-    // matching row is already checked.
+    // matching row is already checked. Only fires on a first-time log, not
+    // when re-saving an edit made after unlockRow.
     async function checkRow(exerciseId, row, partnerRow = null) {
       if (row.checked) return;
       // Weight is optional — bodyweight/banded exercises (scapular wall
@@ -174,22 +176,40 @@ export default {
       row.weightInvalid = Number.isNaN(weightEntered);
       row.repsInvalid = Number.isNaN(reps);
       if (row.weightInvalid || row.repsInvalid) return;
-      await logSet({
-        exerciseId,
-        date: todayString(),
-        reps,
-        weightEntered,
-        unit: row.unit,
-        routineId,
-        sessionId,
-      });
+
+      // A row already carrying a loggedSetId was unlocked for editing, not
+      // logged for the first time — update the existing set in place rather
+      // than creating a duplicate, which would also churn its id/createdAt
+      // and reshuffle history ordering.
+      const isEdit = Boolean(row.loggedSetId);
+      if (isEdit) {
+        await updateSet(row.loggedSetId, { reps, weightEntered, unit: row.unit });
+      } else {
+        const set = await logSet({
+          exerciseId,
+          date: todayString(),
+          reps,
+          weightEntered,
+          unit: row.unit,
+          routineId,
+          sessionId,
+        });
+        row.loggedSetId = set.id;
+      }
       row.checked = true;
       const weightInLbs = row.unit === 'kg' ? kgToLbs(weightEntered) : weightEntered;
       ghostTextByExercise[exerciseId] = formatGhostText(weightInLbs, row.unit, reps);
 
-      if (!partnerRow || partnerRow.checked) {
+      if (!isEdit && (!partnerRow || partnerRow.checked)) {
         startRestBanner();
       }
+    }
+
+    // Re-opens an already-logged row for editing. Doesn't touch the
+    // database — the existing set stays as-is until the next reps change
+    // re-saves it via checkRow's update path above.
+    function unlockRow(row) {
+      row.checked = false;
     }
 
     function viewHistory(exerciseId) {
@@ -224,6 +244,7 @@ export default {
       pairedRows,
       toggleUnit,
       checkRow,
+      unlockRow,
       dismissRestBanner,
       viewHistory,
       finishWorkout,
@@ -290,13 +311,14 @@ export default {
                   class="w-16 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
                   :class="row.repsInvalid ? 'border-rose-500' : 'border-slate-700'"
                 />
-                <div
-                  :aria-label="row.checked ? 'Set logged' : 'Set not yet logged'"
+                <button
+                  @click="row.checked ? unlockRow(row) : checkRow(block.exercises[0].id, row)"
+                  :aria-label="row.checked ? 'Edit set' : 'Log set'"
                   class="w-11 h-11 rounded-lg border-2 flex items-center justify-center flex-shrink-0"
                   :class="row.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-700'"
                 >
                   <span v-if="row.checked">&#10003;</span>
-                </div>
+                </button>
               </div>
             </div>
 
@@ -354,13 +376,14 @@ export default {
                       class="w-14 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
                       :class="pair.rowA.repsInvalid ? 'border-rose-500' : 'border-slate-700'"
                     />
-                    <div
-                      :aria-label="pair.rowA.checked ? 'Set logged' : 'Set not yet logged'"
+                    <button
+                      @click="pair.rowA.checked ? unlockRow(pair.rowA) : checkRow(block.exercises[0].id, pair.rowA, pair.rowB)"
+                      :aria-label="pair.rowA.checked ? 'Edit set' : 'Log set'"
                       class="w-11 h-11 flex-shrink-0 rounded-lg border-2 flex items-center justify-center"
                       :class="pair.rowA.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-700'"
                     >
                       <span v-if="pair.rowA.checked">&#10003;</span>
-                    </div>
+                    </button>
                   </div>
                 </div>
 
@@ -393,13 +416,14 @@ export default {
                       class="w-14 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
                       :class="pair.rowB.repsInvalid ? 'border-rose-500' : 'border-slate-700'"
                     />
-                    <div
-                      :aria-label="pair.rowB.checked ? 'Set logged' : 'Set not yet logged'"
+                    <button
+                      @click="pair.rowB.checked ? unlockRow(pair.rowB) : checkRow(block.exercises[1].id, pair.rowB, pair.rowA)"
+                      :aria-label="pair.rowB.checked ? 'Edit set' : 'Log set'"
                       class="w-11 h-11 flex-shrink-0 rounded-lg border-2 flex items-center justify-center"
                       :class="pair.rowB.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-700'"
                     >
                       <span v-if="pair.rowB.checked">&#10003;</span>
-                    </div>
+                    </button>
                   </div>
                 </div>
               </div>
