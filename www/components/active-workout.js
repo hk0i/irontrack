@@ -1,4 +1,4 @@
-import { getRoutineById, getExerciseById, getLastSetForExercise, logSet, updateSet, formatWeight, kgToLbs, logWorkoutSession } from '../db.js';
+import { getRoutineById, getExerciseById, getLastWorkoutBestSetForExercise, logSet, updateSet, formatWeight, logWorkoutSession } from '../db.js';
 import { settings } from '../store.js';
 
 const REST_SECONDS = 90;
@@ -76,11 +76,11 @@ export default {
       // setRowsByExercise for both sides of a superset without a null-check,
       // so blocks must never become visible while a partner's rows haven't
       // been seeded yet — otherwise a render could land in that gap (this
-      // loop awaits getLastSetForExercise per exercise) and throw.
+      // loop awaits getLastWorkoutBestSetForExercise per exercise) and throw.
       for (const exercise of exercises) {
         if (!exercise) continue;
         setRowsByExercise[exercise.id] = reactive([makeEmptyRow()]);
-        const lastSet = await getLastSetForExercise(exercise.id);
+        const lastSet = await getLastWorkoutBestSetForExercise(exercise.id, sessionId);
         ghostTextByExercise[exercise.id] = lastSet ? formatGhostText(lastSet.weightInLbs, lastSet.unit, lastSet.reps) : null;
       }
 
@@ -197,8 +197,9 @@ export default {
         row.loggedSetId = set.id;
       }
       row.checked = true;
-      const weightInLbs = row.unit === 'kg' ? kgToLbs(weightEntered) : weightEntered;
-      ghostTextByExercise[exerciseId] = formatGhostText(weightInLbs, row.unit, reps);
+      // Ghost text is deliberately left untouched here — it always reflects
+      // the prior workout's best set (set once in loadWorkout), never what's
+      // being logged in this session, so set 2 never shows set 1's own data.
 
       if (!isEdit && (!partnerRow || partnerRow.checked)) {
         startRestBanner();

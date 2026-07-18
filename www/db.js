@@ -195,15 +195,22 @@ export function getSetsForExercise(exerciseId) {
     .then((sets) => sets.sort((a, b) => a.date.localeCompare(b.date) || (a.createdAt || 0) - (b.createdAt || 0)));
 }
 
-// Most recent logged set for an exercise, regardless of recency window — a
-// lift not trained in a while should still show its last weight, that's when
-// the hint is most useful. Dates are YYYY-MM-DD strings so lexicographic sort
-// equals chronological sort; createdAt breaks ties between multiple sets
-// logged for the same exercise on the same day.
-export async function getLastSetForExercise(exerciseId) {
+// Heaviest set from the most recent OTHER workout that included this
+// exercise — used for the active workout screen's ghost text. currentSessionId
+// excludes the in-progress session's own sets, so mid-workout logging never
+// makes the ghost text show what you just did; it always reflects the prior
+// workout. Regardless of recency window — a lift not trained in a while
+// should still show its last weight, that's when the hint is most useful.
+export async function getLastWorkoutBestSetForExercise(exerciseId, currentSessionId = null) {
   const sets = await db.sets.where('exerciseId').equals(exerciseId).toArray();
-  if (sets.length === 0) return null;
-  return sets.sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt || 0) - (a.createdAt || 0))[0];
+  const candidates = currentSessionId ? sets.filter((s) => s.sessionId !== currentSessionId) : sets;
+  if (candidates.length === 0) return null;
+
+  // Dates are YYYY-MM-DD strings so lexicographic comparison equals
+  // chronological comparison.
+  const mostRecentDate = candidates.reduce((max, s) => (s.date.localeCompare(max) > 0 ? s.date : max), candidates[0].date);
+  const onThatDate = candidates.filter((s) => s.date === mostRecentDate);
+  return onThatDate.reduce((heaviest, s) => (s.weightInLbs > heaviest.weightInLbs ? s : heaviest));
 }
 
 export function deleteSet(id) {
