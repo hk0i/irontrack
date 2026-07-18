@@ -1,28 +1,23 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import { getAllRoutines } from './shared/db.js';
-import { settings } from './shared/store.js';
+import { ref } from 'vue';
+import SettingsScreen from './features/settings/SettingsScreen.vue';
 
-// Placeholder only — proves Vite + @vitejs/plugin-vue (SFC compilation),
-// @tailwindcss/vite (the emerald classes below), and the relocated
-// src/shared/db.js (real `import Dexie from 'dexie'` instead of a global)
-// all work end to end. No real screens live here yet; see
-// docs/edd-vue-sfc-migration.md step 2.
-const message = ref('Vite scaffold is working');
-const routineCount = ref(null);
+// Minimal host for step 3's proof-of-concept conversion — no real
+// screen-switching yet (that returns once more screens are converted).
+// Just proves a real .vue screen renders and its @navigate emit round-trips
+// correctly. See docs/edd-vue-sfc-migration.md step 3.
+const lastNavigation = ref('(none yet)');
 
-onMounted(async () => {
-  const routines = await getAllRoutines();
-  routineCount.value = routines.length;
-});
+function onNavigate(screen, params = {}) {
+  lastNavigation.value = `${screen} ${JSON.stringify(params)}`;
+}
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center gap-2">
-    <p class="text-emerald-400 font-bold text-xl">{{ message }}</p>
-    <p class="text-slate-400 text-sm">
-      shared/db.js connected — {{ routineCount === null ? 'loading…' : `${routineCount} routines in this origin's IndexedDB` }}
-    </p>
-    <p class="text-slate-400 text-sm">shared/store.js connected — preferred unit: {{ settings.preferredUnit }}</p>
+  <div>
+    <SettingsScreen :nav-params="{}" @navigate="onNavigate" />
+    <div class="fixed bottom-0 inset-x-0 bg-slate-800 text-slate-100 text-xs p-2 text-center">
+      Last navigate() call: {{ lastNavigation }}
+    </div>
   </div>
 </template>
