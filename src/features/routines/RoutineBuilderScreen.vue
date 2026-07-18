@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import {
   searchExercises,
@@ -9,28 +9,36 @@ import {
   getExerciseById,
   setSupersetLink,
   clearSupersetLink,
-} from '../../shared/db.js';
-import { COMMON_EXERCISES } from '../../shared/common-exercises.js';
+  type Exercise,
+} from '../../shared/db';
+import { COMMON_EXERCISES } from '../../shared/common-exercises';
+import type { NavParams, ScreenName } from '../../shared/types';
 
-const props = defineProps({
-  navParams: { type: Object, default: () => ({}) },
-});
-const emit = defineEmits(['navigate']);
+// mergedResults mixes real Exercise rows with not-yet-created suggestions
+// from COMMON_EXERCISES (id: null until the user selects one).
+type ExerciseOption = Exercise | { id: null; name: string };
 
-const editingRoutineId = ref(props.navParams.routineId || null);
+const props = defineProps<{
+  navParams?: NavParams;
+}>();
+const emit = defineEmits<{
+  navigate: [screen: ScreenName, params?: NavParams];
+}>();
+
+const editingRoutineId = ref(props.navParams?.routineId || null);
 const routineName = ref('');
 const searchQuery = ref('');
-const searchResults = ref([]);
-const selectedExercises = ref([]);
-const linkModeExerciseId = ref(null);
+const searchResults = ref<Exercise[]>([]);
+const selectedExercises = ref<Exercise[]>([]);
+const linkModeExerciseId = ref<string | null>(null);
 
-const draggingIndex = ref(null);
+const draggingIndex = ref<number | null>(null);
 const dragOffset = ref(0);
-const rowEls = [];
+const rowEls: (HTMLElement | null)[] = [];
 let pointerStartY = 0;
 let rowStep = 0;
 
-function onRowPointerDown(event, index) {
+function onRowPointerDown(event: PointerEvent, index: number) {
   event.preventDefault();
   draggingIndex.value = index;
   dragOffset.value = 0;
@@ -41,7 +49,7 @@ function onRowPointerDown(event, index) {
   window.addEventListener('pointerup', onRowPointerUp);
 }
 
-function onRowPointerMove(event) {
+function onRowPointerMove(event: PointerEvent) {
   if (draggingIndex.value === null) return;
   dragOffset.value = event.clientY - pointerStartY;
   const from = draggingIndex.value;
@@ -75,7 +83,7 @@ onMounted(async () => {
   const routine = await getRoutineById(editingRoutineId.value);
   if (!routine) return;
   routineName.value = routine.name;
-  const exercises = [];
+  const exercises: Exercise[] = [];
   for (const id of routine.exerciseIds) {
     const exercise = await getExerciseById(id);
     if (exercise) exercises.push(exercise);
@@ -91,7 +99,7 @@ watch(searchQuery, async (query) => {
 // suggestion list, so autocomplete works even before any exercise has
 // ever been created. Common suggestions with no DB record yet are
 // represented with id: null and get created on first selection.
-const mergedResults = computed(() => {
+const mergedResults = computed<ExerciseOption[]>(() => {
   const query = searchQuery.value.trim().toLowerCase();
   if (!query) return [];
   const dbNames = new Set(searchResults.value.map((e) => e.name.toLowerCase()));
@@ -105,12 +113,12 @@ const exactMatchExists = computed(() =>
   mergedResults.value.some((e) => e.name.toLowerCase() === searchQuery.value.trim().toLowerCase())
 );
 
-function isSelected(exercise) {
+function isSelected(exercise: ExerciseOption) {
   if (exercise.id) return selectedExercises.value.some((e) => e.id === exercise.id);
   return selectedExercises.value.some((e) => e.name.toLowerCase() === exercise.name.toLowerCase());
 }
 
-async function addExercise(exercise) {
+async function addExercise(exercise: ExerciseOption) {
   if (isSelected(exercise)) return;
   if (exercise.id) {
     selectedExercises.value.push(exercise);
@@ -128,13 +136,13 @@ async function createAndAddExercise() {
   searchQuery.value = '';
 }
 
-function removeExercise(exercise) {
+function removeExercise(exercise: Exercise) {
   selectedExercises.value = selectedExercises.value.filter((e) => e.id !== exercise.id);
 }
 
 // Tap a link icon to enter "link mode"; tap a second row's link icon to
 // complete the pair. Tapping an already-linked row's icon unlinks it.
-async function toggleLink(exercise) {
+async function toggleLink(exercise: Exercise) {
   if (exercise.supersetWith) {
     await clearSupersetLink(exercise.id);
     const partner = selectedExercises.value.find((e) => e.id === exercise.supersetWith);
@@ -237,7 +245,7 @@ async function save() {
           <div
             v-for="(exercise, index) in selectedExercises"
             :key="exercise.id"
-            :ref="(el) => (rowEls[index] = el)"
+            :ref="(el) => (rowEls[index] = el as HTMLElement | null)"
             class="flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-900 border select-none"
             :class="[exercise.supersetWith ? 'border-emerald-700' : 'border-slate-800', draggingIndex === index ? 'relative z-10 shadow-xl' : '']"
             :style="draggingIndex === index ? { transform: 'translateY(' + dragOffset + 'px)' } : {}"
