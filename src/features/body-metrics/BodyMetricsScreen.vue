@@ -1,7 +1,18 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
-import { getAllMetricBlueprints, createMetricBlueprint, logMetric, getRecentLogsForBlueprint, formatMetricValue } from '../../shared/db.js';
-import { settings } from '../../shared/store.js';
+import {
+  getAllMetricBlueprints,
+  createMetricBlueprint,
+  logMetric,
+  getRecentLogsForBlueprint,
+  formatMetricValue,
+  type MetricBlueprint,
+  type MetricLog,
+  type MetricType,
+  type Unit,
+} from '../../shared/db';
+import { settings } from '../../shared/store';
+import type { NavParams, ScreenName } from '../../shared/types';
 
 const CHART_WIDTH = 320;
 const CHART_HEIGHT = 160;
@@ -9,27 +20,34 @@ const PADDING = 20;
 
 function todayString() {
   const now = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
+  const pad = (n: number) => String(n).padStart(2, '0');
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
-defineProps({
-  navParams: { type: Object, default: () => ({}) },
-});
-const emit = defineEmits(['navigate']);
+defineProps<{
+  navParams?: NavParams;
+}>();
+const emit = defineEmits<{
+  navigate: [screen: ScreenName, params?: NavParams];
+}>();
 
-const blueprints = ref([]);
+interface ChartPoint {
+  x: number;
+  y: number;
+}
+
+const blueprints = ref<MetricBlueprint[]>([]);
 const selectedBlueprintId = ref('');
-const recentLogs = ref([]);
+const recentLogs = ref<MetricLog[]>([]);
 
 const newTrackerName = ref('');
-const newTrackerType = ref('mass');
+const newTrackerType = ref<MetricType>('mass');
 
 const entryValue = ref('');
-const entryUnit = ref('lbs');
+const entryUnit = ref<Unit>('lbs');
 const entryDate = ref(todayString());
 
-const selectedBlueprint = computed(
+const selectedBlueprint = computed<MetricBlueprint | null>(
   () => blueprints.value.find((b) => b.id === selectedBlueprintId.value) || null
 );
 
@@ -98,15 +116,17 @@ async function submitLogEntry() {
 // The chart always renders in the app's global preferred unit for the
 // metric's dimension (mass or length), independent of whatever unit the
 // entry form's toggle pill happens to be set to right now.
-const chartPreferredUnit = computed(() => {
+const chartPreferredUnit = computed<Unit | ''>(() => {
   if (!selectedBlueprint.value) return '';
   return selectedBlueprint.value.type === 'mass' ? settings.preferredUnit : settings.preferredLengthUnit;
 });
 
-const points = computed(() => {
+const points = computed<ChartPoint[]>(() => {
   if (!selectedBlueprint.value || recentLogs.value.length === 0) return [];
   const type = selectedBlueprint.value.type;
-  const values = recentLogs.value.map((log) => formatMetricValue(log.valueBaseline, type, chartPreferredUnit.value));
+  const unit = chartPreferredUnit.value;
+  if (!unit) return [];
+  const values = recentLogs.value.map((log) => formatMetricValue(log.valueBaseline, type, unit));
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
