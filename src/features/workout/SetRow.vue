@@ -1,20 +1,29 @@
-<script setup>
+<script setup lang="ts">
 // Weight/unit/reps/checkmark group shared by both the standalone-exercise
 // case and both sides of a superset pair — previously duplicated three times
 // across active-workout.js's template (see docs/edd-vue-sfc-migration.md
 // step 5). Deliberately "dumb": it only knows about `row`'s own fields, not
 // exerciseId/partnerRow/sessionId, so it emits intent and lets the parent
 // (which already has that context) decide what checking/unlocking means.
-defineProps({
-  row: { type: Object, required: true },
-  // Set index for a standalone exercise's row list; omitted (null) for
-  // superset rows, which are labeled by exercise name above instead.
-  index: { type: Number, default: null },
-  // Superset rows sit in a narrower nested box, so their reps input and
-  // row gap are slightly tighter than a standalone row's.
-  compact: { type: Boolean, default: false },
-});
-const emit = defineEmits(['toggle-unit', 'check', 'unlock']);
+import type { SetRowState } from '../../shared/types';
+
+withDefaults(
+  defineProps<{
+    row: SetRowState;
+    // Set index for a standalone exercise's row list; omitted (null) for
+    // superset rows, which are labeled by exercise name above instead.
+    index?: number | null;
+    // Superset rows sit in a narrower nested box, so their reps input and
+    // row gap are slightly tighter than a standalone row's.
+    compact?: boolean;
+  }>(),
+  { index: null, compact: false }
+);
+const emit = defineEmits<{
+  'toggle-unit': [];
+  check: [];
+  unlock: [];
+}>();
 </script>
 
 <template>

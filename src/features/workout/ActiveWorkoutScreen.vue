@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import {
   getRoutineById,
@@ -8,27 +8,39 @@ import {
   updateSet,
   formatWeight,
   logWorkoutSession,
-} from '../../shared/db.js';
-import { settings } from '../../shared/store.js';
+  type Exercise,
+  type WeightUnit,
+} from '../../shared/db';
+import { settings } from '../../shared/store';
+import type { NavParams, ScreenName, SetRowState } from '../../shared/types';
 import SetRow from './SetRow.vue';
 
 const REST_SECONDS = 90;
 
+// Deliberately not a strict 1-or-2-length tuple — the block-building loop in
+// loadWorkout() constructs these dynamically and enforcing a tuple type
+// there would add generic-narrowing ceremony for no real safety gain; the
+// 1-or-2 invariant stays enforced by the template's v-if on .length, same
+// as today.
+interface WorkoutBlock {
+  exercises: Exercise[];
+}
+
 function todayString() {
   const now = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
+  const pad = (n: number) => String(n).padStart(2, '0');
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
 // Weight is optional (bodyweight/banded exercises), so a 0 weight is a
 // normal, common case — showing "0 lbs x 12" would read like a mistake, so
 // the weight portion is omitted entirely when there's none logged.
-function formatGhostText(weightInLbs, unit, reps) {
+function formatGhostText(weightInLbs: number, unit: WeightUnit, reps: number) {
   if (!weightInLbs) return `${reps} reps`;
   return `${formatWeight(weightInLbs, unit)} ${unit} x ${reps}`;
 }
 
-function makeEmptyRow() {
+function makeEmptyRow(): SetRowState {
   return reactive({
     weightEntered: '',
     reps: '',
@@ -40,14 +52,16 @@ function makeEmptyRow() {
   });
 }
 
-const props = defineProps({
-  navParams: { type: Object, default: () => ({}) },
-});
-const emit = defineEmits(['navigate']);
+const props = defineProps<{
+  navParams?: NavParams;
+}>();
+const emit = defineEmits<{
+  navigate: [screen: ScreenName, params?: NavParams];
+}>();
 
 // Read once — navParams doesn't change over this screen's lifetime.
 // Threaded through to logSet so history can be grouped by routine.
-const routineId = props.navParams.routineId || null;
+const routineId = props.navParams?.routineId || null;
 
 // Captured the moment this screen is entered (a workout "starting"), held
 // in memory only until Finish Workout writes it out as a session. Lost if
@@ -61,22 +75,23 @@ const startedAt = routineId ? Date.now() : null;
 // merging them with any other same-day session of the same routine.
 const sessionId = routineId ? crypto.randomUUID() : null;
 
-const blocks = ref([]); // [{ exercises: [ex] } | { exercises: [exA, exB] }]
-const ghostTextByExercise = reactive({});
-const setRowsByExercise = reactive({});
+const blocks = ref<WorkoutBlock[]>([]);
+const ghostTextByExercise: Record<string, string | null> = reactive({});
+const setRowsByExercise: Record<string, SetRowState[]> = reactive({});
 
 const restBannerVisible = ref(false);
 const restBannerSecondsLeft = ref(REST_SECONDS);
-let restInterval = null;
+let restInterval: ReturnType<typeof setInterval> | null = null;
 
 async function loadWorkout() {
   if (!routineId) return;
   const routine = await getRoutineById(routineId);
   if (!routine) return;
 
-  const exercises = [];
+  const exercises: Exercise[] = [];
   for (const id of routine.exerciseIds) {
-    exercises.push(await getExerciseById(id));
+    const exercise = await getExerciseById(id);
+    if (exercise) exercises.push(exercise);
   }
 
   // Populate every exercise's row array and ghost text *before* exposing
@@ -86,19 +101,18 @@ async function loadWorkout() {
   // been seeded yet — otherwise a render could land in that gap (this
   // loop awaits getLastWorkoutBestSetForExercise per exercise) and throw.
   for (const exercise of exercises) {
-    if (!exercise) continue;
     setRowsByExercise[exercise.id] = reactive([makeEmptyRow()]);
     const lastSet = await getLastWorkoutBestSetForExercise(exercise.id, sessionId);
     ghostTextByExercise[exercise.id] = lastSet ? formatGhostText(lastSet.weightInLbs, lastSet.unit, lastSet.reps) : null;
   }
 
-  const seen = new Set();
-  const builtBlocks = [];
+  const seen = new Set<string>();
+  const builtBlocks: WorkoutBlock[] = [];
   for (const exercise of exercises) {
-    if (!exercise || seen.has(exercise.id)) continue;
+    if (seen.has(exercise.id)) continue;
     seen.add(exercise.id);
-    if (exercise.supersetWith && exercises.some((e) => e && e.id === exercise.supersetWith)) {
-      const partner = exercises.find((e) => e && e.id === exercise.supersetWith);
+    const partner = exercise.supersetWith ? exercises.find((e) => e.id === exercise.supersetWith) : undefined;
+    if (partner) {
       seen.add(partner.id);
       builtBlocks.push({ exercises: [exercise, partner] });
     } else {
@@ -113,18 +127,18 @@ onUnmounted(() => {
   if (restInterval) clearInterval(restInterval);
 });
 
-function addRow(exerciseId) {
+function addRow(exerciseId: string) {
   setRowsByExercise[exerciseId].push(makeEmptyRow());
 }
 
 // Supersets always add a set to both exercises together, keeping their
 // row arrays index-synced so "Set N" always pairs the right two rows.
-function addSupersetRow(exerciseIdA, exerciseIdB) {
+function addSupersetRow(exerciseIdA: string, exerciseIdB: string) {
   setRowsByExercise[exerciseIdA].push(makeEmptyRow());
   setRowsByExercise[exerciseIdB].push(makeEmptyRow());
 }
 
-function getRow(exerciseId, index) {
+function getRow(exerciseId: string, index: number): SetRowState | undefined {
   const rows = setRowsByExercise[exerciseId];
   return rows ? rows[index] : undefined;
 }
@@ -134,16 +148,16 @@ function getRow(exerciseId, index) {
 // then Set 2 of A above Set 2 of B, etc. rowA/rowB are references to the
 // same reactive row objects the arrays hold, so v-model bindings on them
 // still mutate the real state.
-function pairedRows(block) {
+function pairedRows(block: WorkoutBlock): { index: number; rowA: SetRowState; rowB: SetRowState }[] {
   const [exerciseA, exerciseB] = block.exercises;
   const rowsA = setRowsByExercise[exerciseA.id];
   if (!rowsA) return [];
   return rowsA
     .map((rowA, index) => ({ index, rowA, rowB: getRow(exerciseB.id, index) }))
-    .filter((pair) => pair.rowB);
+    .filter((pair): pair is { index: number; rowA: SetRowState; rowB: SetRowState } => Boolean(pair.rowB));
 }
 
-function toggleUnit(row) {
+function toggleUnit(row: SetRowState) {
   row.unit = row.unit === 'lbs' ? 'kg' : 'lbs';
 }
 
@@ -154,7 +168,7 @@ function startRestBanner() {
   restInterval = setInterval(() => {
     restBannerSecondsLeft.value -= 1;
     if (restBannerSecondsLeft.value <= 0) {
-      clearInterval(restInterval);
+      if (restInterval) clearInterval(restInterval);
       restInterval = null;
       restBannerVisible.value = false;
     }
@@ -173,7 +187,7 @@ function dismissRestBanner() {
 // here when there's no partner (standalone exercise) or the partner's
 // matching row is already checked. Only fires on a first-time log, not
 // when re-saving an edit made after unlockRow.
-async function checkRow(exerciseId, row, partnerRow = null) {
+async function checkRow(exerciseId: string, row: SetRowState, partnerRow: SetRowState | null = null) {
   if (row.checked) return;
   // Weight is optional — bodyweight/banded exercises (scapular wall
   // slides, banded rows, etc.) have nothing to enter there. Reps is the
@@ -191,7 +205,7 @@ async function checkRow(exerciseId, row, partnerRow = null) {
   // and reshuffle history ordering.
   const isEdit = Boolean(row.loggedSetId);
   if (isEdit) {
-    await updateSet(row.loggedSetId, { reps, weightEntered, unit: row.unit });
+    await updateSet(row.loggedSetId!, { reps, weightEntered, unit: row.unit });
   } else {
     const set = await logSet({
       exerciseId,
@@ -217,11 +231,11 @@ async function checkRow(exerciseId, row, partnerRow = null) {
 // Re-opens an already-logged row for editing. Doesn't touch the
 // database — the existing set stays as-is until the next reps change
 // re-saves it via checkRow's update path above.
-function unlockRow(row) {
+function unlockRow(row: SetRowState) {
   row.checked = false;
 }
 
-function viewHistory(exerciseId) {
+function viewHistory(exerciseId: string) {
   emit('navigate', 'progress-chart', { initialExerciseId: exerciseId });
 }
 
@@ -237,7 +251,7 @@ async function finishWorkout() {
   if (finishing.value) return;
   finishing.value = true;
   if (routineId && startedAt) {
-    await logWorkoutSession({ id: sessionId, routineId, date: todayString(), startedAt, endedAt: Date.now() });
+    await logWorkoutSession({ id: sessionId!, routineId, date: todayString(), startedAt, endedAt: Date.now() });
   }
   emit('navigate', 'dashboard');
 }
