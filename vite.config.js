@@ -20,6 +20,10 @@ function commitHash() {
 }
 
 export default defineConfig({
+  // GitHub Pages serves this project from /irontrack/, not the domain root —
+  // set via DEPLOY_BASE in the Pages workflow only. Docker/nginx and local
+  // dev both serve from `/`, so the default here must stay `/` for them.
+  base: process.env.DEPLOY_BASE || '/',
   plugins: [
     vue(),
     tailwindcss(),

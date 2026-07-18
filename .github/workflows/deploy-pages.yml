@@ -35,6 +35,8 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Build
         run: npm run build
+        env:
+          DEPLOY_BASE: /irontrack/
       - name: Upload dist/ as Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

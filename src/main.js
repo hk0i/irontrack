@@ -17,7 +17,7 @@ if ('serviceWorker' in navigator) {
   // forces that check to happen immediately on every load, instead of
   // waiting on the browser's own (up to 24h) update heuristic.
   navigator.serviceWorker
-    .register('/sw.js', { updateViaCache: 'none' })
+    .register(`${import.meta.env.BASE_URL}sw.js`, { updateViaCache: 'none' })
     .then((registration) => registration.update())
     .catch((err) => {
       console.warn('Service worker registration failed:', err);
