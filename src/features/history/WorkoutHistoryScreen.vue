@@ -1,14 +1,50 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { getAllSets, getAllExercises, getAllRoutines, getAllWorkoutSessions, updateSet, deleteSet, formatWeight } from '../../shared/db.js';
-import { settings } from '../../shared/store.js';
+import {
+  getAllSets,
+  getAllExercises,
+  getAllRoutines,
+  getAllWorkoutSessions,
+  updateSet,
+  deleteSet,
+  formatWeight,
+  type SetEntry,
+  type WeightUnit,
+  type WorkoutSession,
+} from '../../shared/db';
+import { settings } from '../../shared/store';
+import type { NavParams, ScreenName } from '../../shared/types';
 
-defineProps({
-  navParams: { type: Object, default: () => ({}) },
-});
-const emit = defineEmits(['navigate']);
+defineProps<{
+  navParams?: NavParams;
+}>();
+const emit = defineEmits<{
+  navigate: [screen: ScreenName, params?: NavParams];
+}>();
 
-function formatDate(dateStr) {
+// Transient inline-edit fields bolted onto a real SetEntry, never persisted
+// as-is — startEdit()/cancelEdit() add/remove them on the object in place.
+type EditableSet = SetEntry & {
+  _editWeight?: string;
+  _editReps?: string;
+  _editUnit?: WeightUnit;
+};
+
+interface ExerciseGroup {
+  name: string;
+  sets: EditableSet[];
+}
+
+interface DayGroup {
+  key: string;
+  date: string;
+  label: string;
+  routineName: string | null;
+  durations: string[];
+  exercises: ExerciseGroup[];
+}
+
+function formatDate(dateStr: string) {
   const [year, month, day] = dateStr.split('-').map(Number);
   const date = new Date(year, month - 1, day);
   return date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
@@ -16,15 +52,22 @@ function formatDate(dateStr) {
 
 // Rounds up to the nearest minute so a very short test/real session still
 // reads as "1m" rather than a confusing "0m".
-function formatDuration(ms) {
+function formatDuration(ms: number) {
   const totalMinutes = Math.max(1, Math.round(ms / 60000));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 }
 
-const days = ref([]);
-const editingId = ref(null);
+const days = ref<DayGroup[]>([]);
+const editingId = ref<string | null>(null);
+
+interface SessionAccumulator {
+  date: string;
+  routineId: string | null;
+  sessionId: string | null;
+  byExercise: Map<string, EditableSet[]>;
+}
 
 onMounted(async () => {
   const [sets, exercises, routines, workoutSessions] = await Promise.all([
@@ -41,30 +84,30 @@ onMounted(async () => {
   // way to tell two same-day sessions of the same routine apart, so they
   // still merge onto one card, listing each matching duration as its own
   // pill rather than picking one.
-  const legacySessionsByKey = new Map();
+  const legacySessionsByKey = new Map<string, WorkoutSession[]>();
   for (const session of workoutSessions) {
     const key = `${session.date}::${session.routineId || 'none'}`;
     if (!legacySessionsByKey.has(key)) legacySessionsByKey.set(key, []);
-    legacySessionsByKey.get(key).push(session);
+    legacySessionsByKey.get(key)!.push(session);
   }
 
   // Grouped by sessionId when a set has one — that's what keeps two
   // separate same-day sessions of the same routine as two separate
   // cards instead of merging their sets together. Falls back to the old
   // date+routine key for sets logged before sessionId existed.
-  const bySession = new Map();
+  const bySession = new Map<string, SessionAccumulator>();
   for (const set of sets) {
     const sessionKey = set.sessionId ? `session::${set.sessionId}` : `legacy::${set.date}::${set.routineId || 'none'}`;
     if (!bySession.has(sessionKey)) {
       bySession.set(sessionKey, { date: set.date, routineId: set.routineId || null, sessionId: set.sessionId || null, byExercise: new Map() });
     }
-    const session = bySession.get(sessionKey);
+    const session = bySession.get(sessionKey)!;
     if (!session.byExercise.has(set.exerciseId)) session.byExercise.set(set.exerciseId, []);
-    session.byExercise.get(set.exerciseId).push(set);
+    session.byExercise.get(set.exerciseId)!.push(set);
   }
 
   days.value = [...bySession.entries()].map(([key, session]) => {
-    let durations;
+    let durations: string[];
     if (session.sessionId) {
       const match = workoutById.get(session.sessionId);
       durations = match ? [formatDuration(match.durationMs)] : [];
@@ -78,7 +121,7 @@ onMounted(async () => {
       key,
       date: session.date,
       label: formatDate(session.date),
-      routineName: routineById.get(session.routineId)?.name || null,
+      routineName: (session.routineId && routineById.get(session.routineId)?.name) || null,
       durations,
       exercises: [...session.byExercise.entries()].map(([exerciseId, exerciseSets]) => ({
         name: exerciseById.get(exerciseId)?.name || 'Unknown exercise',
@@ -88,7 +131,7 @@ onMounted(async () => {
   });
 });
 
-function formattedSet(set) {
+function formattedSet(set: SetEntry) {
   const weight = formatWeight(set.weightInLbs, settings.preferredUnit);
   return set.weightInLbs ? `${weight} ${settings.preferredUnit} x ${set.reps}` : `${set.reps} reps`;
 }
@@ -97,37 +140,37 @@ function formattedSet(set) {
 // so the read-only pill doesn't change mid-edit — only Save persists and
 // updates the real fields, matching the weight-optional/reps-required
 // rule the active workout screen uses.
-function startEdit(set) {
+function startEdit(set: EditableSet) {
   set._editWeight = String(set.weightEntered);
   set._editReps = String(set.reps);
   set._editUnit = set.unit;
   editingId.value = set.id;
 }
 
-function cancelEdit(set) {
+function cancelEdit(set: EditableSet) {
   delete set._editWeight;
   delete set._editReps;
   delete set._editUnit;
   editingId.value = null;
 }
 
-function toggleEditUnit(set) {
+function toggleEditUnit(set: EditableSet) {
   set._editUnit = set._editUnit === 'lbs' ? 'kg' : 'lbs';
 }
 
-function editIsValid(set) {
+function editIsValid(set: EditableSet) {
   const weightText = (set._editWeight || '').trim();
   const weightEntered = weightText === '' ? 0 : parseFloat(weightText);
-  const reps = parseInt(set._editReps, 10);
+  const reps = parseInt(set._editReps || '', 10);
   return !Number.isNaN(weightEntered) && !Number.isNaN(reps);
 }
 
-async function saveEdit(set) {
+async function saveEdit(set: EditableSet) {
   if (!editIsValid(set)) return;
-  const weightText = set._editWeight.trim();
+  const weightText = (set._editWeight || '').trim();
   const weightEntered = weightText === '' ? 0 : parseFloat(weightText);
-  const reps = parseInt(set._editReps, 10);
-  const unit = set._editUnit;
+  const reps = parseInt(set._editReps || '', 10);
+  const unit = set._editUnit!;
   const { weightInLbs } = await updateSet(set.id, { reps, weightEntered, unit });
   set.reps = reps;
   set.weightEntered = weightEntered;
@@ -141,7 +184,7 @@ async function saveEdit(set) {
 
 // Prunes empty exercise groups/days after a delete so the screen never
 // shows a leftover heading with nothing under it.
-async function deleteEntry(day, exercise, set) {
+async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: EditableSet) {
   if (!confirm('Delete this set? This cannot be undone.')) return;
   await deleteSet(set.id);
   exercise.sets = exercise.sets.filter((s) => s.id !== set.id);
