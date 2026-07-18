@@ -21,6 +21,7 @@
     "@tailwindcss/browser": "4.3.2",
     "@tailwindcss/vite": "4.3.3",
     "@vitejs/plugin-vue": "6.0.8",
-    "vite": "8.1.5"
+    "vite": "8.1.5",
+    "vite-plugin-pwa": "1.3.0"
   }
 }
