@@ -272,6 +272,13 @@ export default {
                   class="w-20 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
                   :class="row.weightInvalid ? 'border-rose-500' : 'border-slate-700'"
                 />
+                <button
+                  @click="toggleUnit(row)"
+                  :disabled="row.checked"
+                  class="w-14 h-11 flex-shrink-0 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold uppercase disabled:opacity-50"
+                >
+                  {{ row.unit }}
+                </button>
                 <input
                   v-model="row.reps"
                   @input="row.repsInvalid = false"
@@ -282,13 +289,6 @@ export default {
                   class="w-16 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
                   :class="row.repsInvalid ? 'border-rose-500' : 'border-slate-700'"
                 />
-                <button
-                  @click="toggleUnit(row)"
-                  :disabled="row.checked"
-                  class="w-14 h-11 flex-shrink-0 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold uppercase disabled:opacity-50"
-                >
-                  {{ row.unit }}
-                </button>
                 <button
                   @click="checkRow(block.exercises[0].id, row)"
                   :aria-label="row.checked ? 'Set logged' : 'Log set'"
@@ -338,6 +338,11 @@ export default {
                       class="w-20 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
                       :class="pair.rowA.weightInvalid ? 'border-rose-500' : 'border-slate-700'"
                     />
+                    <button
+                      @click="toggleUnit(pair.rowA)"
+                      :disabled="pair.rowA.checked"
+                      class="w-14 h-11 flex-shrink-0 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold uppercase disabled:opacity-50"
+                    >{{ pair.rowA.unit }}</button>
                     <input
                       v-model="pair.rowA.reps"
                       @input="pair.rowA.repsInvalid = false"
@@ -348,11 +353,6 @@ export default {
                       class="w-14 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
                       :class="pair.rowA.repsInvalid ? 'border-rose-500' : 'border-slate-700'"
                     />
-                    <button
-                      @click="toggleUnit(pair.rowA)"
-                      :disabled="pair.rowA.checked"
-                      class="w-14 h-11 flex-shrink-0 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold uppercase disabled:opacity-50"
-                    >{{ pair.rowA.unit }}</button>
                     <button
                       @click="checkRow(block.exercises[0].id, pair.rowA, pair.rowB)"
                       :aria-label="pair.rowA.checked ? 'Set logged' : 'Log set'"
@@ -377,6 +377,11 @@ export default {
                       class="w-20 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
                       :class="pair.rowB.weightInvalid ? 'border-rose-500' : 'border-slate-700'"
                     />
+                    <button
+                      @click="toggleUnit(pair.rowB)"
+                      :disabled="pair.rowB.checked"
+                      class="w-14 h-11 flex-shrink-0 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold uppercase disabled:opacity-50"
+                    >{{ pair.rowB.unit }}</button>
                     <input
                       v-model="pair.rowB.reps"
                       @input="pair.rowB.repsInvalid = false"
@@ -387,11 +392,6 @@ export default {
                       class="w-14 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
                       :class="pair.rowB.repsInvalid ? 'border-rose-500' : 'border-slate-700'"
                     />
-                    <button
-                      @click="toggleUnit(pair.rowB)"
-                      :disabled="pair.rowB.checked"
-                      class="w-14 h-11 flex-shrink-0 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold uppercase disabled:opacity-50"
-                    >{{ pair.rowB.unit }}</button>
                     <button
                       @click="checkRow(block.exercises[1].id, pair.rowB, pair.rowA)"
                       :aria-label="pair.rowB.checked ? 'Set logged' : 'Log set'"
