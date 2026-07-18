@@ -282,6 +282,7 @@ export default {
                 <input
                   v-model="row.reps"
                   @input="row.repsInvalid = false"
+                  @change="checkRow(block.exercises[0].id, row)"
                   :disabled="row.checked"
                   inputmode="numeric"
                   type="text"
@@ -289,14 +290,13 @@ export default {
                   class="w-16 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
                   :class="row.repsInvalid ? 'border-rose-500' : 'border-slate-700'"
                 />
-                <button
-                  @click="checkRow(block.exercises[0].id, row)"
-                  :aria-label="row.checked ? 'Set logged' : 'Log set'"
+                <div
+                  :aria-label="row.checked ? 'Set logged' : 'Set not yet logged'"
                   class="w-11 h-11 rounded-lg border-2 flex items-center justify-center flex-shrink-0"
                   :class="row.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-700'"
                 >
                   <span v-if="row.checked">&#10003;</span>
-                </button>
+                </div>
               </div>
             </div>
 
@@ -346,6 +346,7 @@ export default {
                     <input
                       v-model="pair.rowA.reps"
                       @input="pair.rowA.repsInvalid = false"
+                      @change="checkRow(block.exercises[0].id, pair.rowA, pair.rowB)"
                       :disabled="pair.rowA.checked"
                       inputmode="numeric"
                       type="text"
@@ -353,14 +354,13 @@ export default {
                       class="w-14 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
                       :class="pair.rowA.repsInvalid ? 'border-rose-500' : 'border-slate-700'"
                     />
-                    <button
-                      @click="checkRow(block.exercises[0].id, pair.rowA, pair.rowB)"
-                      :aria-label="pair.rowA.checked ? 'Set logged' : 'Log set'"
+                    <div
+                      :aria-label="pair.rowA.checked ? 'Set logged' : 'Set not yet logged'"
                       class="w-11 h-11 flex-shrink-0 rounded-lg border-2 flex items-center justify-center"
                       :class="pair.rowA.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-700'"
                     >
                       <span v-if="pair.rowA.checked">&#10003;</span>
-                    </button>
+                    </div>
                   </div>
                 </div>
 
@@ -385,6 +385,7 @@ export default {
                     <input
                       v-model="pair.rowB.reps"
                       @input="pair.rowB.repsInvalid = false"
+                      @change="checkRow(block.exercises[1].id, pair.rowB, pair.rowA)"
                       :disabled="pair.rowB.checked"
                       inputmode="numeric"
                       type="text"
@@ -392,14 +393,13 @@ export default {
                       class="w-14 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
                       :class="pair.rowB.repsInvalid ? 'border-rose-500' : 'border-slate-700'"
                     />
-                    <button
-                      @click="checkRow(block.exercises[1].id, pair.rowB, pair.rowA)"
-                      :aria-label="pair.rowB.checked ? 'Set logged' : 'Log set'"
+                    <div
+                      :aria-label="pair.rowB.checked ? 'Set logged' : 'Set not yet logged'"
                       class="w-11 h-11 flex-shrink-0 rounded-lg border-2 flex items-center justify-center"
                       :class="pair.rowB.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-700'"
                     >
                       <span v-if="pair.rowB.checked">&#10003;</span>
-                    </button>
+                    </div>
                   </div>
                 </div>
               </div>
