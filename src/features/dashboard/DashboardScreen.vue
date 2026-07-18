@@ -1,11 +1,14 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { getAllRoutines, deleteRoutine, getAllSets } from '../../shared/db.js';
+import { getAllRoutines, deleteRoutine, getAllSets, type Routine } from '../../shared/db';
+import type { NavParams, ScreenName } from '../../shared/types';
 
-defineProps({
-  navParams: { type: Object, default: () => ({}) },
-});
-const emit = defineEmits(['navigate']);
+defineProps<{
+  navParams?: NavParams;
+}>();
+const emit = defineEmits<{
+  navigate: [screen: ScreenName, params?: NavParams];
+}>();
 
 // __APP_VERSION__/__COMMIT_HASH__ are Vite `define` constants (see
 // vite.config.js) substituted at build time — assigned to local consts here
@@ -14,8 +17,8 @@ const emit = defineEmits(['navigate']);
 const APP_VERSION = __APP_VERSION__;
 const COMMIT_HASH = __COMMIT_HASH__;
 
-const routines = ref([]);
-const suggestedRoutine = ref(null);
+const routines = ref<Routine[]>([]);
+const suggestedRoutine = ref<Routine | null>(null);
 
 async function loadRoutines() {
   routines.value = await getAllRoutines();
@@ -28,7 +31,7 @@ async function loadRoutines() {
 // -based rather than calendar-based, so rest days don't throw it off.
 // Defaults to the first routine if there's no history yet, or the last
 // one performed has since been deleted.
-async function computeSuggestedRoutine(currentRoutines) {
+async function computeSuggestedRoutine(currentRoutines: Routine[]): Promise<Routine | null> {
   if (currentRoutines.length === 0) return null;
   const sets = await getAllSets();
   const lastRoutineId = sets.find((s) => s.routineId)?.routineId || null;
@@ -39,15 +42,15 @@ async function computeSuggestedRoutine(currentRoutines) {
 
 onMounted(loadRoutines);
 
-function openRoutine(routine) {
+function openRoutine(routine: Routine) {
   emit('navigate', 'active-workout', { routineId: routine.id });
 }
 
-function editRoutine(routine) {
+function editRoutine(routine: Routine) {
   emit('navigate', 'routine-builder', { routineId: routine.id });
 }
 
-async function removeRoutine(routine) {
+async function removeRoutine(routine: Routine) {
   if (!confirm(`Delete "${routine.name}"? This cannot be undone.`)) return;
   await deleteRoutine(routine.id);
   await loadRoutines();
