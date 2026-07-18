@@ -6,7 +6,7 @@
 // not whatever happened to be cached at install time.
 // ASSET_LIST (used only for the install-time baseline cache) must be kept in
 // sync manually — there's no glob in a hand-written service worker.
-const CACHE_NAME = 'irontrack-v13';
+const CACHE_NAME = 'irontrack-v14';
 
 const ASSET_LIST = [
   './',
@@ -15,6 +15,7 @@ const ASSET_LIST = [
   './db.js',
   './store.js',
   './version.js',
+  './commit.js',
   './common-exercises.js',
   './manifest.json',
   './components/dashboard.js',

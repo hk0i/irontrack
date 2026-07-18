@@ -23,6 +23,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Stamp commit hash
+        run: echo "export const COMMIT_HASH = '${GITHUB_SHA::7}';" > www/commit.js
       - name: Upload www/ as Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
