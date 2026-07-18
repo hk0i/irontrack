@@ -1,23 +1,34 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, shallowRef } from 'vue';
+import DashboardScreen from './features/dashboard/DashboardScreen.vue';
 import SettingsScreen from './features/settings/SettingsScreen.vue';
 
-// Minimal host for step 3's proof-of-concept conversion — no real
-// screen-switching yet (that returns once more screens are converted).
-// Just proves a real .vue screen renders and its @navigate emit round-trips
-// correctly. See docs/edd-vue-sfc-migration.md step 3.
-const lastNavigation = ref('(none yet)');
+// Screens not yet converted from the old www/ app fall through to the
+// "not yet converted" placeholder below — added to this map as each one
+// lands. See docs/edd-vue-sfc-migration.md step 4.
+const screens = {
+  dashboard: DashboardScreen,
+  settings: SettingsScreen,
+};
 
-function onNavigate(screen, params = {}) {
-  lastNavigation.value = `${screen} ${JSON.stringify(params)}`;
+const currentScreen = ref('dashboard');
+const navParams = shallowRef({});
+
+function navigate(screen, params = {}) {
+  currentScreen.value = screen;
+  navParams.value = params;
 }
 </script>
 
 <template>
-  <div>
-    <SettingsScreen :nav-params="{}" @navigate="onNavigate" />
-    <div class="fixed bottom-0 inset-x-0 bg-slate-800 text-slate-100 text-xs p-2 text-center">
-      Last navigate() call: {{ lastNavigation }}
-    </div>
+  <component
+    v-if="screens[currentScreen]"
+    :is="screens[currentScreen]"
+    :nav-params="navParams"
+    @navigate="navigate"
+  />
+  <div v-else class="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center gap-4 px-6 text-center">
+    <p class="text-slate-300">"{{ currentScreen }}" hasn't been converted yet.</p>
+    <button @click="navigate('dashboard')" class="px-4 py-2 rounded-lg bg-emerald-500 text-slate-950 font-semibold">Back to Dashboard</button>
   </div>
 </template>
