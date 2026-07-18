@@ -1,21 +1,30 @@
-<script setup>
+<script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue';
-import { getAllExercises, getSetsForExercise, formatWeight } from '../../shared/db.js';
-import { settings } from '../../shared/store.js';
+import { getAllExercises, getSetsForExercise, formatWeight, type Exercise, type SetEntry } from '../../shared/db';
+import { settings } from '../../shared/store';
+import type { NavParams, ScreenName } from '../../shared/types';
 
 const CHART_WIDTH = 320;
 const CHART_HEIGHT = 200;
 const PADDING = 24;
 
-const props = defineProps({
-  navParams: { type: Object, default: () => ({}) },
-});
-const emit = defineEmits(['navigate']);
+const props = defineProps<{
+  navParams?: NavParams;
+}>();
+const emit = defineEmits<{
+  navigate: [screen: ScreenName, params?: NavParams];
+}>();
 
-const exercises = ref([]);
-const selectedExerciseId = ref(props.navParams.initialExerciseId || '');
-const sets = ref([]);
-const activeModalSet = ref(null);
+interface ChartPoint {
+  x: number;
+  y: number;
+  set: SetEntry;
+}
+
+const exercises = ref<Exercise[]>([]);
+const selectedExerciseId = ref(props.navParams?.initialExerciseId || '');
+const sets = ref<SetEntry[]>([]);
+const activeModalSet = ref<SetEntry | null>(null);
 
 onMounted(async () => {
   exercises.value = await getAllExercises();
@@ -28,7 +37,7 @@ watch(selectedExerciseId, async (id) => {
   sets.value = id ? await getSetsForExercise(id) : [];
 }, { immediate: true });
 
-const points = computed(() => {
+const points = computed<ChartPoint[]>(() => {
   if (sets.value.length === 0) return [];
   const weights = sets.value.map((s) => s.weightInLbs);
   const min = Math.min(...weights);
@@ -47,7 +56,7 @@ const points = computed(() => {
 
 const polylinePoints = computed(() => points.value.map((p) => `${p.x},${p.y}`).join(' '));
 
-function openModal(point) {
+function openModal(point: ChartPoint) {
   activeModalSet.value = point.set;
 }
 
@@ -55,7 +64,7 @@ function closeModal() {
   activeModalSet.value = null;
 }
 
-function formattedEntry(set) {
+function formattedEntry(set: SetEntry) {
   const weight = formatWeight(set.weightInLbs, settings.preferredUnit);
   return `${set.date}: ${weight} ${settings.preferredUnit} x ${set.reps} reps`;
 }
