@@ -23,12 +23,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Stamp commit hash
-        run: echo "export const COMMIT_HASH = '${GITHUB_SHA::7}';" > www/commit.js
-      - name: Upload www/ as Pages artifact
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+      - name: Install dependencies
+        # --ignore-scripts: postinstall runs scripts/vendor.mjs for the old
+        # zero-build app's www/vendor/ — unused output in this pipeline now
+        # that it deploys dist/, not www/.
+        run: npm ci --ignore-scripts
+      - name: Build
+        run: npm run build
+      - name: Upload dist/ as Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: www
+          path: dist
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

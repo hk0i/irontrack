@@ -1,11 +1,14 @@
-FROM alpine/git AS gitinfo
-WORKDIR /repo
-COPY .git ./.git
-RUN git rev-parse --short HEAD > /commit.txt
+FROM node:22-alpine AS build
+RUN apk add --no-cache git
+WORKDIR /app
+COPY package.json package-lock.json ./
+# --ignore-scripts: postinstall runs scripts/vendor.mjs, which populates
+# www/vendor/ for the old zero-build app — not needed here since Vite
+# bundles vue/dexie directly, and scripts/ isn't copied in yet anyway.
+RUN npm ci --ignore-scripts
+COPY . .
+RUN npm run build
 
 FROM nginx:alpine
-COPY ./www /usr/share/nginx/html
-COPY --from=gitinfo /commit.txt /tmp/commit.txt
-RUN echo "export const COMMIT_HASH = '$(cat /tmp/commit.txt)';" > /usr/share/nginx/html/commit.js \
-    && rm /tmp/commit.txt
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
