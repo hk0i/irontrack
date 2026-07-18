@@ -14,4 +14,4 @@ services:
 networks:
   switchnet_network:
     external: true
-    name: switchnet
+    name: ${PROXY_NETWORK}
