@@ -2,59 +2,139 @@
 // db.routines / db.exercises / db.sets directly — this keeps "weightInLbs is
 // the only source of truth" invariant in one place.
 
-import Dexie from 'dexie';
+import Dexie, { type Table } from 'dexie';
 
 const KG_TO_LBS = 2.20462262;
 const CM_TO_IN = 0.39370078;
 
-const db = new Dexie('IronTrackDB');
-db.version(1).stores({
-  routines: 'id, name',
-  exercises: 'id, name, supersetWith',
-  sets: 'id, exerciseId, date, weightInLbs',
-});
+export type WeightUnit = 'lbs' | 'kg';
+export type LengthUnit = 'in' | 'cm';
+export type Unit = WeightUnit | LengthUnit;
+export type MetricType = 'mass' | 'length';
 
-// Only new tables need to be listed here — Dexie carries forward any table
-// not mentioned in a later version() call unchanged, so this doesn't touch
-// existing routines/exercises/sets data or require a migration step.
-db.version(2).stores({
-  metric_blueprints: 'id, name',
-  metric_logs: 'id, blueprintId, date',
-});
+export interface Routine {
+  id: string;
+  name: string;
+  exerciseIds: string[];
+}
 
-db.version(3).stores({
-  workouts: 'id, routineId, date',
-});
+export interface Exercise {
+  id: string;
+  name: string;
+  supersetWith: string | null;
+}
+
+export interface SetEntry {
+  id: string;
+  exerciseId: string;
+  date: string;
+  reps: number;
+  weightEntered: number;
+  unit: WeightUnit;
+  weightInLbs: number;
+  routineId: string | null;
+  sessionId: string | null;
+  createdAt: number;
+}
+
+export interface WorkoutSession {
+  id: string;
+  routineId: string;
+  date: string;
+  startedAt: number;
+  endedAt: number;
+  durationMs: number;
+}
+
+export interface MetricBlueprint {
+  id: string;
+  name: string;
+  type: MetricType;
+}
+
+export interface MetricLog {
+  id: string;
+  blueprintId: string;
+  date: string;
+  valueEntered: number;
+  unit: Unit;
+  valueBaseline: number;
+}
+
+interface BackupPayload {
+  version: number;
+  exportedAt: string;
+  routines: Routine[];
+  exercises: Exercise[];
+  sets: SetEntry[];
+  metricBlueprints?: MetricBlueprint[];
+  metricLogs?: MetricLog[];
+  workouts?: WorkoutSession[];
+}
+
+class IronTrackDB extends Dexie {
+  routines!: Table<Routine, string>;
+  exercises!: Table<Exercise, string>;
+  sets!: Table<SetEntry, string>;
+  metric_blueprints!: Table<MetricBlueprint, string>;
+  metric_logs!: Table<MetricLog, string>;
+  workouts!: Table<WorkoutSession, string>;
+
+  constructor() {
+    super('IronTrackDB');
+
+    this.version(1).stores({
+      routines: 'id, name',
+      exercises: 'id, name, supersetWith',
+      sets: 'id, exerciseId, date, weightInLbs',
+    });
+
+    // Only new tables need to be listed here — Dexie carries forward any
+    // table not mentioned in a later version() call unchanged, so this
+    // doesn't touch existing routines/exercises/sets data or require a
+    // migration step.
+    this.version(2).stores({
+      metric_blueprints: 'id, name',
+      metric_logs: 'id, blueprintId, date',
+    });
+
+    this.version(3).stores({
+      workouts: 'id, routineId, date',
+    });
+  }
+}
+
+const db = new IronTrackDB();
 
 // ---------- Unit conversion ----------
 
-export function kgToLbs(kg) {
+export function kgToLbs(kg: number): number {
   return kg * KG_TO_LBS;
 }
 
-export function lbsToKg(lbs) {
+export function lbsToKg(lbs: number): number {
   return lbs / KG_TO_LBS;
 }
 
 // Single source every display surface should call so rounding/conversion
 // never drifts between the ghost text, chart tooltips, and set rows.
-export function formatWeight(weightInLbs, preferredUnit) {
+export function formatWeight(weightInLbs: number, preferredUnit: WeightUnit): number {
   const value = preferredUnit === 'kg' ? lbsToKg(weightInLbs) : weightInLbs;
   return Math.round(value * 10) / 10;
 }
 
-export function cmToIn(cm) {
+export function cmToIn(cm: number): number {
   return cm * CM_TO_IN;
 }
 
-export function inToCm(inches) {
+export function inToCm(inches: number): number {
   return inches / CM_TO_IN;
 }
 
 // Single source for displaying a metric_logs.valueBaseline in whichever unit
 // the caller wants, across both metric types (mass baseline = lbs, length
 // baseline = inches).
-export function formatMetricValue(valueBaseline, type, preferredUnit) {
+export function formatMetricValue(valueBaseline: number, type: MetricType, preferredUnit: Unit): number {
   let value = valueBaseline;
   if (type === 'mass' && preferredUnit === 'kg') value = lbsToKg(valueBaseline);
   if (type === 'length' && preferredUnit === 'cm') value = inToCm(valueBaseline);
@@ -63,47 +143,47 @@ export function formatMetricValue(valueBaseline, type, preferredUnit) {
 
 // ---------- Routines ----------
 
-export async function createRoutine({ name, exerciseIds }) {
-  const routine = { id: crypto.randomUUID(), name, exerciseIds: [...exerciseIds] };
+export async function createRoutine({ name, exerciseIds }: { name: string; exerciseIds: string[] }): Promise<Routine> {
+  const routine: Routine = { id: crypto.randomUUID(), name, exerciseIds: [...exerciseIds] };
   await db.routines.add(routine);
   return routine;
 }
 
-export function getAllRoutines() {
+export function getAllRoutines(): Promise<Routine[]> {
   return db.routines.toArray();
 }
 
-export function getRoutineById(id) {
+export function getRoutineById(id: string): Promise<Routine | undefined> {
   return db.routines.get(id);
 }
 
-export function updateRoutine(id, patch) {
+export function updateRoutine(id: string, patch: Partial<Routine>): Promise<number> {
   return db.routines.update(id, patch);
 }
 
-export function deleteRoutine(id) {
+export function deleteRoutine(id: string): Promise<void> {
   return db.routines.delete(id);
 }
 
 // ---------- Exercises ----------
 
-export async function createExercise({ name, supersetWith = null }) {
-  const exercise = { id: crypto.randomUUID(), name, supersetWith };
+export async function createExercise({ name, supersetWith = null }: { name: string; supersetWith?: string | null }): Promise<Exercise> {
+  const exercise: Exercise = { id: crypto.randomUUID(), name, supersetWith };
   await db.exercises.add(exercise);
   return exercise;
 }
 
-export function getAllExercises() {
+export function getAllExercises(): Promise<Exercise[]> {
   return db.exercises.toArray();
 }
 
-export function getExerciseById(id) {
+export function getExerciseById(id: string): Promise<Exercise | undefined> {
   return db.exercises.get(id);
 }
 
 // Client-side substring match. Exercise counts are small (tens to low
 // hundreds of rows) so a real fuzzy-search index isn't warranted for v1.
-export async function searchExercises(query) {
+export async function searchExercises(query: string): Promise<Exercise[]> {
   const all = await db.exercises.toArray();
   const needle = query.trim().toLowerCase();
   if (!needle) return all;
@@ -114,7 +194,7 @@ export async function searchExercises(query) {
 // partner per exercise, so this is scoped to pairs, not multi-exercise
 // circuits. Defensively clears any pre-existing link on either side first so
 // the invariant "supersetWith is always mutual or null" can't be violated.
-export async function setSupersetLink(exerciseIdA, exerciseIdB) {
+export async function setSupersetLink(exerciseIdA: string, exerciseIdB: string): Promise<void> {
   await db.transaction('rw', db.exercises, async () => {
     await clearSupersetLink(exerciseIdA);
     await clearSupersetLink(exerciseIdB);
@@ -123,7 +203,7 @@ export async function setSupersetLink(exerciseIdA, exerciseIdB) {
   });
 }
 
-export async function clearSupersetLink(exerciseId) {
+export async function clearSupersetLink(exerciseId: string): Promise<void> {
   const exercise = await db.exercises.get(exerciseId);
   if (!exercise || !exercise.supersetWith) return;
   const partnerId = exercise.supersetWith;
@@ -152,9 +232,25 @@ export async function clearSupersetLink(exerciseId) {
 // sets onto one card. Optional and unindexed, like routineId, so older sets
 // logged before this existed still import/display fine (grouped by
 // date+routineId as a fallback).
-export async function logSet({ exerciseId, date, reps, weightEntered, unit, routineId = null, sessionId = null }) {
+export async function logSet({
+  exerciseId,
+  date,
+  reps,
+  weightEntered,
+  unit,
+  routineId = null,
+  sessionId = null,
+}: {
+  exerciseId: string;
+  date: string;
+  reps: number;
+  weightEntered: number;
+  unit: WeightUnit;
+  routineId?: string | null;
+  sessionId?: string | null;
+}): Promise<SetEntry> {
   const weightInLbs = unit === 'kg' ? kgToLbs(weightEntered) : weightEntered;
-  const set = {
+  const set: SetEntry = {
     id: crypto.randomUUID(),
     exerciseId,
     date,
@@ -172,7 +268,10 @@ export async function logSet({ exerciseId, date, reps, weightEntered, unit, rout
 
 // Same write-time conversion rule as logSet, for correcting an existing
 // entry from the workout history screen rather than creating a new one.
-export async function updateSet(id, { reps, weightEntered, unit }) {
+export async function updateSet(
+  id: string,
+  { reps, weightEntered, unit }: { reps: number; weightEntered: number; unit: WeightUnit }
+): Promise<Pick<SetEntry, 'reps' | 'weightEntered' | 'unit' | 'weightInLbs'>> {
   const weightInLbs = unit === 'kg' ? kgToLbs(weightEntered) : weightEntered;
   const patch = { reps, weightEntered, unit, weightInLbs };
   await db.sets.update(id, patch);
@@ -181,12 +280,12 @@ export async function updateSet(id, { reps, weightEntered, unit }) {
 
 // Every logged set, most recent day first — the source for the workout
 // history screen, which groups these by date then by exercise.
-export async function getAllSets() {
+export async function getAllSets(): Promise<SetEntry[]> {
   const sets = await db.sets.toArray();
   return sets.sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt || 0) - (a.createdAt || 0));
 }
 
-export function getSetsForExercise(exerciseId) {
+export function getSetsForExercise(exerciseId: string): Promise<SetEntry[]> {
   return db.sets
     .where('exerciseId')
     .equals(exerciseId)
@@ -200,7 +299,7 @@ export function getSetsForExercise(exerciseId) {
 // makes the ghost text show what you just did; it always reflects the prior
 // workout. Regardless of recency window — a lift not trained in a while
 // should still show its last weight, that's when the hint is most useful.
-export async function getLastWorkoutBestSetForExercise(exerciseId, currentSessionId = null) {
+export async function getLastWorkoutBestSetForExercise(exerciseId: string, currentSessionId: string | null = null): Promise<SetEntry | null> {
   const sets = await db.sets.where('exerciseId').equals(exerciseId).toArray();
   const candidates = currentSessionId ? sets.filter((s) => s.sessionId !== currentSessionId) : sets;
   if (candidates.length === 0) return null;
@@ -212,7 +311,7 @@ export async function getLastWorkoutBestSetForExercise(exerciseId, currentSessio
   return onThatDate.reduce((heaviest, s) => (s.weightInLbs > heaviest.weightInLbs ? s : heaviest));
 }
 
-export function deleteSet(id) {
+export function deleteSet(id: string): Promise<void> {
   return db.sets.delete(id);
 }
 
@@ -225,8 +324,20 @@ export function deleteSet(id) {
 // sessionId it tagged this session's logSet calls with, so this row's id
 // doubles as the join key the history screen uses to group a session's sets
 // together instead of merging same-day-same-routine sessions.
-export async function logWorkoutSession({ id = crypto.randomUUID(), routineId, date, startedAt, endedAt }) {
-  const session = {
+export async function logWorkoutSession({
+  id = crypto.randomUUID(),
+  routineId,
+  date,
+  startedAt,
+  endedAt,
+}: {
+  id?: string;
+  routineId: string;
+  date: string;
+  startedAt: number;
+  endedAt: number;
+}): Promise<WorkoutSession> {
+  const session: WorkoutSession = {
     id,
     routineId,
     date,
@@ -238,13 +349,13 @@ export async function logWorkoutSession({ id = crypto.randomUUID(), routineId, d
   return session;
 }
 
-export function getAllWorkoutSessions() {
+export function getAllWorkoutSessions(): Promise<WorkoutSession[]> {
   return db.workouts.toArray();
 }
 
 // ---------- Body metrics ----------
 
-const DEFAULT_METRIC_BLUEPRINTS = [
+const DEFAULT_METRIC_BLUEPRINTS: MetricBlueprint[] = [
   { id: 'm-weight', name: 'Body Weight', type: 'mass' },
   { id: 'm-waist', name: 'Waist Size', type: 'length' },
   { id: 'm-arms', name: 'Arm Size', type: 'length' },
@@ -254,36 +365,46 @@ const DEFAULT_METRIC_BLUEPRINTS = [
 
 // Idempotent — only seeds if the table is empty, so it's safe to call on
 // every app start without duplicating rows on subsequent loads.
-export async function ensureMetricBlueprintsSeeded() {
+export async function ensureMetricBlueprintsSeeded(): Promise<void> {
   const count = await db.metric_blueprints.count();
   if (count > 0) return;
   await db.metric_blueprints.bulkAdd(DEFAULT_METRIC_BLUEPRINTS);
 }
 
-export async function createMetricBlueprint({ name, type }) {
-  const blueprint = { id: crypto.randomUUID(), name, type };
+export async function createMetricBlueprint({ name, type }: { name: string; type: MetricType }): Promise<MetricBlueprint> {
+  const blueprint: MetricBlueprint = { id: crypto.randomUUID(), name, type };
   await db.metric_blueprints.add(blueprint);
   return blueprint;
 }
 
-export function getAllMetricBlueprints() {
+export function getAllMetricBlueprints(): Promise<MetricBlueprint[]> {
   return db.metric_blueprints.toArray();
 }
 
-export function getMetricBlueprintById(id) {
+export function getMetricBlueprintById(id: string): Promise<MetricBlueprint | undefined> {
   return db.metric_blueprints.get(id);
 }
 
 // The only place a metric log's valueBaseline gets computed: mass blueprints
 // store lbs, length blueprints store inches, per the same
 // convert-at-write-time pattern as logSet's weightInLbs.
-export async function logMetric({ blueprintId, date, valueEntered, unit }) {
+export async function logMetric({
+  blueprintId,
+  date,
+  valueEntered,
+  unit,
+}: {
+  blueprintId: string;
+  date: string;
+  valueEntered: number;
+  unit: Unit;
+}): Promise<MetricLog> {
   const blueprint = await db.metric_blueprints.get(blueprintId);
   if (!blueprint) throw new Error('Unknown metric blueprint: ' + blueprintId);
   let valueBaseline = valueEntered;
   if (blueprint.type === 'mass' && unit === 'kg') valueBaseline = kgToLbs(valueEntered);
   if (blueprint.type === 'length' && unit === 'cm') valueBaseline = cmToIn(valueEntered);
-  const log = {
+  const log: MetricLog = {
     id: crypto.randomUUID(),
     blueprintId,
     date,
@@ -297,7 +418,7 @@ export async function logMetric({ blueprintId, date, valueEntered, unit }) {
 
 // Chronologically-ascending last `limit` entries for a blueprint — directly
 // plottable left-to-right on a chart with no further sorting needed.
-export async function getRecentLogsForBlueprint(blueprintId, limit = 8) {
+export async function getRecentLogsForBlueprint(blueprintId: string, limit = 8): Promise<MetricLog[]> {
   const logs = await db.metric_logs.where('blueprintId').equals(blueprintId).toArray();
   logs.sort((a, b) => a.date.localeCompare(b.date));
   return logs.slice(-limit);
@@ -305,7 +426,7 @@ export async function getRecentLogsForBlueprint(blueprintId, limit = 8) {
 
 // ---------- Backup / restore ----------
 
-export async function exportAllData() {
+export async function exportAllData(): Promise<BackupPayload> {
   const [routines, exercises, sets, metricBlueprints, metricLogs, workouts] = await Promise.all([
     db.routines.toArray(),
     db.exercises.toArray(),
@@ -330,25 +451,21 @@ export async function exportAllData() {
 // in a transaction so a failure partway through can't leave mixed state.
 // metricBlueprints/metricLogs/workouts are optional so older backups — taken
 // before body metrics or duration tracking existed — still import cleanly.
-export async function importAllData(payload) {
-  if (!payload || !Array.isArray(payload.routines) || !Array.isArray(payload.exercises) || !Array.isArray(payload.sets)) {
+export async function importAllData(payload: unknown): Promise<void> {
+  const data = payload as Partial<BackupPayload> | null | undefined;
+  if (!data || !Array.isArray(data.routines) || !Array.isArray(data.exercises) || !Array.isArray(data.sets)) {
     throw new Error('Invalid backup file: missing routines/exercises/sets arrays.');
   }
-  const metricBlueprints = Array.isArray(payload.metricBlueprints) ? payload.metricBlueprints : [];
-  const metricLogs = Array.isArray(payload.metricLogs) ? payload.metricLogs : [];
-  const workouts = Array.isArray(payload.workouts) ? payload.workouts : [];
+  const metricBlueprints = Array.isArray(data.metricBlueprints) ? data.metricBlueprints : [];
+  const metricLogs = Array.isArray(data.metricLogs) ? data.metricLogs : [];
+  const workouts = Array.isArray(data.workouts) ? data.workouts : [];
   await db.transaction(
     'rw',
-    db.routines,
-    db.exercises,
-    db.sets,
-    db.metric_blueprints,
-    db.metric_logs,
-    db.workouts,
+    [db.routines, db.exercises, db.sets, db.metric_blueprints, db.metric_logs, db.workouts],
     async () => {
-      await db.routines.bulkPut(payload.routines);
-      await db.exercises.bulkPut(payload.exercises);
-      await db.sets.bulkPut(payload.sets);
+      await db.routines.bulkPut(data.routines!);
+      await db.exercises.bulkPut(data.exercises!);
+      await db.sets.bulkPut(data.sets!);
       await db.metric_blueprints.bulkPut(metricBlueprints);
       await db.metric_logs.bulkPut(metricLogs);
       await db.workouts.bulkPut(workouts);
