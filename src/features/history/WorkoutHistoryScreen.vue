@@ -198,9 +198,9 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-950 text-slate-100 pb-10">
-    <header class="flex items-center gap-3 px-4 py-5 sticky top-0 bg-slate-950/95 backdrop-blur border-b border-slate-800">
-      <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full bg-slate-800 active:bg-slate-700">
+  <div class="min-h-screen bg-background text-foreground pb-10">
+    <header class="flex items-center gap-3 px-4 py-5 sticky top-0 bg-background/95 backdrop-blur border-b border-border">
+      <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full bg-surface-2 active:bg-surface-3">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
@@ -209,14 +209,14 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
     </header>
 
     <main class="px-4 py-4 space-y-4">
-      <div v-if="days.length === 0" class="text-slate-400 text-center mt-16">
+      <div v-if="days.length === 0" class="text-foreground-muted text-center mt-16">
         No workouts logged yet.
       </div>
 
       <div
         v-for="day in days"
         :key="day.key"
-        class="bg-slate-900 border border-slate-800 rounded-2xl p-4"
+        class="bg-surface border border-border rounded-2xl p-4"
       >
         <div class="mb-3">
           <div class="flex items-start justify-between gap-2">
@@ -225,26 +225,26 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
               <span
                 v-for="(duration, i) in day.durations"
                 :key="i"
-                class="text-xs font-semibold text-emerald-400 bg-emerald-950/40 px-2 py-1 rounded-full whitespace-nowrap"
+                class="text-xs font-semibold text-accent-bright bg-accent-soft/40 px-2 py-1 rounded-full whitespace-nowrap"
               >{{ duration }}</span>
             </div>
           </div>
-          <div class="text-xs text-slate-400">{{ day.label }}</div>
+          <div class="text-xs text-foreground-muted">{{ day.label }}</div>
         </div>
         <div class="space-y-3">
           <div v-for="exercise in day.exercises" :key="exercise.name">
-            <div class="text-sm font-medium text-slate-200 mb-1">{{ exercise.name }}</div>
+            <div class="text-sm font-medium text-foreground mb-1">{{ exercise.name }}</div>
             <div class="flex flex-wrap gap-2">
               <div v-for="set in exercise.sets" :key="set.id">
                 <div
                   v-if="editingId !== set.id"
-                  class="flex items-center gap-1 text-xs pl-2 pr-1 py-1 rounded-lg bg-slate-800 text-slate-300"
+                  class="flex items-center gap-1 text-xs pl-2 pr-1 py-1 rounded-lg bg-surface-2 text-foreground-subtle"
                 >
                   <span>{{ formattedSet(set) }}</span>
                   <button
                     @click="startEdit(set)"
                     :aria-label="'Edit set'"
-                    class="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-md text-emerald-400 active:bg-slate-700"
+                    class="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-md text-accent-bright active:bg-surface-3"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 112.914 2.914L7.5 19.675l-4 1 1-4L16.862 4.487z" />
@@ -253,7 +253,7 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
                   <button
                     @click="deleteEntry(day, exercise, set)"
                     aria-label="Delete set"
-                    class="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-md text-rose-400 active:bg-slate-700"
+                    class="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-md text-danger active:bg-surface-3"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0l1 13a2 2 0 002 2h4a2 2 0 002-2l1-13" />
@@ -261,30 +261,30 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
                   </button>
                 </div>
 
-                <div v-else class="flex items-center gap-1.5 bg-slate-800 rounded-lg p-1.5">
+                <div v-else class="flex items-center gap-1.5 bg-surface-2 rounded-lg p-1.5">
                   <input
                     v-model="set._editWeight"
                     inputmode="decimal"
                     type="text"
                     placeholder="Wt"
-                    class="w-16 h-11 rounded-lg bg-slate-900 border border-slate-700 px-2 text-center"
+                    class="w-16 h-11 rounded-lg bg-surface border border-border-strong px-2 text-center"
                   />
                   <input
                     v-model="set._editReps"
                     inputmode="numeric"
                     type="text"
                     placeholder="Reps"
-                    class="w-14 h-11 rounded-lg bg-slate-900 border border-slate-700 px-2 text-center"
+                    class="w-14 h-11 rounded-lg bg-surface border border-border-strong px-2 text-center"
                   />
                   <button
                     @click="toggleEditUnit(set)"
-                    class="w-14 h-11 flex-shrink-0 rounded-full bg-slate-900 border border-slate-700 text-xs font-semibold uppercase"
+                    class="w-14 h-11 flex-shrink-0 rounded-full bg-surface border border-border-strong text-xs font-semibold uppercase"
                   >{{ set._editUnit }}</button>
                   <button
                     @click="saveEdit(set)"
                     :disabled="!editIsValid(set)"
                     aria-label="Save set"
-                    class="w-11 h-11 flex-shrink-0 rounded-lg bg-emerald-500 text-slate-950 flex items-center justify-center disabled:opacity-30"
+                    class="w-11 h-11 flex-shrink-0 rounded-lg bg-accent text-on-accent flex items-center justify-center disabled:opacity-30"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -293,7 +293,7 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
                   <button
                     @click="cancelEdit(set)"
                     aria-label="Cancel edit"
-                    class="w-11 h-11 flex-shrink-0 rounded-lg bg-slate-700 text-slate-300 flex items-center justify-center text-lg"
+                    class="w-11 h-11 flex-shrink-0 rounded-lg bg-surface-3 text-foreground-subtle flex items-center justify-center text-lg"
                   >&times;</button>
                 </div>
               </div>

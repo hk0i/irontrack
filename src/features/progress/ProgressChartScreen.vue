@@ -71,9 +71,9 @@ function formattedEntry(set: SetEntry) {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-950 text-slate-100 pb-10">
-    <header class="flex items-center gap-3 px-4 py-5 sticky top-0 bg-slate-950/95 backdrop-blur border-b border-slate-800">
-      <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full bg-slate-800 active:bg-slate-700">
+  <div class="min-h-screen bg-background text-foreground pb-10">
+    <header class="flex items-center gap-3 px-4 py-5 sticky top-0 bg-background/95 backdrop-blur border-b border-border">
+      <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full bg-surface-2 active:bg-surface-3">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
@@ -84,21 +84,21 @@ function formattedEntry(set: SetEntry) {
     <main class="px-4 py-4 space-y-4">
       <select
         v-model="selectedExerciseId"
-        class="w-full rounded-xl bg-slate-900 border border-slate-800 px-4 py-3 text-base"
+        class="w-full rounded-xl bg-surface border border-border px-4 py-3 text-base"
       >
         <option v-for="exercise in exercises" :key="exercise.id" :value="exercise.id">{{ exercise.name }}</option>
       </select>
 
-      <div v-if="sets.length === 0" class="text-slate-400 text-center mt-16">
+      <div v-if="sets.length === 0" class="text-foreground-muted text-center mt-16">
         No logged sets for this exercise yet.
       </div>
 
-      <div v-else class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+      <div v-else class="bg-surface border border-border rounded-2xl p-4">
         <svg :viewBox="'0 0 ' + CHART_WIDTH + ' ' + CHART_HEIGHT" class="w-full h-auto">
-          <polyline :points="polylinePoints" fill="none" stroke="#10b981" stroke-width="2" />
+          <polyline :points="polylinePoints" fill="none" stroke="var(--color-accent)" stroke-width="2" />
           <g v-for="(point, i) in points" :key="i" @click="openModal(point)" class="cursor-pointer">
             <circle :cx="point.x" :cy="point.y" r="14" fill="transparent" />
-            <circle :cx="point.x" :cy="point.y" r="5" fill="#10b981" />
+            <circle :cx="point.x" :cy="point.y" r="5" fill="var(--color-accent)" />
           </g>
         </svg>
       </div>
@@ -107,11 +107,11 @@ function formattedEntry(set: SetEntry) {
     <div
       v-if="activeModalSet"
       @click.self="closeModal"
-      class="fixed inset-0 bg-black/60 flex items-center justify-center px-6"
+      class="fixed inset-0 bg-overlay/60 flex items-center justify-center px-6"
     >
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 w-full max-w-sm">
+      <div class="bg-surface border border-border rounded-2xl p-6 w-full max-w-sm">
         <p class="text-base mb-4">{{ formattedEntry(activeModalSet) }}</p>
-        <button @click="closeModal" class="w-full py-3 rounded-xl bg-slate-800 font-semibold">Close</button>
+        <button @click="closeModal" class="w-full py-3 rounded-xl bg-surface-2 font-semibold">Close</button>
       </div>
     </div>
   </div>

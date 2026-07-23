@@ -58,7 +58,7 @@ function resetBandColors() {
 
 <template>
   <div class="flex items-center flex-wrap" :class="compact ? 'gap-1.5' : 'gap-2'">
-    <span v-if="index !== null" class="w-5 text-sm text-slate-500 text-center">{{ index + 1 }}</span>
+    <span v-if="index !== null" class="w-5 text-sm text-foreground-faint text-center">{{ index + 1 }}</span>
 
     <template v-if="resistanceType === 'weight'">
       <input
@@ -68,13 +68,13 @@ function resetBandColors() {
         inputmode="decimal"
         type="text"
         placeholder="Weight"
-        class="w-20 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
-        :class="row.weightInvalid ? 'border-rose-500' : 'border-slate-700'"
+        class="w-20 h-11 rounded-lg bg-surface-2 border px-2 text-center disabled:opacity-50"
+        :class="row.weightInvalid ? 'border-danger' : 'border-border-strong'"
       />
       <button
         @click="emit('toggle-unit')"
         :disabled="row.checked"
-        class="w-14 h-11 flex-shrink-0 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold uppercase disabled:opacity-50"
+        class="w-14 h-11 flex-shrink-0 rounded-full bg-surface-2 border border-border-strong text-xs font-semibold uppercase disabled:opacity-50"
       >
         {{ row.unit }}
       </button>
@@ -89,7 +89,7 @@ function resetBandColors() {
         :aria-label="color + ' band'"
         :aria-pressed="row.bandColors.includes(color)"
         class="px-2 h-7 rounded-full border text-[10px] font-semibold disabled:opacity-50"
-        :class="row.bandColors.includes(color) ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'bg-slate-800 border-slate-700 text-slate-300'"
+        :class="row.bandColors.includes(color) ? 'bg-accent border-accent text-on-accent' : 'bg-surface-2 border-border-strong text-foreground-subtle'"
       >
         {{ color }}
       </button>
@@ -98,7 +98,7 @@ function resetBandColors() {
         @click="resetBandColors"
         :disabled="row.checked"
         aria-label="Clear band selection"
-        class="px-2 h-7 rounded-full border border-slate-700 text-[10px] font-semibold text-slate-400 disabled:opacity-50"
+        class="px-2 h-7 rounded-full border border-border-strong text-[10px] font-semibold text-foreground-muted disabled:opacity-50"
       >
         Reset
       </button>
@@ -112,14 +112,14 @@ function resetBandColors() {
       inputmode="numeric"
       type="text"
       placeholder="Reps"
-      class="h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
-      :class="[compact ? 'w-14' : 'w-16', row.repsInvalid ? 'border-rose-500' : 'border-slate-700']"
+      class="h-11 rounded-lg bg-surface-2 border px-2 text-center disabled:opacity-50"
+      :class="[compact ? 'w-14' : 'w-16', row.repsInvalid ? 'border-danger' : 'border-border-strong']"
     />
     <button
       @click="row.checked ? emit('unlock') : emit('check')"
       :aria-label="row.checked ? 'Edit set' : 'Log set'"
       class="w-11 h-11 rounded-lg border-2 flex items-center justify-center flex-shrink-0"
-      :class="row.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-700'"
+      :class="row.checked ? 'bg-accent border-accent text-on-accent' : 'border-border-strong'"
     >
       <span v-if="row.checked">&#10003;</span>
     </button>
@@ -127,7 +127,7 @@ function resetBandColors() {
       v-if="removable && isEmpty"
       @click="emit('remove')"
       aria-label="Remove empty set"
-      class="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-800 text-slate-400 text-sm"
+      class="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full bg-surface-2 text-foreground-muted text-sm"
     >
       &times;
     </button>

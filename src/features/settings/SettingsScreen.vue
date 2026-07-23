@@ -59,9 +59,9 @@ async function handleFileSelected(event: Event) {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-950 text-slate-100 pb-10">
-    <header class="flex items-center gap-3 px-4 py-5 sticky top-0 bg-slate-950/95 backdrop-blur border-b border-slate-800">
-      <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full bg-slate-800 active:bg-slate-700">
+  <div class="min-h-screen bg-background text-foreground pb-10">
+    <header class="flex items-center gap-3 px-4 py-5 sticky top-0 bg-background/95 backdrop-blur border-b border-border">
+      <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full bg-surface-2 active:bg-surface-3">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
@@ -71,36 +71,36 @@ async function handleFileSelected(event: Event) {
 
     <main class="px-4 py-4 space-y-6">
       <div>
-        <label class="text-sm text-slate-400 mb-2 block">Preferred weight unit</label>
-        <div class="flex rounded-xl overflow-hidden border border-slate-800">
+        <label class="text-sm text-foreground-muted mb-2 block">Preferred weight unit</label>
+        <div class="flex rounded-xl overflow-hidden border border-border">
           <button
             @click="setPreferredUnit('lbs')"
             class="flex-1 py-3 font-semibold"
-            :class="settings.preferredUnit === 'lbs' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-900 text-slate-300'"
+            :class="settings.preferredUnit === 'lbs' ? 'bg-accent text-on-accent' : 'bg-surface text-foreground-subtle'"
           >
             LBs
           </button>
           <button
             @click="setPreferredUnit('kg')"
             class="flex-1 py-3 font-semibold"
-            :class="settings.preferredUnit === 'kg' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-900 text-slate-300'"
+            :class="settings.preferredUnit === 'kg' ? 'bg-accent text-on-accent' : 'bg-surface text-foreground-subtle'"
           >
             KGs
           </button>
         </div>
-        <p class="text-xs text-slate-500 mt-2">Only affects how numbers are displayed — your logged history is never rewritten.</p>
+        <p class="text-xs text-foreground-faint mt-2">Only affects how numbers are displayed — your logged history is never rewritten.</p>
       </div>
 
       <div class="space-y-2">
-        <label class="text-sm text-slate-400 block">Cloud portability</label>
-        <button @click="doExport" class="w-full py-3 rounded-xl bg-slate-900 border border-slate-800 font-semibold">
+        <label class="text-sm text-foreground-muted block">Cloud portability</label>
+        <button @click="doExport" class="w-full py-3 rounded-xl bg-surface border border-border font-semibold">
           Export Backup File
         </button>
-        <button @click="triggerImport" class="w-full py-3 rounded-xl bg-slate-900 border border-slate-800 font-semibold">
+        <button @click="triggerImport" class="w-full py-3 rounded-xl bg-surface border border-border font-semibold">
           Import Data File
         </button>
         <input ref="fileInput" type="file" accept="application/json" class="hidden" @change="handleFileSelected" />
-        <p v-if="importStatus" class="text-sm text-emerald-400">{{ importStatus }}</p>
+        <p v-if="importStatus" class="text-sm text-accent-bright">{{ importStatus }}</p>
       </div>
     </main>
   </div>

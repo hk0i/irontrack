@@ -210,9 +210,9 @@ async function save() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-950 text-slate-100 pb-10">
-    <header class="flex items-center gap-3 px-4 py-5 sticky top-0 bg-slate-950/95 backdrop-blur border-b border-slate-800">
-      <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full bg-slate-800 active:bg-slate-700">
+  <div class="min-h-screen bg-background text-foreground pb-10">
+    <header class="flex items-center gap-3 px-4 py-5 sticky top-0 bg-background/95 backdrop-blur border-b border-border">
+      <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full bg-surface-2 active:bg-surface-3">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
@@ -222,42 +222,42 @@ async function save() {
 
     <main class="px-4 py-4 space-y-6">
       <div>
-        <label class="text-sm text-slate-400 mb-1 block">Routine name</label>
+        <label class="text-sm text-foreground-muted mb-1 block">Routine name</label>
         <input
           v-model="routineName"
           type="text"
           placeholder="e.g. Push Day A"
-          class="w-full rounded-xl bg-slate-900 border border-slate-800 px-4 py-3 text-base"
+          class="w-full rounded-xl bg-surface border border-border px-4 py-3 text-base"
         />
       </div>
 
       <div>
-        <label class="text-sm text-slate-400 mb-1 block">Add exercises</label>
+        <label class="text-sm text-foreground-muted mb-1 block">Add exercises</label>
         <input
           v-model="searchQuery"
           type="text"
           placeholder="Search exercises..."
-          class="w-full rounded-xl bg-slate-900 border border-slate-800 px-4 py-3 text-base"
+          class="w-full rounded-xl bg-surface border border-border px-4 py-3 text-base"
         />
 
-        <div class="flex rounded-xl overflow-hidden border border-slate-800 mt-2">
+        <div class="flex rounded-xl overflow-hidden border border-border mt-2">
           <button
             v-for="option in RESISTANCE_TYPES"
             :key="option.value"
             @click="newExerciseResistanceType = option.value"
             class="flex-1 py-2 text-xs font-semibold"
-            :class="newExerciseResistanceType === option.value ? 'bg-emerald-500 text-slate-950' : 'bg-slate-900 text-slate-300'"
+            :class="newExerciseResistanceType === option.value ? 'bg-accent text-on-accent' : 'bg-surface text-foreground-subtle'"
           >
             {{ option.label }}
           </button>
         </div>
-        <p class="text-xs text-slate-500 mt-1">Resistance type for the next new exercise you add.</p>
+        <p class="text-xs text-foreground-faint mt-1">Resistance type for the next new exercise you add.</p>
 
         <div v-if="searchQuery.trim()" class="mt-2 space-y-1">
           <button
             v-if="!exactMatchExists"
             @click="createAndAddExercise"
-            class="w-full text-left px-4 py-3 rounded-xl bg-emerald-950 border border-emerald-800 text-emerald-300"
+            class="w-full text-left px-4 py-3 rounded-xl bg-accent-soft border border-accent-soft text-accent-soft"
           >
             + Create "{{ searchQuery }}" as new exercise
           </button>
@@ -266,7 +266,7 @@ async function save() {
             :key="exercise.id || exercise.name"
             @click="addExercise(exercise)"
             :disabled="isSelected(exercise)"
-            class="w-full text-left px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 disabled:opacity-40"
+            class="w-full text-left px-4 py-3 rounded-xl bg-surface border border-border disabled:opacity-40"
           >
             {{ exercise.name }}
           </button>
@@ -274,24 +274,24 @@ async function save() {
       </div>
 
       <div v-if="selectedExercises.length">
-        <label class="text-sm text-slate-400 mb-2 block">
+        <label class="text-sm text-foreground-muted mb-2 block">
           Routine order
-          <span v-if="linkModeExerciseId" class="text-emerald-400">— tap another exercise's link icon to pair as a superset</span>
+          <span v-if="linkModeExerciseId" class="text-accent-bright">— tap another exercise's link icon to pair as a superset</span>
         </label>
         <div class="space-y-2">
           <div
             v-for="(exercise, index) in selectedExercises"
             :key="exercise.id"
             :ref="(el) => (rowEls[index] = el as HTMLElement | null)"
-            class="flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-900 border select-none"
-            :class="[exercise.supersetWith ? 'border-emerald-700' : 'border-slate-800', draggingIndex === index ? 'relative z-10 shadow-xl' : '']"
+            class="flex items-center gap-2 px-4 py-3 rounded-xl bg-surface border select-none"
+            :class="[exercise.supersetWith ? 'border-accent-soft' : 'border-border', draggingIndex === index ? 'relative z-10 shadow-xl' : '']"
             :style="draggingIndex === index ? { transform: 'translateY(' + dragOffset + 'px)' } : {}"
           >
             <button
               @pointerdown="onRowPointerDown($event, index)"
               :aria-label="'Drag to reorder ' + exercise.name"
               style="touch-action: none"
-              class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-800 text-slate-400 cursor-grab active:cursor-grabbing"
+              class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full bg-surface-2 text-foreground-muted cursor-grab active:cursor-grabbing"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <circle cx="9" cy="6" r="1.5" />
@@ -306,7 +306,7 @@ async function save() {
             <button
               @click="toggleResistanceType(exercise)"
               :aria-label="'Resistance type: ' + (exercise.resistanceType || 'weight') + ', tap to change'"
-              class="px-2.5 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-800 text-slate-300 text-[10px] font-semibold uppercase tracking-wide"
+              class="px-2.5 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-surface-2 text-foreground-subtle text-[10px] font-semibold uppercase tracking-wide"
             >
               {{ (exercise.resistanceType || 'weight').slice(0, 4) }}
             </button>
@@ -314,13 +314,13 @@ async function save() {
               @click="toggleLink(exercise)"
               :aria-label="exercise.supersetWith ? 'Unlink superset' : 'Link as superset'"
               class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full"
-              :class="exercise.supersetWith || linkModeExerciseId === exercise.id ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300'"
+              :class="exercise.supersetWith || linkModeExerciseId === exercise.id ? 'bg-accent-strong text-on-accent-strong' : 'bg-surface-2 text-foreground-subtle'"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" />
               </svg>
             </button>
-            <button @click="removeExercise(exercise)" aria-label="Remove" class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-800 text-slate-400 text-lg">
+            <button @click="removeExercise(exercise)" aria-label="Remove" class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full bg-surface-2 text-foreground-muted text-lg">
               &times;
             </button>
           </div>
@@ -332,7 +332,7 @@ async function save() {
       <button
         @click="save"
         :disabled="!canSave"
-        class="w-full py-4 rounded-xl bg-emerald-500 text-slate-950 font-semibold text-base disabled:opacity-30"
+        class="w-full py-4 rounded-xl bg-accent text-on-accent font-semibold text-base disabled:opacity-30"
       >
         Save Routine
       </button>

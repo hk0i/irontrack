@@ -143,9 +143,9 @@ const polylinePoints = computed(() => points.value.map((p) => `${p.x},${p.y}`).j
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-950 text-slate-100 pb-10">
-    <header class="flex items-center gap-3 px-4 py-5 sticky top-0 bg-slate-950/95 backdrop-blur border-b border-slate-800">
-      <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full bg-slate-800 active:bg-slate-700">
+  <div class="min-h-screen bg-background text-foreground pb-10">
+    <header class="flex items-center gap-3 px-4 py-5 sticky top-0 bg-background/95 backdrop-blur border-b border-border">
+      <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full bg-surface-2 active:bg-surface-3">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
@@ -154,40 +154,40 @@ const polylinePoints = computed(() => points.value.map((p) => `${p.x},${p.y}`).j
     </header>
 
     <main class="px-4 py-4 space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
-        <label class="text-sm text-slate-400 block">Add a custom tracker</label>
+      <div class="bg-surface border border-border rounded-2xl p-4 space-y-3">
+        <label class="text-sm text-foreground-muted block">Add a custom tracker</label>
         <input
           v-model="newTrackerName"
           type="text"
           placeholder="Add Custom Tracker Name..."
-          class="w-full rounded-xl bg-slate-800 border border-slate-700 px-4 py-3 text-base"
+          class="w-full rounded-xl bg-surface-2 border border-border-strong px-4 py-3 text-base"
         />
         <div class="flex items-center gap-3">
-          <div class="flex rounded-xl overflow-hidden border border-slate-700 flex-1">
+          <div class="flex rounded-xl overflow-hidden border border-border-strong flex-1">
             <button
               @click="newTrackerType = 'mass'"
               class="flex-1 h-11 text-sm font-semibold"
-              :class="newTrackerType === 'mass' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300'"
+              :class="newTrackerType === 'mass' ? 'bg-accent text-on-accent' : 'bg-surface-2 text-foreground-subtle'"
             >Mass</button>
             <button
               @click="newTrackerType = 'length'"
               class="flex-1 h-11 text-sm font-semibold"
-              :class="newTrackerType === 'length' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300'"
+              :class="newTrackerType === 'length' ? 'bg-accent text-on-accent' : 'bg-surface-2 text-foreground-subtle'"
             >Length</button>
           </div>
           <button
             @click="addCustomTracker"
             :disabled="!newTrackerName.trim()"
-            class="h-11 px-5 rounded-xl bg-emerald-500 text-slate-950 font-semibold disabled:opacity-30"
+            class="h-11 px-5 rounded-xl bg-accent text-on-accent font-semibold disabled:opacity-30"
           >Add</button>
         </div>
       </div>
 
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
-        <label class="text-sm text-slate-400 block">Log an entry</label>
+      <div class="bg-surface border border-border rounded-2xl p-4 space-y-3">
+        <label class="text-sm text-foreground-muted block">Log an entry</label>
         <select
           v-model="selectedBlueprintId"
-          class="w-full h-11 rounded-xl bg-slate-800 border border-slate-700 px-4 text-base"
+          class="w-full h-11 rounded-xl bg-surface-2 border border-border-strong px-4 text-base"
         >
           <option v-for="blueprint in blueprints" :key="blueprint.id" :value="blueprint.id">{{ blueprint.name }}</option>
         </select>
@@ -198,24 +198,24 @@ const polylinePoints = computed(() => points.value.map((p) => `${p.x},${p.y}`).j
             inputmode="decimal"
             type="text"
             placeholder="Value"
-            class="flex-1 min-w-0 h-11 rounded-lg bg-slate-800 border border-slate-700 px-3 text-center"
+            class="flex-1 min-w-0 h-11 rounded-lg bg-surface-2 border border-border-strong px-3 text-center"
           />
           <button
             @click="toggleEntryUnit"
-            class="w-16 h-11 flex-shrink-0 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold uppercase"
+            class="w-16 h-11 flex-shrink-0 rounded-full bg-surface-2 border border-border-strong text-xs font-semibold uppercase"
           >{{ entryUnit }}</button>
         </div>
         <div class="flex items-center gap-2">
           <input
             v-model="entryDate"
             type="date"
-            class="flex-1 min-w-0 h-11 rounded-lg bg-slate-800 border border-slate-700 px-2 text-sm"
+            class="flex-1 min-w-0 h-11 rounded-lg bg-surface-2 border border-border-strong px-2 text-sm"
           />
           <button
             @click="submitLogEntry"
             :disabled="!canLog"
             aria-label="Log entry"
-            class="w-11 h-11 flex-shrink-0 rounded-lg bg-emerald-500 text-slate-950 flex items-center justify-center disabled:opacity-30"
+            class="w-11 h-11 flex-shrink-0 rounded-lg bg-accent text-on-accent flex items-center justify-center disabled:opacity-30"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -224,14 +224,14 @@ const polylinePoints = computed(() => points.value.map((p) => `${p.x},${p.y}`).j
         </div>
       </div>
 
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
-        <div class="text-sm text-slate-400 mb-2">
+      <div class="bg-surface border border-border rounded-2xl p-4">
+        <div class="text-sm text-foreground-muted mb-2">
           {{ selectedBlueprint ? selectedBlueprint.name + ' trend (' + chartPreferredUnit + ')' : 'No metric selected' }}
         </div>
-        <div v-if="points.length === 0" class="text-slate-500 text-sm py-8 text-center">No logged entries yet.</div>
+        <div v-if="points.length === 0" class="text-foreground-faint text-sm py-8 text-center">No logged entries yet.</div>
         <svg v-else :viewBox="'0 0 ' + CHART_WIDTH + ' ' + CHART_HEIGHT" class="w-full h-auto">
-          <polyline :points="polylinePoints" fill="none" stroke="#10b981" stroke-width="2" />
-          <circle v-for="(point, i) in points" :key="i" :cx="point.x" :cy="point.y" r="4" fill="#10b981" />
+          <polyline :points="polylinePoints" fill="none" stroke="var(--color-accent)" stroke-width="2" />
+          <circle v-for="(point, i) in points" :key="i" :cx="point.x" :cy="point.y" r="4" fill="var(--color-accent)" />
         </svg>
       </div>
     </main>

@@ -285,9 +285,9 @@ async function finishWorkout() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-950 text-slate-100 pb-32">
-    <header class="flex items-center gap-3 px-4 py-5 sticky top-0 bg-slate-950/95 backdrop-blur border-b border-slate-800 z-10">
-      <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full bg-slate-800 active:bg-slate-700">
+  <div class="min-h-screen bg-background text-foreground pb-32">
+    <header class="flex items-center gap-3 px-4 py-5 sticky top-0 bg-background/95 backdrop-blur border-b border-border z-10">
+      <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full bg-surface-2 active:bg-surface-3">
         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
@@ -298,12 +298,12 @@ async function finishWorkout() {
     <main class="px-4 py-4 space-y-6">
       <div v-for="block in blocks" :key="block.exercises[0].id">
         <!-- Standalone exercise -->
-        <div v-if="block.exercises.length === 1" class="bg-slate-900 border border-slate-800 rounded-2xl p-4">
+        <div v-if="block.exercises.length === 1" class="bg-surface border border-border rounded-2xl p-4">
           <div class="flex items-center justify-between mb-1">
             <h2 class="font-semibold text-base">{{ block.exercises[0].name }}</h2>
-            <button @click="viewHistory(block.exercises[0].id)" class="px-3 py-2 rounded-lg bg-slate-800 text-xs font-semibold text-emerald-400 active:bg-slate-700">History</button>
+            <button @click="viewHistory(block.exercises[0].id)" class="px-3 py-2 rounded-lg bg-surface-2 text-xs font-semibold text-accent-bright active:bg-surface-3">History</button>
           </div>
-          <div class="text-sm text-slate-400 mb-3">
+          <div class="text-sm text-foreground-muted mb-3">
             <span v-if="ghostTextByExercise[block.exercises[0].id]">Last: [{{ ghostTextByExercise[block.exercises[0].id] }}]</span>
             <span v-else>No history yet</span>
           </div>
@@ -323,33 +323,33 @@ async function finishWorkout() {
             />
           </div>
 
-          <button @click="addRow(block.exercises[0].id)" class="mt-3 w-full py-2.5 rounded-lg bg-slate-800 text-sm font-semibold text-emerald-400 active:bg-slate-700">+ Add set</button>
+          <button @click="addRow(block.exercises[0].id)" class="mt-3 w-full py-2.5 rounded-lg bg-surface-2 text-sm font-semibold text-accent-bright active:bg-surface-3">+ Add set</button>
         </div>
 
         <!-- Superset pair: one high-contrast bounding box, sets interleaved A1/B1/A2/B2/... -->
-        <div v-else class="bg-slate-900 border-2 border-emerald-600 rounded-2xl p-4">
+        <div v-else class="bg-surface border-2 border-accent-strong rounded-2xl p-4">
           <div class="flex items-center justify-between mb-3">
             <h2 class="font-semibold text-base">{{ block.exercises[0].name }} + {{ block.exercises[1].name }}</h2>
-            <span class="text-xs uppercase tracking-wide text-emerald-400 font-semibold flex-shrink-0">Superset</span>
+            <span class="text-xs uppercase tracking-wide text-accent-bright font-semibold flex-shrink-0">Superset</span>
           </div>
 
-          <div class="space-y-3 text-xs text-slate-400 mb-4">
+          <div class="space-y-3 text-xs text-foreground-muted mb-4">
             <div v-for="exercise in block.exercises" :key="exercise.id" class="flex items-center justify-between gap-2">
               <div class="min-w-0">
-                <div class="text-slate-300 font-medium text-sm">{{ exercise.name }}</div>
+                <div class="text-foreground-subtle font-medium text-sm">{{ exercise.name }}</div>
                 <span v-if="ghostTextByExercise[exercise.id]">Last: [{{ ghostTextByExercise[exercise.id] }}]</span>
                 <span v-else>No history yet</span>
               </div>
-              <button @click="viewHistory(exercise.id)" class="px-2 py-1.5 rounded-lg bg-slate-800 text-xs font-semibold text-emerald-400 active:bg-slate-700 flex-shrink-0">History</button>
+              <button @click="viewHistory(exercise.id)" class="px-2 py-1.5 rounded-lg bg-surface-2 text-xs font-semibold text-accent-bright active:bg-surface-3 flex-shrink-0">History</button>
             </div>
           </div>
 
           <div class="space-y-3">
-            <div v-for="pair in pairedRows(block)" :key="pair.index" class="rounded-xl bg-slate-800/60 p-2 space-y-2">
-              <div class="text-xs text-slate-500 px-1">Set {{ pair.index + 1 }}</div>
+            <div v-for="pair in pairedRows(block)" :key="pair.index" class="rounded-xl bg-surface-2/60 p-2 space-y-2">
+              <div class="text-xs text-foreground-faint px-1">Set {{ pair.index + 1 }}</div>
 
               <div>
-                <div class="text-xs text-slate-400 mb-1">{{ block.exercises[0].name }}</div>
+                <div class="text-xs text-foreground-muted mb-1">{{ block.exercises[0].name }}</div>
                 <SetRow
                   :row="pair.rowA"
                   compact
@@ -363,7 +363,7 @@ async function finishWorkout() {
               </div>
 
               <div>
-                <div class="text-xs text-slate-400 mb-1">{{ block.exercises[1].name }}</div>
+                <div class="text-xs text-foreground-muted mb-1">{{ block.exercises[1].name }}</div>
                 <SetRow
                   :row="pair.rowB"
                   compact
@@ -378,7 +378,7 @@ async function finishWorkout() {
             </div>
           </div>
 
-          <button @click="addSupersetRow(block.exercises[0].id, block.exercises[1].id)" class="mt-3 w-full py-2.5 rounded-lg bg-slate-800 text-sm font-semibold text-emerald-400 active:bg-slate-700">+ Add set</button>
+          <button @click="addSupersetRow(block.exercises[0].id, block.exercises[1].id)" class="mt-3 w-full py-2.5 rounded-lg bg-surface-2 text-sm font-semibold text-accent-bright active:bg-surface-3">+ Add set</button>
         </div>
       </div>
     </main>
@@ -387,7 +387,7 @@ async function finishWorkout() {
       <button
         @click="finishWorkout"
         :disabled="finishing"
-        class="w-full py-4 rounded-xl bg-emerald-500 text-slate-950 font-semibold text-base active:bg-emerald-400 disabled:opacity-60"
+        class="w-full py-4 rounded-xl bg-accent text-on-accent font-semibold text-base active:bg-accent-bright disabled:opacity-60"
       >
         Finish Workout
       </button>
@@ -395,10 +395,10 @@ async function finishWorkout() {
 
     <div
       v-if="restBannerVisible"
-      class="fixed inset-x-0 bottom-0 bg-emerald-600 text-slate-950 px-4 py-4 flex items-center justify-between font-semibold"
+      class="fixed inset-x-0 bottom-0 bg-accent-strong text-on-accent px-4 py-4 flex items-center justify-between font-semibold"
     >
       <span>Rest: {{ restBannerSecondsLeft }}s</span>
-      <button @click="dismissRestBanner" class="px-4 py-2 rounded-lg bg-slate-950/25 active:bg-slate-950/40">Skip</button>
+      <button @click="dismissRestBanner" class="px-4 py-2 rounded-lg bg-background/25 active:bg-background/40">Skip</button>
     </div>
   </div>
 </template>
