@@ -67,3 +67,57 @@
   --color-danger: var(--color-rose-400);
   --color-danger-border: var(--color-rose-500);
 }
+
+/* Second theme: onebigfunction platform design system
+   (https://www.figma.com/design/19qUm3VYRFgzSBZr35vxzW/onebigfunction-library?node-id=312-3).
+   Overrides the same token names @theme declared above — Tailwind already
+   generated every utility class (bg-primary, text-secondary, etc) from
+   those names, so this block only needs to supply different values, not
+   redeclare the classes. Toggled via a `data-theme="onebigfunction"`
+   attribute on <html> — the switcher UI that sets this is a later step.
+
+   Shade-picking convention, consistent across both themes: the family's
+   flagship/main shade for solid fills (primary, success, danger-border),
+   a lighter shade for text/icon legible-on-dark roles (primary-bright,
+   secondary, danger), a deeper shade for the one "strong" emphasis need
+   (primary-strong). Neutral runs the same direction as Tailwind's slate
+   (higher number = darker), so it maps onto background/surface/border/text
+   directly. */
+:root[data-theme='onebigfunction'] {
+  /* Surfaces (Neutral) */
+  --color-background: #000000;
+  --color-surface: #12161c;
+  --color-surface-2: #232b36;
+  --color-surface-3: #333f4e;
+  --color-overlay: #000000;
+
+  /* Borders (Neutral) */
+  --color-border: #232b36;
+  --color-border-strong: #333f4e;
+
+  /* Text (Neutral) */
+  --color-foreground: #f2f8ff;
+  --color-foreground-subtle: #bfdcff;
+  --color-foreground-muted: #7590b2;
+  --color-foreground-faint: #546880;
+  --color-foreground-faintest: #333f4e;
+
+  --color-on-primary: #000000;
+  --color-on-primary-strong: #ffffff;
+  --color-on-success: #000000;
+
+  /* Primary (Primary/orange) */
+  --color-primary: #f57900; /* 700 Main */
+  --color-primary-bright: #fcaf3e; /* 500 */
+  --color-primary-strong: #ce5c00; /* 900 */
+
+  /* Secondary (Secondary/purple) */
+  --color-secondary: #ad7fa8; /* 500 */
+
+  /* Success (Success/green) */
+  --color-success: #73d216; /* 700 Main */
+
+  /* Danger (Error/red) */
+  --color-danger: #ef2929; /* 500 */
+  --color-danger-border: #cc0000; /* 700 Main */
+}
