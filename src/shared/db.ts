@@ -11,6 +11,7 @@ export type WeightUnit = 'lbs' | 'kg';
 export type LengthUnit = 'in' | 'cm';
 export type Unit = WeightUnit | LengthUnit;
 export type MetricType = 'mass' | 'length';
+export type ResistanceType = 'bodyweight' | 'bands' | 'weight';
 
 export interface Routine {
   id: string;
@@ -22,6 +23,10 @@ export interface Exercise {
   id: string;
   name: string;
   supersetWith: string | null;
+  // Optional — exercises created before this field existed have no key at
+  // all, not just a falsy value. Every read site must fall back to
+  // 'weight' (the prior implicit behavior) rather than assume presence.
+  resistanceType?: ResistanceType;
 }
 
 export interface SetEntry {
@@ -35,6 +40,10 @@ export interface SetEntry {
   routineId: string | null;
   sessionId: string | null;
   createdAt: number;
+  // Only meaningful for band-resistance exercises — plain field, not
+  // indexed, so no Dexie version bump needed (same pattern as routineId).
+  // Optional: sets logged before this field existed have no key at all.
+  bandColors?: string[];
 }
 
 export interface WorkoutSession {
@@ -167,8 +176,16 @@ export function deleteRoutine(id: string): Promise<void> {
 
 // ---------- Exercises ----------
 
-export async function createExercise({ name, supersetWith = null }: { name: string; supersetWith?: string | null }): Promise<Exercise> {
-  const exercise: Exercise = { id: crypto.randomUUID(), name, supersetWith };
+export async function createExercise({
+  name,
+  supersetWith = null,
+  resistanceType = 'weight',
+}: {
+  name: string;
+  supersetWith?: string | null;
+  resistanceType?: ResistanceType;
+}): Promise<Exercise> {
+  const exercise: Exercise = { id: crypto.randomUUID(), name, supersetWith, resistanceType };
   await db.exercises.add(exercise);
   return exercise;
 }
@@ -179,6 +196,10 @@ export function getAllExercises(): Promise<Exercise[]> {
 
 export function getExerciseById(id: string): Promise<Exercise | undefined> {
   return db.exercises.get(id);
+}
+
+export function updateExercise(id: string, patch: Partial<Exercise>): Promise<number> {
+  return db.exercises.update(id, patch);
 }
 
 // Client-side substring match. Exercise counts are small (tens to low
@@ -240,6 +261,7 @@ export async function logSet({
   unit,
   routineId = null,
   sessionId = null,
+  bandColors = [],
 }: {
   exerciseId: string;
   date: string;
@@ -248,6 +270,7 @@ export async function logSet({
   unit: WeightUnit;
   routineId?: string | null;
   sessionId?: string | null;
+  bandColors?: string[];
 }): Promise<SetEntry> {
   const weightInLbs = unit === 'kg' ? kgToLbs(weightEntered) : weightEntered;
   const set: SetEntry = {
@@ -261,6 +284,7 @@ export async function logSet({
     routineId,
     sessionId,
     createdAt: Date.now(),
+    bandColors,
   };
   await db.sets.add(set);
   return set;
@@ -270,10 +294,10 @@ export async function logSet({
 // entry from the workout history screen rather than creating a new one.
 export async function updateSet(
   id: string,
-  { reps, weightEntered, unit }: { reps: number; weightEntered: number; unit: WeightUnit }
-): Promise<Pick<SetEntry, 'reps' | 'weightEntered' | 'unit' | 'weightInLbs'>> {
+  { reps, weightEntered, unit, bandColors }: { reps: number; weightEntered: number; unit: WeightUnit; bandColors?: string[] }
+): Promise<Pick<SetEntry, 'reps' | 'weightEntered' | 'unit' | 'weightInLbs' | 'bandColors'>> {
   const weightInLbs = unit === 'kg' ? kgToLbs(weightEntered) : weightEntered;
-  const patch = { reps, weightEntered, unit, weightInLbs };
+  const patch = { reps, weightEntered, unit, weightInLbs, ...(bandColors !== undefined && { bandColors }) };
   await db.sets.update(id, patch);
   return patch;
 }

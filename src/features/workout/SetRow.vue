@@ -6,8 +6,10 @@
 // exerciseId/partnerRow/sessionId, so it emits intent and lets the parent
 // (which already has that context) decide what checking/unlocking means.
 import type { SetRowState } from '../../shared/types';
+import type { ResistanceType } from '../../shared/db';
+import { THERABAND_COLORS } from '../../shared/band-colors';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     row: SetRowState;
     // Set index for a standalone exercise's row list; omitted (null) for
@@ -16,36 +18,78 @@ withDefaults(
     // Superset rows sit in a narrower nested box, so their reps input and
     // row gap are slightly tighter than a standalone row's.
     compact?: boolean;
+    // Comes from the exercise, not the row — weight input/unit pill only
+    // render for 'weight', band chips only for 'bands', neither for
+    // 'bodyweight' (just reps + checkmark).
+    resistanceType?: ResistanceType;
   }>(),
-  { index: null, compact: false }
+  { index: null, compact: false, resistanceType: 'weight' }
 );
 const emit = defineEmits<{
   'toggle-unit': [];
   check: [];
   unlock: [];
 }>();
+
+function toggleBandColor(color: string) {
+  const i = props.row.bandColors.indexOf(color);
+  if (i === -1) props.row.bandColors.push(color);
+  else props.row.bandColors.splice(i, 1);
+}
+
+function resetBandColors() {
+  props.row.bandColors.splice(0, props.row.bandColors.length);
+}
 </script>
 
 <template>
-  <div class="flex items-center" :class="compact ? 'gap-1.5' : 'gap-2'">
+  <div class="flex items-center flex-wrap" :class="compact ? 'gap-1.5' : 'gap-2'">
     <span v-if="index !== null" class="w-5 text-sm text-slate-500 text-center">{{ index + 1 }}</span>
-    <input
-      v-model="row.weightEntered"
-      @input="row.weightInvalid = false"
-      :disabled="row.checked"
-      inputmode="decimal"
-      type="text"
-      placeholder="Weight"
-      class="w-20 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
-      :class="row.weightInvalid ? 'border-rose-500' : 'border-slate-700'"
-    />
-    <button
-      @click="emit('toggle-unit')"
-      :disabled="row.checked"
-      class="w-14 h-11 flex-shrink-0 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold uppercase disabled:opacity-50"
-    >
-      {{ row.unit }}
-    </button>
+
+    <template v-if="resistanceType === 'weight'">
+      <input
+        v-model="row.weightEntered"
+        @input="row.weightInvalid = false"
+        :disabled="row.checked"
+        inputmode="decimal"
+        type="text"
+        placeholder="Weight"
+        class="w-20 h-11 rounded-lg bg-slate-800 border px-2 text-center disabled:opacity-50"
+        :class="row.weightInvalid ? 'border-rose-500' : 'border-slate-700'"
+      />
+      <button
+        @click="emit('toggle-unit')"
+        :disabled="row.checked"
+        class="w-14 h-11 flex-shrink-0 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold uppercase disabled:opacity-50"
+      >
+        {{ row.unit }}
+      </button>
+    </template>
+
+    <div v-else-if="resistanceType === 'bands'" class="flex flex-wrap gap-1 max-w-[220px]">
+      <button
+        v-for="color in THERABAND_COLORS"
+        :key="color"
+        @click="toggleBandColor(color)"
+        :disabled="row.checked"
+        :aria-label="color + ' band'"
+        :aria-pressed="row.bandColors.includes(color)"
+        class="px-2 h-7 rounded-full border text-[10px] font-semibold disabled:opacity-50"
+        :class="row.bandColors.includes(color) ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'bg-slate-800 border-slate-700 text-slate-300'"
+      >
+        {{ color }}
+      </button>
+      <button
+        v-if="row.bandColors.length"
+        @click="resetBandColors"
+        :disabled="row.checked"
+        aria-label="Clear band selection"
+        class="px-2 h-7 rounded-full border border-slate-700 text-[10px] font-semibold text-slate-400 disabled:opacity-50"
+      >
+        Reset
+      </button>
+    </div>
+
     <input
       v-model="row.reps"
       @input="row.repsInvalid = false"

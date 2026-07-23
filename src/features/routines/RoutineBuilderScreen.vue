@@ -5,11 +5,13 @@ import {
   createExercise,
   createRoutine,
   updateRoutine,
+  updateExercise,
   getRoutineById,
   getExerciseById,
   setSupersetLink,
   clearSupersetLink,
   type Exercise,
+  type ResistanceType,
 } from '../../shared/db';
 import { COMMON_EXERCISES } from '../../shared/common-exercises';
 import type { NavParams, ScreenName } from '../../shared/types';
@@ -31,6 +33,28 @@ const searchQuery = ref('');
 const searchResults = ref<Exercise[]>([]);
 const selectedExercises = ref<Exercise[]>([]);
 const linkModeExerciseId = ref<string | null>(null);
+
+// Applied to whatever exercise gets created next via search/create-new —
+// existing exercises keep whatever type they already have, edited via the
+// per-row cycle button in "Routine order" instead.
+const RESISTANCE_TYPES: { value: ResistanceType; label: string }[] = [
+  { value: 'weight', label: 'Weight' },
+  { value: 'bodyweight', label: 'Bodyweight' },
+  { value: 'bands', label: 'Bands' },
+];
+const newExerciseResistanceType = ref<ResistanceType>('weight');
+
+function cycleResistanceType(current: ResistanceType | undefined): ResistanceType {
+  const order: ResistanceType[] = ['weight', 'bodyweight', 'bands'];
+  const index = order.indexOf(current || 'weight');
+  return order[(index + 1) % order.length];
+}
+
+async function toggleResistanceType(exercise: Exercise) {
+  const next = cycleResistanceType(exercise.resistanceType);
+  await updateExercise(exercise.id, { resistanceType: next });
+  exercise.resistanceType = next;
+}
 
 const draggingIndex = ref<number | null>(null);
 const dragOffset = ref(0);
@@ -124,14 +148,14 @@ async function addExercise(exercise: ExerciseOption) {
     selectedExercises.value.push(exercise);
     return;
   }
-  const created = await createExercise({ name: exercise.name });
+  const created = await createExercise({ name: exercise.name, resistanceType: newExerciseResistanceType.value });
   selectedExercises.value.push(created);
 }
 
 async function createAndAddExercise() {
   const name = searchQuery.value.trim();
   if (!name) return;
-  const exercise = await createExercise({ name });
+  const exercise = await createExercise({ name, resistanceType: newExerciseResistanceType.value });
   selectedExercises.value.push(exercise);
   searchQuery.value = '';
 }
@@ -216,6 +240,19 @@ async function save() {
           class="w-full rounded-xl bg-slate-900 border border-slate-800 px-4 py-3 text-base"
         />
 
+        <div class="flex rounded-xl overflow-hidden border border-slate-800 mt-2">
+          <button
+            v-for="option in RESISTANCE_TYPES"
+            :key="option.value"
+            @click="newExerciseResistanceType = option.value"
+            class="flex-1 py-2 text-xs font-semibold"
+            :class="newExerciseResistanceType === option.value ? 'bg-emerald-500 text-slate-950' : 'bg-slate-900 text-slate-300'"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+        <p class="text-xs text-slate-500 mt-1">Resistance type for the next new exercise you add.</p>
+
         <div v-if="searchQuery.trim()" class="mt-2 space-y-1">
           <button
             v-if="!exactMatchExists"
@@ -266,6 +303,13 @@ async function save() {
               </svg>
             </button>
             <span class="flex-1">{{ exercise.name }}</span>
+            <button
+              @click="toggleResistanceType(exercise)"
+              :aria-label="'Resistance type: ' + (exercise.resistanceType || 'weight') + ', tap to change'"
+              class="px-2.5 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-800 text-slate-300 text-[10px] font-semibold uppercase tracking-wide"
+            >
+              {{ (exercise.resistanceType || 'weight').slice(0, 4) }}
+            </button>
             <button
               @click="toggleLink(exercise)"
               :aria-label="exercise.supersetWith ? 'Unlink superset' : 'Link as superset'"

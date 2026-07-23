@@ -45,6 +45,7 @@ function makeEmptyRow(): SetRowState {
     weightEntered: '',
     reps: '',
     unit: settings.preferredUnit,
+    bandColors: [],
     checked: false,
     weightInvalid: false,
     repsInvalid: false,
@@ -204,8 +205,12 @@ async function checkRow(exerciseId: string, row: SetRowState, partnerRow: SetRow
   // than creating a duplicate, which would also churn its id/createdAt
   // and reshuffle history ordering.
   const isEdit = Boolean(row.loggedSetId);
+  // Spread — row is deeply reactive, so row.bandColors is a Proxy-wrapped
+  // array. IndexedDB structured-clones everything Dexie writes, and it
+  // can't clone a Proxy; a plain array copy is required at the DB boundary.
+  const bandColors = [...row.bandColors];
   if (isEdit) {
-    await updateSet(row.loggedSetId!, { reps, weightEntered, unit: row.unit });
+    await updateSet(row.loggedSetId!, { reps, weightEntered, unit: row.unit, bandColors });
   } else {
     const set = await logSet({
       exerciseId,
@@ -215,6 +220,7 @@ async function checkRow(exerciseId: string, row: SetRowState, partnerRow: SetRow
       unit: row.unit,
       routineId,
       sessionId,
+      bandColors,
     });
     row.loggedSetId = set.id;
   }
@@ -287,6 +293,7 @@ async function finishWorkout() {
               :key="index"
               :row="row"
               :index="index"
+              :resistance-type="block.exercises[0].resistanceType || 'weight'"
               @toggle-unit="toggleUnit(row)"
               @check="checkRow(block.exercises[0].id, row)"
               @unlock="unlockRow(row)"
@@ -323,6 +330,7 @@ async function finishWorkout() {
                 <SetRow
                   :row="pair.rowA"
                   compact
+                  :resistance-type="block.exercises[0].resistanceType || 'weight'"
                   @toggle-unit="toggleUnit(pair.rowA)"
                   @check="checkRow(block.exercises[0].id, pair.rowA, pair.rowB)"
                   @unlock="unlockRow(pair.rowA)"
@@ -334,6 +342,7 @@ async function finishWorkout() {
                 <SetRow
                   :row="pair.rowB"
                   compact
+                  :resistance-type="block.exercises[1].resistanceType || 'weight'"
                   @toggle-unit="toggleUnit(pair.rowB)"
                   @check="checkRow(block.exercises[1].id, pair.rowB, pair.rowA)"
                   @unlock="unlockRow(pair.rowB)"

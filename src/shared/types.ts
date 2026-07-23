@@ -25,6 +25,10 @@ export interface SetRowState {
   weightEntered: string;
   reps: string;
   unit: WeightUnit;
+  // Only meaningful when the exercise's resistanceType is 'bands' — more
+  // than one band can be stacked per set, so this is an array, not a
+  // single color.
+  bandColors: string[];
   checked: boolean;
   weightInvalid: boolean;
   repsInvalid: boolean;
