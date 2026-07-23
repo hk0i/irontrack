@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { exportAllData, importAllData } from '../../shared/db';
-import { settings, setPreferredUnit } from '../../shared/store';
+import { settings, setPreferredUnit, setTheme, type Theme } from '../../shared/store';
 import type { NavParams, ScreenName } from '../../shared/types';
 
 defineProps<{
@@ -10,6 +10,11 @@ defineProps<{
 const emit = defineEmits<{
   navigate: [screen: ScreenName, params?: NavParams];
 }>();
+
+const THEMES: { value: Theme; label: string }[] = [
+  { value: 'irontrack', label: 'IronTrack' },
+  { value: 'onebigfunction', label: 'onebigfunction' },
+];
 
 const importStatus = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -70,6 +75,21 @@ async function handleFileSelected(event: Event) {
     </header>
 
     <main class="px-4 py-4 space-y-6">
+      <div>
+        <label class="text-sm text-foreground-muted mb-2 block">Color theme</label>
+        <div class="flex rounded-xl overflow-hidden border border-border">
+          <button
+            v-for="option in THEMES"
+            :key="option.value"
+            @click="setTheme(option.value)"
+            class="flex-1 py-3 font-semibold"
+            :class="settings.theme === option.value ? 'bg-primary text-on-primary' : 'bg-surface text-foreground-subtle'"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+      </div>
+
       <div>
         <label class="text-sm text-foreground-muted mb-2 block">Preferred weight unit</label>
         <div class="flex rounded-xl overflow-hidden border border-border">
