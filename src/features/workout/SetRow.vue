@@ -5,6 +5,7 @@
 // step 5). Deliberately "dumb": it only knows about `row`'s own fields, not
 // exerciseId/partnerRow/sessionId, so it emits intent and lets the parent
 // (which already has that context) decide what checking/unlocking means.
+import { computed } from 'vue';
 import type { SetRowState } from '../../shared/types';
 import type { ResistanceType } from '../../shared/db';
 import { THERABAND_COLORS } from '../../shared/band-colors';
@@ -22,14 +23,27 @@ const props = withDefaults(
     // render for 'weight', band chips only for 'bands', neither for
     // 'bodyweight' (just reps + checkmark).
     resistanceType?: ResistanceType;
+    // Only the trailing row of a set list is ever removable — set by the
+    // parent, which knows the row's position. Removing a non-trailing row
+    // would desync a superset pair's index-paired arrays, so that's not
+    // offered at all rather than handled riskily.
+    removable?: boolean;
   }>(),
-  { index: null, compact: false, resistanceType: 'weight' }
+  { index: null, compact: false, resistanceType: 'weight', removable: false }
 );
 const emit = defineEmits<{
   'toggle-unit': [];
   check: [];
   unlock: [];
+  remove: [];
 }>();
+
+// A row is only removable once it's also empty — untouched since
+// makeEmptyRow() created it. Prevents the X from ever discarding
+// weight/reps/bands the user actually entered.
+const isEmpty = computed(
+  () => !props.row.checked && props.row.weightEntered === '' && props.row.reps === '' && props.row.bandColors.length === 0
+);
 
 function toggleBandColor(color: string) {
   const i = props.row.bandColors.indexOf(color);
@@ -108,6 +122,14 @@ function resetBandColors() {
       :class="row.checked ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-700'"
     >
       <span v-if="row.checked">&#10003;</span>
+    </button>
+    <button
+      v-if="removable && isEmpty"
+      @click="emit('remove')"
+      aria-label="Remove empty set"
+      class="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full bg-slate-800 text-slate-400 text-sm"
+    >
+      &times;
     </button>
   </div>
 </template>

@@ -144,6 +144,27 @@ function getRow(exerciseId: string, index: number): SetRowState | undefined {
   return rows ? rows[index] : undefined;
 }
 
+// Only the trailing row is ever eligible for removal — see SetRow's
+// `removable` prop comment. Also keeps at least one row per exercise, so
+// there's always somewhere to log a set.
+function isLastRow(exerciseId: string, index: number): boolean {
+  const rows = setRowsByExercise[exerciseId];
+  return rows.length > 1 && index === rows.length - 1;
+}
+
+function removeRow(exerciseId: string, index: number) {
+  if (!isLastRow(exerciseId, index)) return;
+  setRowsByExercise[exerciseId].splice(index, 1);
+}
+
+// Mirrors addSupersetRow — a superset's two row arrays are added to and
+// removed from together, keeping them index-synced.
+function removeSupersetRow(exerciseIdA: string, exerciseIdB: string, index: number) {
+  if (!isLastRow(exerciseIdA, index) || !isLastRow(exerciseIdB, index)) return;
+  setRowsByExercise[exerciseIdA].splice(index, 1);
+  setRowsByExercise[exerciseIdB].splice(index, 1);
+}
+
 // Zips a superset pair's two row arrays into { index, rowA, rowB } tuples
 // so the template can render Set 1 of A immediately above Set 1 of B,
 // then Set 2 of A above Set 2 of B, etc. rowA/rowB are references to the
@@ -294,9 +315,11 @@ async function finishWorkout() {
               :row="row"
               :index="index"
               :resistance-type="block.exercises[0].resistanceType || 'weight'"
+              :removable="isLastRow(block.exercises[0].id, index)"
               @toggle-unit="toggleUnit(row)"
               @check="checkRow(block.exercises[0].id, row)"
               @unlock="unlockRow(row)"
+              @remove="removeRow(block.exercises[0].id, index)"
             />
           </div>
 
@@ -331,9 +354,11 @@ async function finishWorkout() {
                   :row="pair.rowA"
                   compact
                   :resistance-type="block.exercises[0].resistanceType || 'weight'"
+                  :removable="isLastRow(block.exercises[0].id, pair.index)"
                   @toggle-unit="toggleUnit(pair.rowA)"
                   @check="checkRow(block.exercises[0].id, pair.rowA, pair.rowB)"
                   @unlock="unlockRow(pair.rowA)"
+                  @remove="removeSupersetRow(block.exercises[0].id, block.exercises[1].id, pair.index)"
                 />
               </div>
 
@@ -343,9 +368,11 @@ async function finishWorkout() {
                   :row="pair.rowB"
                   compact
                   :resistance-type="block.exercises[1].resistanceType || 'weight'"
+                  :removable="isLastRow(block.exercises[1].id, pair.index)"
                   @toggle-unit="toggleUnit(pair.rowB)"
                   @check="checkRow(block.exercises[1].id, pair.rowB, pair.rowA)"
                   @unlock="unlockRow(pair.rowB)"
+                  @remove="removeSupersetRow(block.exercises[0].id, block.exercises[1].id, pair.index)"
                 />
               </div>
             </div>
