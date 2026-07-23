@@ -95,10 +95,10 @@ function formattedEntry(set: SetEntry) {
 
       <div v-else class="bg-surface border border-border rounded-2xl p-4">
         <svg :viewBox="'0 0 ' + CHART_WIDTH + ' ' + CHART_HEIGHT" class="w-full h-auto">
-          <polyline :points="polylinePoints" fill="none" stroke="var(--color-accent)" stroke-width="2" />
+          <polyline :points="polylinePoints" fill="none" stroke="var(--color-primary)" stroke-width="2" />
           <g v-for="(point, i) in points" :key="i" @click="openModal(point)" class="cursor-pointer">
             <circle :cx="point.x" :cy="point.y" r="14" fill="transparent" />
-            <circle :cx="point.x" :cy="point.y" r="5" fill="var(--color-accent)" />
+            <circle :cx="point.x" :cy="point.y" r="5" fill="var(--color-primary)" />
           </g>
         </svg>
       </div>

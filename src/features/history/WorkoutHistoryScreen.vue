@@ -225,7 +225,7 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
               <span
                 v-for="(duration, i) in day.durations"
                 :key="i"
-                class="text-xs font-semibold text-accent-bright bg-accent-soft/40 px-2 py-1 rounded-full whitespace-nowrap"
+                class="text-xs font-semibold text-primary-bright bg-primary/10 px-2 py-1 rounded-full whitespace-nowrap"
               >{{ duration }}</span>
             </div>
           </div>
@@ -244,7 +244,7 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
                   <button
                     @click="startEdit(set)"
                     :aria-label="'Edit set'"
-                    class="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-md text-accent-bright active:bg-surface-3"
+                    class="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-md text-secondary active:bg-surface-3"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 112.914 2.914L7.5 19.675l-4 1 1-4L16.862 4.487z" />
@@ -284,7 +284,7 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
                     @click="saveEdit(set)"
                     :disabled="!editIsValid(set)"
                     aria-label="Save set"
-                    class="w-11 h-11 flex-shrink-0 rounded-lg bg-accent text-on-accent flex items-center justify-center disabled:opacity-30"
+                    class="w-11 h-11 flex-shrink-0 rounded-lg bg-primary text-on-primary flex items-center justify-center disabled:opacity-30"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />

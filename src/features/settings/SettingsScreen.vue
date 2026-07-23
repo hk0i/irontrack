@@ -76,14 +76,14 @@ async function handleFileSelected(event: Event) {
           <button
             @click="setPreferredUnit('lbs')"
             class="flex-1 py-3 font-semibold"
-            :class="settings.preferredUnit === 'lbs' ? 'bg-accent text-on-accent' : 'bg-surface text-foreground-subtle'"
+            :class="settings.preferredUnit === 'lbs' ? 'bg-primary text-on-primary' : 'bg-surface text-foreground-subtle'"
           >
             LBs
           </button>
           <button
             @click="setPreferredUnit('kg')"
             class="flex-1 py-3 font-semibold"
-            :class="settings.preferredUnit === 'kg' ? 'bg-accent text-on-accent' : 'bg-surface text-foreground-subtle'"
+            :class="settings.preferredUnit === 'kg' ? 'bg-primary text-on-primary' : 'bg-surface text-foreground-subtle'"
           >
             KGs
           </button>
@@ -100,7 +100,7 @@ async function handleFileSelected(event: Event) {
           Import Data File
         </button>
         <input ref="fileInput" type="file" accept="application/json" class="hidden" @change="handleFileSelected" />
-        <p v-if="importStatus" class="text-sm text-accent-bright">{{ importStatus }}</p>
+        <p v-if="importStatus" class="text-sm text-success">{{ importStatus }}</p>
       </div>
     </main>
   </div>

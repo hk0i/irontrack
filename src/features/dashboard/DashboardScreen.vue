@@ -113,9 +113,9 @@ async function removeRoutine(routine: Routine) {
       <button
         v-if="suggestedRoutine"
         @click="openRoutine(suggestedRoutine)"
-        class="w-full text-left bg-accent-soft/40 border-2 border-accent-strong rounded-2xl px-5 py-4 active:bg-accent-soft/60"
+        class="w-full text-left bg-primary/10 border-2 border-primary-strong rounded-2xl px-5 py-4 active:bg-primary/15"
       >
-        <div class="text-xs uppercase tracking-wide text-accent-bright font-semibold mb-1">Suggested</div>
+        <div class="text-xs uppercase tracking-wide text-primary-bright font-semibold mb-1">Suggested</div>
         <div class="text-lg font-semibold">{{ suggestedRoutine.name }}</div>
         <div class="text-sm text-foreground-muted mt-1">{{ suggestedRoutine.exerciseIds.length }} exercises</div>
       </button>
@@ -144,7 +144,7 @@ async function removeRoutine(routine: Routine) {
         <button
           @click="removeRoutine(routine)"
           :aria-label="'Delete ' + routine.name"
-          class="absolute top-1/2 -translate-y-1/2 right-3 w-11 h-11 flex items-center justify-center rounded-full bg-danger-soft text-danger active:bg-danger-soft-hover"
+          class="absolute top-1/2 -translate-y-1/2 right-3 w-11 h-11 flex items-center justify-center rounded-full bg-danger/15 text-danger active:bg-danger/25"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0l1 13a2 2 0 002 2h4a2 2 0 002-2l1-13" />
@@ -156,7 +156,7 @@ async function removeRoutine(routine: Routine) {
     <button
       @click="emit('navigate', 'routine-builder')"
       aria-label="New routine"
-      class="fixed bottom-6 right-6 w-16 h-16 rounded-full bg-accent text-on-accent text-3xl font-bold flex items-center justify-center shadow-lg active:bg-accent-bright"
+      class="fixed bottom-6 right-6 w-16 h-16 rounded-full bg-primary text-on-primary text-3xl font-bold flex items-center justify-center shadow-lg active:bg-primary-bright"
     >
       +
     </button>

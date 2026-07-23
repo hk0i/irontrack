@@ -69,7 +69,7 @@ function resetBandColors() {
         type="text"
         placeholder="Weight"
         class="w-20 h-11 rounded-lg bg-surface-2 border px-2 text-center disabled:opacity-50"
-        :class="row.weightInvalid ? 'border-danger' : 'border-border-strong'"
+        :class="row.weightInvalid ? 'border-danger-border' : 'border-border-strong'"
       />
       <button
         @click="emit('toggle-unit')"
@@ -89,7 +89,7 @@ function resetBandColors() {
         :aria-label="color + ' band'"
         :aria-pressed="row.bandColors.includes(color)"
         class="px-2 h-7 rounded-full border text-[10px] font-semibold disabled:opacity-50"
-        :class="row.bandColors.includes(color) ? 'bg-accent border-accent text-on-accent' : 'bg-surface-2 border-border-strong text-foreground-subtle'"
+        :class="row.bandColors.includes(color) ? 'bg-primary border-primary text-on-primary' : 'bg-surface-2 border-border-strong text-foreground-subtle'"
       >
         {{ color }}
       </button>
@@ -113,13 +113,13 @@ function resetBandColors() {
       type="text"
       placeholder="Reps"
       class="h-11 rounded-lg bg-surface-2 border px-2 text-center disabled:opacity-50"
-      :class="[compact ? 'w-14' : 'w-16', row.repsInvalid ? 'border-danger' : 'border-border-strong']"
+      :class="[compact ? 'w-14' : 'w-16', row.repsInvalid ? 'border-danger-border' : 'border-border-strong']"
     />
     <button
       @click="row.checked ? emit('unlock') : emit('check')"
       :aria-label="row.checked ? 'Edit set' : 'Log set'"
       class="w-11 h-11 rounded-lg border-2 flex items-center justify-center flex-shrink-0"
-      :class="row.checked ? 'bg-accent border-accent text-on-accent' : 'border-border-strong'"
+      :class="row.checked ? 'bg-success border-success text-on-success' : 'border-border-strong'"
     >
       <span v-if="row.checked">&#10003;</span>
     </button>

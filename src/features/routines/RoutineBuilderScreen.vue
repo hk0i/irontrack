@@ -246,7 +246,7 @@ async function save() {
             :key="option.value"
             @click="newExerciseResistanceType = option.value"
             class="flex-1 py-2 text-xs font-semibold"
-            :class="newExerciseResistanceType === option.value ? 'bg-accent text-on-accent' : 'bg-surface text-foreground-subtle'"
+            :class="newExerciseResistanceType === option.value ? 'bg-primary text-on-primary' : 'bg-surface text-foreground-subtle'"
           >
             {{ option.label }}
           </button>
@@ -257,7 +257,7 @@ async function save() {
           <button
             v-if="!exactMatchExists"
             @click="createAndAddExercise"
-            class="w-full text-left px-4 py-3 rounded-xl bg-accent-soft border border-accent-soft text-accent-soft"
+            class="w-full text-left px-4 py-3 rounded-xl bg-primary/10 border border-primary/40 text-primary-bright"
           >
             + Create "{{ searchQuery }}" as new exercise
           </button>
@@ -276,7 +276,7 @@ async function save() {
       <div v-if="selectedExercises.length">
         <label class="text-sm text-foreground-muted mb-2 block">
           Routine order
-          <span v-if="linkModeExerciseId" class="text-accent-bright">— tap another exercise's link icon to pair as a superset</span>
+          <span v-if="linkModeExerciseId" class="text-primary-bright">— tap another exercise's link icon to pair as a superset</span>
         </label>
         <div class="space-y-2">
           <div
@@ -284,7 +284,7 @@ async function save() {
             :key="exercise.id"
             :ref="(el) => (rowEls[index] = el as HTMLElement | null)"
             class="flex items-center gap-2 px-4 py-3 rounded-xl bg-surface border select-none"
-            :class="[exercise.supersetWith ? 'border-accent-soft' : 'border-border', draggingIndex === index ? 'relative z-10 shadow-xl' : '']"
+            :class="[exercise.supersetWith ? 'border-primary/40' : 'border-border', draggingIndex === index ? 'relative z-10 shadow-xl' : '']"
             :style="draggingIndex === index ? { transform: 'translateY(' + dragOffset + 'px)' } : {}"
           >
             <button
@@ -314,7 +314,7 @@ async function save() {
               @click="toggleLink(exercise)"
               :aria-label="exercise.supersetWith ? 'Unlink superset' : 'Link as superset'"
               class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full"
-              :class="exercise.supersetWith || linkModeExerciseId === exercise.id ? 'bg-accent-strong text-on-accent-strong' : 'bg-surface-2 text-foreground-subtle'"
+              :class="exercise.supersetWith || linkModeExerciseId === exercise.id ? 'bg-primary-strong text-on-primary-strong' : 'bg-surface-2 text-foreground-subtle'"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" />
@@ -332,7 +332,7 @@ async function save() {
       <button
         @click="save"
         :disabled="!canSave"
-        class="w-full py-4 rounded-xl bg-accent text-on-accent font-semibold text-base disabled:opacity-30"
+        class="w-full py-4 rounded-xl bg-primary text-on-primary font-semibold text-base disabled:opacity-30"
       >
         Save Routine
       </button>

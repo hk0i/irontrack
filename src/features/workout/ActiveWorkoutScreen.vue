@@ -301,7 +301,7 @@ async function finishWorkout() {
         <div v-if="block.exercises.length === 1" class="bg-surface border border-border rounded-2xl p-4">
           <div class="flex items-center justify-between mb-1">
             <h2 class="font-semibold text-base">{{ block.exercises[0].name }}</h2>
-            <button @click="viewHistory(block.exercises[0].id)" class="px-3 py-2 rounded-lg bg-surface-2 text-xs font-semibold text-accent-bright active:bg-surface-3">History</button>
+            <button @click="viewHistory(block.exercises[0].id)" class="px-3 py-2 rounded-lg bg-surface-2 text-xs font-semibold text-secondary active:bg-surface-3">History</button>
           </div>
           <div class="text-sm text-foreground-muted mb-3">
             <span v-if="ghostTextByExercise[block.exercises[0].id]">Last: [{{ ghostTextByExercise[block.exercises[0].id] }}]</span>
@@ -323,14 +323,14 @@ async function finishWorkout() {
             />
           </div>
 
-          <button @click="addRow(block.exercises[0].id)" class="mt-3 w-full py-2.5 rounded-lg bg-surface-2 text-sm font-semibold text-accent-bright active:bg-surface-3">+ Add set</button>
+          <button @click="addRow(block.exercises[0].id)" class="mt-3 w-full py-2.5 rounded-lg bg-surface-2 text-sm font-semibold text-secondary active:bg-surface-3">+ Add set</button>
         </div>
 
         <!-- Superset pair: one high-contrast bounding box, sets interleaved A1/B1/A2/B2/... -->
-        <div v-else class="bg-surface border-2 border-accent-strong rounded-2xl p-4">
+        <div v-else class="bg-surface border-2 border-primary-strong rounded-2xl p-4">
           <div class="flex items-center justify-between mb-3">
             <h2 class="font-semibold text-base">{{ block.exercises[0].name }} + {{ block.exercises[1].name }}</h2>
-            <span class="text-xs uppercase tracking-wide text-accent-bright font-semibold flex-shrink-0">Superset</span>
+            <span class="text-xs uppercase tracking-wide text-primary-bright font-semibold flex-shrink-0">Superset</span>
           </div>
 
           <div class="space-y-3 text-xs text-foreground-muted mb-4">
@@ -340,7 +340,7 @@ async function finishWorkout() {
                 <span v-if="ghostTextByExercise[exercise.id]">Last: [{{ ghostTextByExercise[exercise.id] }}]</span>
                 <span v-else>No history yet</span>
               </div>
-              <button @click="viewHistory(exercise.id)" class="px-2 py-1.5 rounded-lg bg-surface-2 text-xs font-semibold text-accent-bright active:bg-surface-3 flex-shrink-0">History</button>
+              <button @click="viewHistory(exercise.id)" class="px-2 py-1.5 rounded-lg bg-surface-2 text-xs font-semibold text-secondary active:bg-surface-3 flex-shrink-0">History</button>
             </div>
           </div>
 
@@ -378,7 +378,7 @@ async function finishWorkout() {
             </div>
           </div>
 
-          <button @click="addSupersetRow(block.exercises[0].id, block.exercises[1].id)" class="mt-3 w-full py-2.5 rounded-lg bg-surface-2 text-sm font-semibold text-accent-bright active:bg-surface-3">+ Add set</button>
+          <button @click="addSupersetRow(block.exercises[0].id, block.exercises[1].id)" class="mt-3 w-full py-2.5 rounded-lg bg-surface-2 text-sm font-semibold text-secondary active:bg-surface-3">+ Add set</button>
         </div>
       </div>
     </main>
@@ -387,7 +387,7 @@ async function finishWorkout() {
       <button
         @click="finishWorkout"
         :disabled="finishing"
-        class="w-full py-4 rounded-xl bg-accent text-on-accent font-semibold text-base active:bg-accent-bright disabled:opacity-60"
+        class="w-full py-4 rounded-xl bg-primary text-on-primary font-semibold text-base active:bg-primary-bright disabled:opacity-60"
       >
         Finish Workout
       </button>
@@ -395,7 +395,7 @@ async function finishWorkout() {
 
     <div
       v-if="restBannerVisible"
-      class="fixed inset-x-0 bottom-0 bg-accent-strong text-on-accent px-4 py-4 flex items-center justify-between font-semibold"
+      class="fixed inset-x-0 bottom-0 bg-primary-strong text-on-primary px-4 py-4 flex items-center justify-between font-semibold"
     >
       <span>Rest: {{ restBannerSecondsLeft }}s</span>
       <button @click="dismissRestBanner" class="px-4 py-2 rounded-lg bg-background/25 active:bg-background/40">Skip</button>

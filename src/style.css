@@ -1,11 +1,30 @@
 @import "tailwindcss";
 
-/* Semantic color tokens — named by role, not by raw Tailwind palette shade,
-   so the app can be re-themed later without touching component templates.
-   Every value here is currently just an alias to the exact shade already in
-   use (step 1 of the theming work: pure abstraction, zero visual change).
-   Step 2 adds a second [data-theme] block and a switcher; these become the
-   default/first theme's values then. */
+/* Semantic color tokens — named by role, not by raw palette shade, so the
+   app can be re-themed later without touching component templates. Values
+   here are the "irontrack" (default/current) theme. A second [data-theme]
+   block + switcher come next.
+
+   Role split (matters for anyone adding a new theme):
+   - primary:   solid CTA buttons, selected/active picker state, data-viz
+                line color, highlight badges (Suggested card, superset
+                marker) — the general brand-forward emphasis color.
+   - secondary: ghost/text-only minor action buttons (History, +Add set,
+                small edit icons) — irontrack's default theme happens to
+                reuse the same green shade as primary-bright here, but a
+                theme with a real secondary brand color (e.g. purple) should
+                diverge.
+   - success:   literal confirmation-of-completed-action states only (a set
+                was logged, an import finished) — not a general "positive"
+                decoration color, keep this one narrow.
+   - danger:    delete actions, validation errors.
+
+   "Soft" tinted backgrounds (badges, soft buttons) are NOT separate stored
+   shades — they're the base token at reduced opacity via Tailwind's slash
+   modifier (bg-primary/15, border-danger/40, etc). A hand-picked "soft"
+   step from a palette's own scale (e.g. its palest tint) is usually tuned
+   for a light-mode surface, not a near-black one, so it doesn't reliably
+   port across themes the way an opacity modifier on the base color does. */
 @theme {
   /* Surfaces */
   --color-background: var(--color-slate-950);
@@ -24,24 +43,27 @@
   --color-foreground-muted: var(--color-slate-400);
   --color-foreground-faint: var(--color-slate-500);
   --color-foreground-faintest: var(--color-slate-600);
-  /* Text/icon color for content placed on top of an accent-colored surface
-     (e.g. a solid emerald button) — distinct from `foreground` even though
-     the value is currently the same, since a future theme could have a
-     light accent on a dark background where these diverge. */
-  --color-on-accent: var(--color-slate-950);
-  --color-on-accent-strong: var(--color-white);
 
-  /* Accent (brand/success green) */
-  --color-accent: var(--color-emerald-500);
-  --color-accent-bright: var(--color-emerald-400);
-  --color-accent-strong: var(--color-emerald-600);
-  --color-accent-soft: var(--color-emerald-950);
-  --color-accent-soft-border: var(--color-emerald-800);
-  --color-accent-soft-text: var(--color-emerald-300);
+  /* Text/icon color for content placed on a solid primary/success surface —
+     distinct from `foreground` even though the value is currently the same,
+     since a future theme's primary/success could be light-on-dark or
+     dark-on-light independently of the page's own foreground/background. */
+  --color-on-primary: var(--color-slate-950);
+  --color-on-primary-strong: var(--color-white);
+  --color-on-success: var(--color-slate-950);
 
-  /* Danger (delete/error) */
+  /* Primary */
+  --color-primary: var(--color-emerald-500);
+  --color-primary-bright: var(--color-emerald-400);
+  --color-primary-strong: var(--color-emerald-600);
+
+  /* Secondary */
+  --color-secondary: var(--color-emerald-400);
+
+  /* Success */
+  --color-success: var(--color-emerald-500);
+
+  /* Danger */
   --color-danger: var(--color-rose-400);
   --color-danger-border: var(--color-rose-500);
-  --color-danger-soft: var(--color-rose-950);
-  --color-danger-soft-hover: var(--color-rose-900);
 }

@@ -167,18 +167,18 @@ const polylinePoints = computed(() => points.value.map((p) => `${p.x},${p.y}`).j
             <button
               @click="newTrackerType = 'mass'"
               class="flex-1 h-11 text-sm font-semibold"
-              :class="newTrackerType === 'mass' ? 'bg-accent text-on-accent' : 'bg-surface-2 text-foreground-subtle'"
+              :class="newTrackerType === 'mass' ? 'bg-primary text-on-primary' : 'bg-surface-2 text-foreground-subtle'"
             >Mass</button>
             <button
               @click="newTrackerType = 'length'"
               class="flex-1 h-11 text-sm font-semibold"
-              :class="newTrackerType === 'length' ? 'bg-accent text-on-accent' : 'bg-surface-2 text-foreground-subtle'"
+              :class="newTrackerType === 'length' ? 'bg-primary text-on-primary' : 'bg-surface-2 text-foreground-subtle'"
             >Length</button>
           </div>
           <button
             @click="addCustomTracker"
             :disabled="!newTrackerName.trim()"
-            class="h-11 px-5 rounded-xl bg-accent text-on-accent font-semibold disabled:opacity-30"
+            class="h-11 px-5 rounded-xl bg-primary text-on-primary font-semibold disabled:opacity-30"
           >Add</button>
         </div>
       </div>
@@ -215,7 +215,7 @@ const polylinePoints = computed(() => points.value.map((p) => `${p.x},${p.y}`).j
             @click="submitLogEntry"
             :disabled="!canLog"
             aria-label="Log entry"
-            class="w-11 h-11 flex-shrink-0 rounded-lg bg-accent text-on-accent flex items-center justify-center disabled:opacity-30"
+            class="w-11 h-11 flex-shrink-0 rounded-lg bg-primary text-on-primary flex items-center justify-center disabled:opacity-30"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -230,8 +230,8 @@ const polylinePoints = computed(() => points.value.map((p) => `${p.x},${p.y}`).j
         </div>
         <div v-if="points.length === 0" class="text-foreground-faint text-sm py-8 text-center">No logged entries yet.</div>
         <svg v-else :viewBox="'0 0 ' + CHART_WIDTH + ' ' + CHART_HEIGHT" class="w-full h-auto">
-          <polyline :points="polylinePoints" fill="none" stroke="var(--color-accent)" stroke-width="2" />
-          <circle v-for="(point, i) in points" :key="i" :cx="point.x" :cy="point.y" r="4" fill="var(--color-accent)" />
+          <polyline :points="polylinePoints" fill="none" stroke="var(--color-primary)" stroke-width="2" />
+          <circle v-for="(point, i) in points" :key="i" :cx="point.x" :cy="point.y" r="4" fill="var(--color-primary)" />
         </svg>
       </div>
     </main>
