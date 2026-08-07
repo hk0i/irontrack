@@ -165,7 +165,7 @@ function selectView(view: ChartView) {
           >
             <span
               class="w-2.5 h-2.5 rounded-full"
-              style="background: linear-gradient(90deg, var(--color-primary) 50%, var(--color-chart-2) 50%)"
+              style="background: linear-gradient(135deg, var(--color-primary) 50%, var(--color-chart-2) 50%)"
             ></span>
             Show all
           </button>
