@@ -5,14 +5,25 @@
 // surviving one.
 
 import { reactive } from 'vue';
+import { showToast } from './toast';
 
 export const appUpdate: { available: boolean } = reactive({ available: false });
 
 let waitingWorker: ServiceWorker | null = null;
 
+// Guards the toast to once per update — if a second version somehow
+// becomes available before the first is installed, waitingWorker is still
+// kept current (installAppUpdate always targets whichever worker is
+// actually waiting), it just doesn't queue a second toast on top.
 function markAvailable(worker: ServiceWorker) {
   waitingWorker = worker;
+  if (appUpdate.available) return;
   appUpdate.available = true;
+  showToast({
+    message: 'A new version is available.',
+    actionLabel: 'Update now',
+    onAction: installAppUpdate,
+  });
 }
 
 // A worker reaching 'installed' only means "a new version is ready" when
