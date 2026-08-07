@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { getAllRoutines, deleteRoutine, getAllSets, type Routine } from '../../shared/db';
+import { activeSession, clearActiveSession } from '../../shared/active-session';
 import type { NavParams, ScreenName } from '../../shared/types';
 
 defineProps<{
@@ -19,10 +20,24 @@ const COMMIT_HASH = __COMMIT_HASH__;
 
 const routines = ref<Routine[]>([]);
 const suggestedRoutine = ref<Routine | null>(null);
+const resumableRoutine = ref<Routine | null>(null);
 
 async function loadRoutines() {
   routines.value = await getAllRoutines();
+  resumableRoutine.value = await resolveResumableRoutine(routines.value);
   suggestedRoutine.value = await computeSuggestedRoutine(routines.value);
+}
+
+// An unfinished workout takes priority over the normal rotation
+// suggestion — it's the thing the user was already in the middle of. If
+// its routine has since been deleted, the session can't be shown or
+// resumed meaningfully, so the stale pointer is cleared here rather than
+// left to surface a broken "Resume" card.
+async function resolveResumableRoutine(currentRoutines: Routine[]): Promise<Routine | null> {
+  if (!activeSession.current) return null;
+  const routine = currentRoutines.find((r) => r.id === activeSession.current!.routineId) || null;
+  if (!routine) clearActiveSession();
+  return routine;
 }
 
 // Rotates through the routine list in whatever order it's displayed:
@@ -111,7 +126,16 @@ async function removeRoutine(routine: Routine) {
       </div>
 
       <button
-        v-if="suggestedRoutine"
+        v-if="resumableRoutine"
+        @click="openRoutine(resumableRoutine)"
+        class="w-full text-left bg-primary/10 border-2 border-primary-strong rounded-2xl px-5 py-4 active:bg-primary/15"
+      >
+        <div class="text-xs uppercase tracking-wide text-primary-bright font-semibold mb-1">Resume</div>
+        <div class="text-lg font-semibold">{{ resumableRoutine.name }}</div>
+        <div class="text-sm text-foreground-muted mt-1">Unfinished workout in progress</div>
+      </button>
+      <button
+        v-else-if="suggestedRoutine"
         @click="openRoutine(suggestedRoutine)"
         class="w-full text-left bg-primary/10 border-2 border-primary-strong rounded-2xl px-5 py-4 active:bg-primary/15"
       >
