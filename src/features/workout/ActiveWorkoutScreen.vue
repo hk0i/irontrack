@@ -12,6 +12,7 @@ import {
   formatWeight,
   logWorkoutSession,
   type Exercise,
+  type ResistanceType,
   type SetEntry,
   type WeightUnit,
 } from '../../shared/db';
@@ -382,14 +383,25 @@ async function finishWorkout() {
 }
 
 // Ad-hoc exercise search — same pattern as RoutineBuilderScreen's, trimmed
-// down (no resistance-type picker, no drag-reorder): search/create here is
-// session-only. The exercise gets logged and shows up in this workout's
-// history, but is never written back into the routine's saved
-// exerciseIds — Routine Builder stays the only place that permanently
-// changes a routine's exercise list.
+// down (no drag-reorder): search/create here is session-only. The exercise
+// gets logged and shows up in this workout's history, but is never written
+// back into the routine's saved exerciseIds — Routine Builder stays the
+// only place that permanently changes a routine's exercise list.
 const showAddExercise = ref(false);
 const searchQuery = ref('');
 const searchResults = ref<Exercise[]>([]);
+
+// Applied to whatever exercise gets created next via search/create-new —
+// mirrors RoutineBuilderScreen.vue. Existing exercises keep whatever type
+// they already have; there's no per-row cycle button here to change it
+// post-add, only at creation time. Sticky across multiple ad-hoc adds in
+// the same workout, not reset after each one.
+const RESISTANCE_TYPES: { value: ResistanceType; label: string }[] = [
+  { value: 'weight', label: 'Weight' },
+  { value: 'bodyweight', label: 'Bodyweight' },
+  { value: 'bands', label: 'Bands' },
+];
+const newExerciseResistanceType = ref<ResistanceType>('weight');
 
 watch(
   searchQuery,
@@ -431,14 +443,14 @@ async function addAdhocExercise(exercise: ExerciseOption) {
     await appendAdhocBlock(exercise);
     return;
   }
-  const created = await createExercise({ name: exercise.name });
+  const created = await createExercise({ name: exercise.name, resistanceType: newExerciseResistanceType.value });
   await appendAdhocBlock(created);
 }
 
 async function createAndAddAdhocExercise() {
   const name = searchQuery.value.trim();
   if (!name) return;
-  const created = await createExercise({ name });
+  const created = await createExercise({ name, resistanceType: newExerciseResistanceType.value });
   await appendAdhocBlock(created);
 }
 </script>
@@ -570,6 +582,20 @@ async function createAndAddAdhocExercise() {
           placeholder="Search exercises..."
           class="w-full rounded-xl bg-surface border border-border px-4 py-3 text-base"
         />
+
+        <div class="flex rounded-xl overflow-hidden border border-border">
+          <button
+            v-for="option in RESISTANCE_TYPES"
+            :key="option.value"
+            @click="newExerciseResistanceType = option.value"
+            class="flex-1 py-2 text-xs font-semibold"
+            :class="newExerciseResistanceType === option.value ? 'bg-primary text-on-primary' : 'bg-surface text-foreground-subtle'"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+        <p class="text-xs text-foreground-faint">Resistance type for the next new exercise you add.</p>
+
         <div v-if="searchQuery.trim()" class="space-y-1">
           <button
             v-if="!exactMatchExists"
