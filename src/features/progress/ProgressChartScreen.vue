@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, computed } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { getAllExercises, getSetsForExercise, formatWeight, type Exercise, type SetEntry } from '../../shared/db';
 import { settings } from '../../shared/store';
+import { useTrendChart, type TrendChartPoint } from '../../shared/composables/useTrendChart';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import EmptyState from '../../shared/components/EmptyState.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
@@ -16,12 +17,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   navigate: [screen: ScreenName, params?: NavParams];
 }>();
-
-interface ChartPoint {
-  x: number;
-  y: number;
-  set: SetEntry;
-}
 
 const exercises = ref<Exercise[]>([]);
 const selectedExerciseId = ref(props.navParams?.initialExerciseId || '');
@@ -39,27 +34,14 @@ watch(selectedExerciseId, async (id) => {
   sets.value = id ? await getSetsForExercise(id) : [];
 }, { immediate: true });
 
-const points = computed<ChartPoint[]>(() => {
-  if (sets.value.length === 0) return [];
-  const weights = sets.value.map((s) => s.weightInLbs);
-  const min = Math.min(...weights);
-  const max = Math.max(...weights);
-  const range = max - min || 1;
-  const usableWidth = CHART_WIDTH - PADDING * 2;
-  const usableHeight = CHART_HEIGHT - PADDING * 2;
-  const step = sets.value.length > 1 ? usableWidth / (sets.value.length - 1) : 0;
-
-  return sets.value.map((s, i) => {
-    const x = PADDING + step * i;
-    const y = PADDING + usableHeight - ((s.weightInLbs - min) / range) * usableHeight;
-    return { x, y, set: s };
-  });
+const { points, polylinePoints } = useTrendChart(sets, (s) => s.weightInLbs, {
+  width: CHART_WIDTH,
+  height: CHART_HEIGHT,
+  padding: PADDING,
 });
 
-const polylinePoints = computed(() => points.value.map((p) => `${p.x},${p.y}`).join(' '));
-
-function openModal(point: ChartPoint) {
-  activeModalSet.value = point.set;
+function openModal(point: TrendChartPoint<SetEntry>) {
+  activeModalSet.value = point.item;
 }
 
 function closeModal() {
