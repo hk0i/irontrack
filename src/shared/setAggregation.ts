@@ -27,7 +27,9 @@ function bodyWeightLbsAsOf(bodyWeightLogs: MetricLog[], date: string): number | 
 // Volume load per resistanceType — reps x resistance whenever a real
 // resistance figure is knowable, raw reps otherwise:
 //  - weight: reps x the weight actually entered.
-//  - bands: reps x the summed resistance of every color on the set.
+//  - bands: reps x the summed resistance of every color on the set, or
+//    just reps if no colors were logged (no fabricated load — matches
+//    bodyweight below, e.g. historical sets logged before band tracking).
 //  - bodyweight: reps x the body weight logged as of that set's date, or
 //    just reps if none was logged yet (no fabricated load).
 //  - mobility: always just reps — no load, by definition, so it never gets
@@ -35,8 +37,10 @@ function bodyWeightLbsAsOf(bodyWeightLogs: MetricLog[], date: string): number | 
 //    inheriting a bodyweight multiplier they don't represent).
 export function computeSetVolume(set: SetEntry, resistanceType: Exercise['resistanceType'], bodyWeightLbs: number | null): number {
   switch (resistanceType) {
-    case 'bands':
-      return set.reps * sumBandResistanceLbs(set.bandColors ?? []);
+    case 'bands': {
+      const bandColors = set.bandColors ?? [];
+      return bandColors.length === 0 ? set.reps : set.reps * sumBandResistanceLbs(bandColors);
+    }
     case 'bodyweight':
       return bodyWeightLbs === null ? set.reps : set.reps * bodyWeightLbs;
     case 'mobility':
