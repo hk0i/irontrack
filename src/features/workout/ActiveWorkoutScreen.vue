@@ -11,6 +11,7 @@ import {
   updateSet,
   formatWeight,
   logWorkoutSession,
+  RESISTANCE_TYPES,
   type Exercise,
   type ResistanceType,
   type SetEntry,
@@ -391,16 +392,11 @@ const showAddExercise = ref(false);
 const searchQuery = ref('');
 const searchResults = ref<Exercise[]>([]);
 
-// Applied to whatever exercise gets created next via search/create-new —
-// mirrors RoutineBuilderScreen.vue. Existing exercises keep whatever type
-// they already have; there's no per-row cycle button here to change it
-// post-add, only at creation time. Sticky across multiple ad-hoc adds in
-// the same workout, not reset after each one.
-const RESISTANCE_TYPES: { value: ResistanceType; label: string }[] = [
-  { value: 'weight', label: 'Weight' },
-  { value: 'bodyweight', label: 'Bodyweight' },
-  { value: 'bands', label: 'Bands' },
-];
+// Applied to whatever exercise gets created next via search/create-new.
+// Existing exercises keep whatever type they already have; there's no
+// per-row cycle button here to change it post-add, only at creation time.
+// Sticky across multiple ad-hoc adds in the same workout, not reset after
+// each one.
 const newExerciseResistanceType = ref<ResistanceType>('weight');
 
 watch(

@@ -10,6 +10,7 @@ import {
   getExerciseById,
   setSupersetLink,
   clearSupersetLink,
+  RESISTANCE_TYPES,
   type Exercise,
   type ResistanceType,
 } from '../../shared/db';
@@ -37,11 +38,6 @@ const linkModeExerciseId = ref<string | null>(null);
 // Applied to whatever exercise gets created next via search/create-new —
 // existing exercises keep whatever type they already have, edited via the
 // per-row cycle button in "Routine order" instead.
-const RESISTANCE_TYPES: { value: ResistanceType; label: string }[] = [
-  { value: 'weight', label: 'Weight' },
-  { value: 'bodyweight', label: 'Bodyweight' },
-  { value: 'bands', label: 'Bands' },
-];
 const newExerciseResistanceType = ref<ResistanceType>('weight');
 
 function cycleResistanceType(current: ResistanceType | undefined): ResistanceType {

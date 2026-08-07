@@ -13,6 +13,15 @@ export type Unit = WeightUnit | LengthUnit;
 export type MetricType = 'mass' | 'length';
 export type ResistanceType = 'bodyweight' | 'bands' | 'weight';
 
+// Display metadata for every picker that lets a user set an exercise's
+// resistance type at creation time (RoutineBuilderScreen, ActiveWorkoutScreen's
+// ad-hoc add panel).
+export const RESISTANCE_TYPES: { value: ResistanceType; label: string }[] = [
+  { value: 'weight', label: 'Weight' },
+  { value: 'bodyweight', label: 'Bodyweight' },
+  { value: 'bands', label: 'Bands' },
+];
+
 export interface Routine {
   id: string;
   name: string;
