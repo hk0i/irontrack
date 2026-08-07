@@ -7,7 +7,7 @@ import {
   updateRoutine,
   updateExercise,
   getRoutineById,
-  getExerciseById,
+  getExercisesForRoutine,
   setSupersetLink,
   clearSupersetLink,
   RESISTANCE_TYPES,
@@ -104,12 +104,7 @@ onMounted(async () => {
   const routine = await getRoutineById(editingRoutineId.value);
   if (!routine) return;
   routineName.value = routine.name;
-  const exercises: Exercise[] = [];
-  for (const id of routine.exerciseIds) {
-    const exercise = await getExerciseById(id);
-    if (exercise) exercises.push(exercise);
-  }
-  selectedExercises.value = exercises;
+  selectedExercises.value = await getExercisesForRoutine(routine);
 });
 
 watch(searchQuery, async (query) => {

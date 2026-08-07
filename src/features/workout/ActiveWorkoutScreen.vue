@@ -3,6 +3,7 @@ import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue';
 import {
   getRoutineById,
   getExerciseById,
+  getExercisesForRoutine,
   getLastWorkoutBestSetForExercise,
   getSetsForSession,
   searchExercises,
@@ -11,6 +12,7 @@ import {
   updateSet,
   formatWeight,
   logWorkoutSession,
+  todayString,
   RESISTANCE_TYPES,
   type Exercise,
   type ResistanceType,
@@ -38,12 +40,6 @@ const REST_SECONDS = 90;
 // as today.
 interface WorkoutBlock {
   exercises: Exercise[];
-}
-
-function todayString() {
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
 // Weight is optional (bodyweight/banded exercises), so a 0 weight is a
@@ -163,11 +159,7 @@ async function loadWorkout() {
   const routine = await getRoutineById(routineId);
   if (!routine) return;
 
-  const exercises: Exercise[] = [];
-  for (const id of routine.exerciseIds) {
-    const exercise = await getExerciseById(id);
-    if (exercise) exercises.push(exercise);
-  }
+  const exercises = await getExercisesForRoutine(routine);
 
   // Empty for a brand-new session — sessionSets only has rows when
   // resuming one already left in progress.

@@ -6,6 +6,7 @@ import {
   logMetric,
   getRecentLogsForBlueprint,
   formatMetricValue,
+  todayString,
   type MetricBlueprint,
   type MetricLog,
   type MetricType,
@@ -18,12 +19,6 @@ import type { NavParams, ScreenName } from '../../shared/types';
 const CHART_WIDTH = 320;
 const CHART_HEIGHT = 160;
 const PADDING = 20;
-
-function todayString() {
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-}
 
 defineProps<{
   navParams?: NavParams;

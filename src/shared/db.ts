@@ -159,6 +159,17 @@ export function formatMetricValue(valueBaseline: number, type: MetricType, prefe
   return Math.round(value * 10) / 10;
 }
 
+// ---------- Dates ----------
+
+// The app's logical-workout-day string (YYYY-MM-DD), same convention as
+// SetEntry.date/MetricLog.date — local time, not UTC, so "today" matches
+// what the clock on the device actually reads.
+export function todayString(): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
 // ---------- Routines ----------
 
 export async function createRoutine({ name, exerciseIds }: { name: string; exerciseIds: string[] }): Promise<Routine> {
@@ -181,6 +192,17 @@ export function updateRoutine(id: string, patch: Partial<Routine>): Promise<numb
 
 export function deleteRoutine(id: string): Promise<void> {
   return db.routines.delete(id);
+}
+
+// Resolves a routine's exerciseIds into their Exercise records, in order,
+// silently skipping any id whose exercise has since been deleted.
+export async function getExercisesForRoutine(routine: Routine): Promise<Exercise[]> {
+  const exercises: Exercise[] = [];
+  for (const id of routine.exerciseIds) {
+    const exercise = await getExerciseById(id);
+    if (exercise) exercises.push(exercise);
+  }
+  return exercises;
 }
 
 // ---------- Exercises ----------
