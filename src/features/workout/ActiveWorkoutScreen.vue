@@ -4,15 +4,17 @@ import {
   getRoutineById,
   getExerciseById,
   getLastWorkoutBestSetForExercise,
+  getSetsForSession,
   logSet,
   updateSet,
   formatWeight,
   logWorkoutSession,
   type Exercise,
+  type SetEntry,
   type WeightUnit,
 } from '../../shared/db';
 import { settings } from '../../shared/store';
-import { setActiveSession, clearActiveSession } from '../../shared/active-session';
+import { activeSession, setActiveSession, clearActiveSession } from '../../shared/active-session';
 import type { NavParams, ScreenName, SetRowState } from '../../shared/types';
 import SetRow from './SetRow.vue';
 
@@ -65,24 +67,46 @@ const emit = defineEmits<{
 // Threaded through to logSet so history can be grouped by routine.
 const routineId = props.navParams?.routineId || null;
 
-// Captured the moment this screen is entered (a workout "starting"), held
-// in memory only until Finish Workout writes it out as a session. Lost if
-// the tab is backgrounded/reclaimed mid-workout — accepted for v1, see
+// Resolves which session this screen should use: reuse one already left
+// in progress for this routine (so loadWorkout() can rehydrate its rows),
+// discard-and-replace one left in progress for a different routine after
+// confirming (single active session app-wide, mirrors DashboardScreen's
+// delete confirmation), or start a brand-new one. Returns null only when
+// the user declines to discard a different routine's in-progress session.
+function resolveWorkoutSession(forRoutineId: string): { sessionId: string; startedAt: number } | null {
+  const prior = activeSession.current;
+  if (prior && prior.routineId === forRoutineId) {
+    return { sessionId: prior.sessionId, startedAt: prior.startedAt };
+  }
+  if (prior) {
+    const discard = confirm('You have an unfinished workout in progress. Discard it and start this one instead?');
+    if (!discard) return null;
+    clearActiveSession();
+  }
+  return { sessionId: crypto.randomUUID(), startedAt: Date.now() };
+}
+
+const session = routineId ? resolveWorkoutSession(routineId) : null;
+if (routineId && !session) {
+  emit('navigate', 'dashboard');
+}
+
+// Captured once, then reused for the lifetime of this screen instance —
+// including across a resume, so Finish still records the full workout
+// duration, not just time spent in this particular visit. See
 // docs/edd-workout-duration.md.
-const startedAt = routineId ? Date.now() : null;
+const startedAt = session?.startedAt ?? null;
 
 // Identifies this one workout instance. Tagged onto every set logged
 // during this screen's lifetime and reused as the workouts row's id on
 // Finish, so history can group this session's sets together instead of
 // merging them with any other same-day session of the same routine.
-const sessionId = routineId ? crypto.randomUUID() : null;
+const sessionId = session?.sessionId ?? null;
 
 // Marks this session resumable the moment it starts, not just on Finish —
 // otherwise navigating away before ever tapping Finish would still lose it.
-// Resume detection (reusing a prior sessionId/startedAt instead of always
-// generating fresh ones here) lands in a later step.
-if (routineId && sessionId && startedAt) {
-  setActiveSession({ sessionId, routineId, startedAt });
+if (session && routineId) {
+  setActiveSession({ sessionId: session.sessionId, routineId, startedAt: session.startedAt });
 }
 
 const blocks = ref<WorkoutBlock[]>([]);
@@ -93,8 +117,26 @@ const restBannerVisible = ref(false);
 const restBannerSecondsLeft = ref(REST_SECONDS);
 let restInterval: ReturnType<typeof setInterval> | null = null;
 
+// Rebuilds a checked row from a previously logged set, so resuming a
+// session shows exactly what was already done. Reuses the persisted
+// values verbatim — there's no way to tell "typed 0" apart from "left
+// blank" once collapsed into a SetEntry, so a genuine 0 just redisplays
+// as 0, same as any other logged value.
+function rowFromSet(set: SetEntry): SetRowState {
+  return reactive({
+    weightEntered: String(set.weightEntered),
+    reps: String(set.reps),
+    unit: set.unit,
+    bandColors: set.bandColors ? [...set.bandColors] : [],
+    checked: true,
+    weightInvalid: false,
+    repsInvalid: false,
+    loggedSetId: set.id,
+  });
+}
+
 async function loadWorkout() {
-  if (!routineId) return;
+  if (!routineId || !sessionId) return;
   const routine = await getRoutineById(routineId);
   if (!routine) return;
 
@@ -104,6 +146,10 @@ async function loadWorkout() {
     if (exercise) exercises.push(exercise);
   }
 
+  // Empty for a brand-new session — sessionSets only has rows when
+  // resuming one already left in progress.
+  const sessionSets = await getSetsForSession(sessionId);
+
   // Populate every exercise's row array and ghost text *before* exposing
   // blocks to the template. pairedRows() reads straight from
   // setRowsByExercise for both sides of a superset without a null-check,
@@ -111,7 +157,12 @@ async function loadWorkout() {
   // been seeded yet — otherwise a render could land in that gap (this
   // loop awaits getLastWorkoutBestSetForExercise per exercise) and throw.
   for (const exercise of exercises) {
-    setRowsByExercise[exercise.id] = reactive([makeEmptyRow()]);
+    // Superset pairs are always logged/added/removed in lockstep (see
+    // addSupersetRow/removeSupersetRow), so rebuilding each exercise's
+    // rows independently from its own sets, in logged order, still keeps
+    // both sides index-aligned for pairedRows().
+    const existingRows = sessionSets.filter((s) => s.exerciseId === exercise.id).map(rowFromSet);
+    setRowsByExercise[exercise.id] = reactive([...existingRows, makeEmptyRow()]);
     const lastSet = await getLastWorkoutBestSetForExercise(exercise.id, sessionId);
     ghostTextByExercise[exercise.id] = lastSet ? formatGhostText(lastSet.weightInLbs, lastSet.unit, lastSet.reps) : null;
   }
