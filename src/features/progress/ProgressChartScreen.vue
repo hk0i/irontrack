@@ -113,6 +113,19 @@ function scrubMove(event: PointerEvent) {
       <EmptyState v-if="sets.length === 0">No logged sets for this exercise yet.</EmptyState>
 
       <div v-else class="bg-surface border border-border rounded-2xl p-4">
+        <div v-if="selectedDay" class="mb-4 pb-4 border-b border-border flex items-center justify-between gap-4">
+          <span class="text-sm text-foreground-muted">{{ selectedDay.date }}</span>
+          <span class="text-xl font-semibold text-right">
+            <template v-if="selectedSeriesKey === 'weight'">
+              {{ formatWeight(selectedDay.weight, settings.preferredUnit) }} {{ settings.preferredUnit }} top set
+            </template>
+            <template v-else>
+              {{ formatWeight(selectedDay.volume, settings.preferredUnit) }} {{ settings.preferredUnit }} volume
+            </template>
+            <span class="block text-sm text-foreground-muted font-normal">{{ selectedDaySetCount }} sets</span>
+          </span>
+        </div>
+
         <div class="flex items-center gap-4 mb-2 text-sm text-foreground-muted">
           <span class="flex items-center gap-1.5">
             <span class="w-2.5 h-2.5 rounded-full" style="background: var(--color-primary)"></span>
@@ -149,19 +162,6 @@ function scrubMove(event: PointerEvent) {
             stroke-width="2" class="pointer-events-none"
           />
         </svg>
-
-        <div v-if="selectedDay" class="mt-4 pt-4 border-t border-border flex items-center justify-between">
-          <span class="text-sm text-foreground-muted">{{ selectedDay.date }}</span>
-          <span class="text-base font-semibold">
-            <template v-if="selectedSeriesKey === 'weight'">
-              {{ formatWeight(selectedDay.weight, settings.preferredUnit) }} {{ settings.preferredUnit }} top set
-            </template>
-            <template v-else>
-              {{ formatWeight(selectedDay.volume, settings.preferredUnit) }} {{ settings.preferredUnit }} volume
-            </template>
-            <span class="text-foreground-muted font-normal"> · {{ selectedDaySetCount }} sets</span>
-          </span>
-        </div>
       </div>
     </main>
   </div>
