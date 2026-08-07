@@ -317,6 +317,15 @@ export function getSetsForExercise(exerciseId: string): Promise<SetEntry[]> {
     .then((sets) => sets.sort((a, b) => a.date.localeCompare(b.date) || (a.createdAt || 0) - (b.createdAt || 0)));
 }
 
+// All sets logged under one workout instance, oldest first — used to
+// rehydrate ActiveWorkoutScreen's checked rows when resuming a session
+// left in progress. sessionId is a plain (unindexed) field like routineId,
+// so this filters client-side rather than using .where().equals().
+export async function getSetsForSession(sessionId: string): Promise<SetEntry[]> {
+  const sets = await db.sets.filter((s) => s.sessionId === sessionId).toArray();
+  return sets.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+}
+
 // Heaviest set from the most recent OTHER workout that included this
 // exercise — used for the active workout screen's ghost text. currentSessionId
 // excludes the in-progress session's own sets, so mid-workout logging never
