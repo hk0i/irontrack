@@ -2,7 +2,9 @@
 import { ref } from 'vue';
 import { exportAllData, importAllData } from '../../shared/db';
 import { settings, setPreferredUnit, setTheme, type Theme } from '../../shared/store';
+import type { WeightUnit } from '../../shared/db';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
+import SegmentedToggle from '../../shared/components/SegmentedToggle.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
 
 defineProps<{
@@ -15,6 +17,11 @@ const emit = defineEmits<{
 const THEMES: { value: Theme; label: string }[] = [
   { value: 'irontrack', label: 'IronTrack' },
   { value: 'onebigfunction', label: 'onebigfunction' },
+];
+
+const UNITS: { value: WeightUnit; label: string }[] = [
+  { value: 'lbs', label: 'LBs' },
+  { value: 'kg', label: 'KGs' },
 ];
 
 const importStatus = ref('');
@@ -71,37 +78,12 @@ async function handleFileSelected(event: Event) {
     <main class="px-4 py-4 space-y-6">
       <div>
         <label class="text-sm text-foreground-muted mb-2 block">Color theme</label>
-        <div class="flex rounded-xl overflow-hidden border border-border">
-          <button
-            v-for="option in THEMES"
-            :key="option.value"
-            @click="setTheme(option.value)"
-            class="flex-1 py-3 font-semibold"
-            :class="settings.theme === option.value ? 'bg-primary text-on-primary' : 'bg-surface text-foreground-subtle'"
-          >
-            {{ option.label }}
-          </button>
-        </div>
+        <SegmentedToggle :options="THEMES" :model-value="settings.theme" @update:model-value="setTheme" />
       </div>
 
       <div>
         <label class="text-sm text-foreground-muted mb-2 block">Preferred weight unit</label>
-        <div class="flex rounded-xl overflow-hidden border border-border">
-          <button
-            @click="setPreferredUnit('lbs')"
-            class="flex-1 py-3 font-semibold"
-            :class="settings.preferredUnit === 'lbs' ? 'bg-primary text-on-primary' : 'bg-surface text-foreground-subtle'"
-          >
-            LBs
-          </button>
-          <button
-            @click="setPreferredUnit('kg')"
-            class="flex-1 py-3 font-semibold"
-            :class="settings.preferredUnit === 'kg' ? 'bg-primary text-on-primary' : 'bg-surface text-foreground-subtle'"
-          >
-            KGs
-          </button>
-        </div>
+        <SegmentedToggle :options="UNITS" :model-value="settings.preferredUnit" @update:model-value="setPreferredUnit" />
         <p class="text-xs text-foreground-faint mt-2">Only affects how numbers are displayed — your logged history is never rewritten.</p>
       </div>
 
