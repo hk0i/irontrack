@@ -8,7 +8,7 @@
 import { computed } from 'vue';
 import type { SetRowState } from '../../shared/types';
 import type { ResistanceType } from '../../shared/db';
-import { THERABAND_COLORS } from '../../shared/band-colors';
+import BandColorPicker from '../../shared/components/BandColorPicker.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -45,15 +45,6 @@ const isEmpty = computed(
   () => !props.row.checked && props.row.weightEntered === '' && props.row.reps === '' && props.row.bandColors.length === 0
 );
 
-function toggleBandColor(color: string) {
-  const i = props.row.bandColors.indexOf(color);
-  if (i === -1) props.row.bandColors.push(color);
-  else props.row.bandColors.splice(i, 1);
-}
-
-function resetBandColors() {
-  props.row.bandColors.splice(0, props.row.bandColors.length);
-}
 </script>
 
 <template>
@@ -80,29 +71,7 @@ function resetBandColors() {
       </button>
     </template>
 
-    <div v-else-if="resistanceType === 'bands'" class="flex flex-wrap gap-1 max-w-[220px]">
-      <button
-        v-for="color in THERABAND_COLORS"
-        :key="color"
-        @click="toggleBandColor(color)"
-        :disabled="row.checked"
-        :aria-label="color + ' band'"
-        :aria-pressed="row.bandColors.includes(color)"
-        class="px-2 h-7 rounded-full border text-[10px] font-semibold disabled:opacity-50"
-        :class="row.bandColors.includes(color) ? 'bg-primary border-primary text-on-primary' : 'bg-surface-2 border-border-strong text-foreground-subtle'"
-      >
-        {{ color }}
-      </button>
-      <button
-        v-if="row.bandColors.length"
-        @click="resetBandColors"
-        :disabled="row.checked"
-        aria-label="Clear band selection"
-        class="px-2 h-7 rounded-full border border-border-strong text-[10px] font-semibold text-foreground-muted disabled:opacity-50"
-      >
-        Reset
-      </button>
-    </div>
+    <BandColorPicker v-else-if="resistanceType === 'bands'" v-model="row.bandColors" :disabled="row.checked" class="max-w-[220px]" />
 
     <input
       v-model="row.reps"

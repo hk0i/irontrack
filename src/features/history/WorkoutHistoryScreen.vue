@@ -13,12 +13,12 @@ import {
   type WeightUnit,
   type WorkoutSession,
 } from '../../shared/db';
-import { THERABAND_COLORS } from '../../shared/band-colors';
 import { settings } from '../../shared/store';
 import { confirmThenDelete } from '../../shared/confirm';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import IconButton from '../../shared/components/IconButton.vue';
 import EmptyState from '../../shared/components/EmptyState.vue';
+import BandColorPicker from '../../shared/components/BandColorPicker.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
 
 defineProps<{
@@ -173,13 +173,6 @@ function toggleEditUnit(set: EditableSet) {
   set._editUnit = set._editUnit === 'lbs' ? 'kg' : 'lbs';
 }
 
-function toggleEditBandColor(set: EditableSet, color: string) {
-  const colors = set._editBandColors || (set._editBandColors = []);
-  const i = colors.indexOf(color);
-  if (i === -1) colors.push(color);
-  else colors.splice(i, 1);
-}
-
 function editIsValid(set: EditableSet) {
   const weightText = (set._editWeight || '').trim();
   const weightEntered = weightText === '' ? 0 : parseFloat(weightText);
@@ -284,19 +277,14 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
                     />
                   </template>
 
-                  <div v-else-if="exercise.resistanceType === 'bands'" class="flex flex-wrap gap-1 max-w-[180px]">
-                    <button
-                      v-for="color in THERABAND_COLORS"
-                      :key="color"
-                      @click="toggleEditBandColor(set, color)"
-                      :aria-label="color + ' band'"
-                      :aria-pressed="(set._editBandColors || []).includes(color)"
-                      class="px-2 h-7 rounded-full border text-[10px] font-semibold"
-                      :class="(set._editBandColors || []).includes(color) ? 'bg-primary border-primary text-on-primary' : 'bg-surface border-border-strong text-foreground-subtle'"
-                    >
-                      {{ color }}
-                    </button>
-                  </div>
+                  <BandColorPicker
+                    v-else-if="exercise.resistanceType === 'bands'"
+                    :model-value="set._editBandColors || []"
+                    @update:model-value="set._editBandColors = $event"
+                    :show-reset="false"
+                    variant="surface"
+                    class="max-w-[180px]"
+                  />
 
                   <input
                     v-model="set._editReps"
