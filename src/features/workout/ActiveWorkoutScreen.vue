@@ -21,6 +21,7 @@ import {
 } from '../../shared/db';
 import { COMMON_EXERCISES } from '../../shared/common-exercises';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
+import SegmentedToggle from '../../shared/components/SegmentedToggle.vue';
 import { settings } from '../../shared/store';
 import { activeSession, setActiveSession, clearActiveSession } from '../../shared/active-session';
 import type { NavParams, ScreenName, SetRowState } from '../../shared/types';
@@ -565,17 +566,7 @@ async function createAndAddAdhocExercise() {
           class="w-full rounded-xl bg-surface border border-border px-4 py-3 text-base"
         />
 
-        <div class="flex rounded-xl overflow-hidden border border-border">
-          <button
-            v-for="option in RESISTANCE_TYPES"
-            :key="option.value"
-            @click="newExerciseResistanceType = option.value"
-            class="flex-1 py-2 text-xs font-semibold"
-            :class="newExerciseResistanceType === option.value ? 'bg-primary text-on-primary' : 'bg-surface text-foreground-subtle'"
-          >
-            {{ option.label }}
-          </button>
-        </div>
+        <SegmentedToggle :options="RESISTANCE_TYPES" v-model="newExerciseResistanceType" size="sm" />
         <p class="text-xs text-foreground-faint">Resistance type for the next new exercise you add.</p>
 
         <div v-if="searchQuery.trim()" class="space-y-1">

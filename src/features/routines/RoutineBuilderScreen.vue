@@ -16,6 +16,7 @@ import {
 } from '../../shared/db';
 import { COMMON_EXERCISES } from '../../shared/common-exercises';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
+import SegmentedToggle from '../../shared/components/SegmentedToggle.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
 
 // mergedResults mixes real Exercise rows with not-yet-created suggestions
@@ -225,16 +226,8 @@ async function save() {
           class="w-full rounded-xl bg-surface border border-border px-4 py-3 text-base"
         />
 
-        <div class="flex rounded-xl overflow-hidden border border-border mt-2">
-          <button
-            v-for="option in RESISTANCE_TYPES"
-            :key="option.value"
-            @click="newExerciseResistanceType = option.value"
-            class="flex-1 py-2 text-xs font-semibold"
-            :class="newExerciseResistanceType === option.value ? 'bg-primary text-on-primary' : 'bg-surface text-foreground-subtle'"
-          >
-            {{ option.label }}
-          </button>
+        <div class="mt-2">
+          <SegmentedToggle :options="RESISTANCE_TYPES" v-model="newExerciseResistanceType" size="sm" />
         </div>
         <p class="text-xs text-foreground-faint mt-1">Resistance type for the next new exercise you add.</p>
 
