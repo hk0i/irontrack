@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import {
   getRoutineById,
   getExerciseById,
@@ -24,6 +24,8 @@ import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import SegmentedToggle from '../../shared/components/SegmentedToggle.vue';
 import { settings } from '../../shared/store';
 import { activeSession, setActiveSession, clearActiveSession } from '../../shared/active-session';
+import { startRestTimer } from '../../shared/rest-timer';
+import { requestRestTimerPermission } from '../../shared/rest-alert';
 import type { NavParams, ScreenName, SetRowState } from '../../shared/types';
 import SetRow from './SetRow.vue';
 
@@ -113,17 +115,19 @@ const sessionId = session?.sessionId ?? null;
 
 // Marks this session resumable the moment it starts, not just on Finish —
 // otherwise navigating away before ever tapping Finish would still lose it.
+// Requesting notification permission here (rather than lazily on the first
+// rest timer) keeps the prompt out of the way before it's ever needed. No
+// need to distinguish fresh-start from resume: the browser only prompts
+// once regardless of how many times this is called — requestRestTimerPermission
+// itself no-ops once permission is no longer 'default'.
 if (session && routineId) {
   setActiveSession({ sessionId: session.sessionId, routineId, startedAt: session.startedAt });
+  requestRestTimerPermission();
 }
 
 const blocks = ref<WorkoutBlock[]>([]);
 const ghostTextByExercise: Record<string, string | null> = reactive({});
 const setRowsByExercise: Record<string, SetRowState[]> = reactive({});
-
-const restBannerVisible = ref(false);
-const restBannerSecondsLeft = ref(REST_SECONDS);
-let restInterval: ReturnType<typeof setInterval> | null = null;
 
 // Rebuilds a checked row from a previously logged set, so resuming a
 // session shows exactly what was already done. Reuses the persisted
@@ -217,9 +221,6 @@ async function loadWorkout() {
 }
 
 onMounted(loadWorkout);
-onUnmounted(() => {
-  if (restInterval) clearInterval(restInterval);
-});
 
 function addRow(exerciseId: string) {
   setRowsByExercise[exerciseId].push(makeEmptyRow());
@@ -276,26 +277,6 @@ function toggleUnit(row: SetRowState) {
   row.unit = row.unit === 'lbs' ? 'kg' : 'lbs';
 }
 
-function startRestBanner() {
-  if (restInterval) clearInterval(restInterval);
-  restBannerSecondsLeft.value = REST_SECONDS;
-  restBannerVisible.value = true;
-  restInterval = setInterval(() => {
-    restBannerSecondsLeft.value -= 1;
-    if (restBannerSecondsLeft.value <= 0) {
-      if (restInterval) clearInterval(restInterval);
-      restInterval = null;
-      restBannerVisible.value = false;
-    }
-  }, 1000);
-}
-
-function dismissRestBanner() {
-  if (restInterval) clearInterval(restInterval);
-  restInterval = null;
-  restBannerVisible.value = false;
-}
-
 // partnerRow is only passed for superset rows. The rest banner should
 // fire once per superset pair, after whichever exercise is checked off
 // last — not after each individual component set — so it only starts
@@ -344,7 +325,7 @@ async function checkRow(exerciseId: string, row: SetRowState, partnerRow: SetRow
   // being logged in this session, so set 2 never shows set 1's own data.
 
   if (!isEdit && (!partnerRow || partnerRow.checked)) {
-    startRestBanner();
+    startRestTimer(REST_SECONDS);
   }
 }
 
@@ -598,14 +579,6 @@ async function createAndAddAdhocExercise() {
       >
         Finish Workout
       </button>
-    </div>
-
-    <div
-      v-if="restBannerVisible"
-      class="fixed inset-x-0 bottom-0 bg-primary-strong text-on-primary px-4 py-4 flex items-center justify-between font-semibold"
-    >
-      <span>Rest: {{ restBannerSecondsLeft }}s</span>
-      <button @click="dismissRestBanner" class="px-4 py-2 rounded-lg bg-background/25 active:bg-background/40">Skip</button>
     </div>
   </div>
 </template>
