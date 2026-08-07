@@ -42,16 +42,9 @@ const linkModeExerciseId = ref<string | null>(null);
 // per-row cycle button in "Routine order" instead.
 const newExerciseResistanceType = ref<ResistanceType>('weight');
 
-function cycleResistanceType(current: ResistanceType | undefined): ResistanceType {
-  const order: ResistanceType[] = ['weight', 'bodyweight', 'bands'];
-  const index = order.indexOf(current || 'weight');
-  return order[(index + 1) % order.length];
-}
-
-async function toggleResistanceType(exercise: Exercise) {
-  const next = cycleResistanceType(exercise.resistanceType);
-  await updateExercise(exercise.id, { resistanceType: next });
-  exercise.resistanceType = next;
+async function setResistanceType(exercise: Exercise, value: ResistanceType) {
+  await updateExercise(exercise.id, { resistanceType: value });
+  exercise.resistanceType = value;
 }
 
 const draggingIndex = ref<number | null>(null);
@@ -281,13 +274,14 @@ async function save() {
               </svg>
             </button>
             <span class="flex-1">{{ exercise.name }}</span>
-            <button
-              @click="toggleResistanceType(exercise)"
-              :aria-label="'Resistance type: ' + (exercise.resistanceType || 'weight') + ', tap to change'"
-              class="px-2.5 h-8 flex-shrink-0 flex items-center justify-center rounded-full bg-surface-2 text-foreground-subtle text-[10px] font-semibold uppercase tracking-wide"
+            <select
+              :value="exercise.resistanceType || 'weight'"
+              @change="setResistanceType(exercise, ($event.target as HTMLSelectElement).value as ResistanceType)"
+              :aria-label="'Resistance type for ' + exercise.name"
+              class="pl-2.5 pr-1 h-8 flex-shrink-0 rounded-full bg-surface-2 text-foreground-subtle text-[10px] font-semibold uppercase tracking-wide border-none appearance-none"
             >
-              {{ (exercise.resistanceType || 'weight').slice(0, 4) }}
-            </button>
+              <option v-for="opt in RESISTANCE_TYPES" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
             <button
               @click="toggleLink(exercise)"
               :aria-label="exercise.supersetWith ? 'Unlink superset' : 'Link as superset'"
