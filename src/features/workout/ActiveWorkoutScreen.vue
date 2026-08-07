@@ -12,6 +12,7 @@ import {
   type WeightUnit,
 } from '../../shared/db';
 import { settings } from '../../shared/store';
+import { setActiveSession, clearActiveSession } from '../../shared/active-session';
 import type { NavParams, ScreenName, SetRowState } from '../../shared/types';
 import SetRow from './SetRow.vue';
 
@@ -75,6 +76,14 @@ const startedAt = routineId ? Date.now() : null;
 // Finish, so history can group this session's sets together instead of
 // merging them with any other same-day session of the same routine.
 const sessionId = routineId ? crypto.randomUUID() : null;
+
+// Marks this session resumable the moment it starts, not just on Finish —
+// otherwise navigating away before ever tapping Finish would still lose it.
+// Resume detection (reusing a prior sessionId/startedAt instead of always
+// generating fresh ones here) lands in a later step.
+if (routineId && sessionId && startedAt) {
+  setActiveSession({ sessionId, routineId, startedAt });
+}
 
 const blocks = ref<WorkoutBlock[]>([]);
 const ghostTextByExercise: Record<string, string | null> = reactive({});
@@ -280,6 +289,7 @@ async function finishWorkout() {
   if (routineId && startedAt) {
     await logWorkoutSession({ id: sessionId!, routineId, date: todayString(), startedAt, endedAt: Date.now() });
   }
+  clearActiveSession();
   emit('navigate', 'dashboard');
 }
 </script>
