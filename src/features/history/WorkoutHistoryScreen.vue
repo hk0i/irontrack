@@ -8,10 +8,12 @@ import {
   updateSet,
   deleteSet,
   formatWeight,
+  type ResistanceType,
   type SetEntry,
   type WeightUnit,
   type WorkoutSession,
 } from '../../shared/db';
+import { THERABAND_COLORS } from '../../shared/band-colors';
 import { settings } from '../../shared/store';
 import { confirmThenDelete } from '../../shared/confirm';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
@@ -32,10 +34,16 @@ type EditableSet = SetEntry & {
   _editWeight?: string;
   _editReps?: string;
   _editUnit?: WeightUnit;
+  _editBandColors?: string[];
 };
 
 interface ExerciseGroup {
   name: string;
+  // Determines which fields the inline edit form shows — mirrors
+  // SetRow.vue's own resistanceType branching (weight+unit / band chips /
+  // reps-only), so editing a historical bodyweight or band-resistance set
+  // no longer shows an irrelevant weight field or loses band-color edits.
+  resistanceType: ResistanceType;
   sets: EditableSet[];
 }
 
@@ -129,6 +137,7 @@ onMounted(async () => {
       durations,
       exercises: [...session.byExercise.entries()].map(([exerciseId, exerciseSets]) => ({
         name: exerciseById.get(exerciseId)?.name || 'Unknown exercise',
+        resistanceType: exerciseById.get(exerciseId)?.resistanceType || 'weight',
         sets: exerciseSets,
       })),
     };
@@ -148,6 +157,7 @@ function startEdit(set: EditableSet) {
   set._editWeight = String(set.weightEntered);
   set._editReps = String(set.reps);
   set._editUnit = set.unit;
+  set._editBandColors = set.bandColors ? [...set.bandColors] : [];
   editingId.value = set.id;
 }
 
@@ -155,11 +165,19 @@ function cancelEdit(set: EditableSet) {
   delete set._editWeight;
   delete set._editReps;
   delete set._editUnit;
+  delete set._editBandColors;
   editingId.value = null;
 }
 
 function toggleEditUnit(set: EditableSet) {
   set._editUnit = set._editUnit === 'lbs' ? 'kg' : 'lbs';
+}
+
+function toggleEditBandColor(set: EditableSet, color: string) {
+  const colors = set._editBandColors || (set._editBandColors = []);
+  const i = colors.indexOf(color);
+  if (i === -1) colors.push(color);
+  else colors.splice(i, 1);
 }
 
 function editIsValid(set: EditableSet) {
@@ -169,20 +187,26 @@ function editIsValid(set: EditableSet) {
   return !Number.isNaN(weightEntered) && !Number.isNaN(reps);
 }
 
-async function saveEdit(set: EditableSet) {
+async function saveEdit(exercise: ExerciseGroup, set: EditableSet) {
   if (!editIsValid(set)) return;
   const weightText = (set._editWeight || '').trim();
   const weightEntered = weightText === '' ? 0 : parseFloat(weightText);
   const reps = parseInt(set._editReps || '', 10);
   const unit = set._editUnit!;
-  const { weightInLbs } = await updateSet(set.id, { reps, weightEntered, unit });
+  // Only band-resistance exercises actually edit bandColors — passing it
+  // for the other two types would blow away band data that was never
+  // shown/editable in their form, even though none should exist there.
+  const bandColors = exercise.resistanceType === 'bands' ? [...(set._editBandColors || [])] : undefined;
+  const { weightInLbs } = await updateSet(set.id, { reps, weightEntered, unit, bandColors });
   set.reps = reps;
   set.weightEntered = weightEntered;
   set.unit = unit;
   set.weightInLbs = weightInLbs;
+  if (bandColors) set.bandColors = bandColors;
   delete set._editWeight;
   delete set._editReps;
   delete set._editUnit;
+  delete set._editBandColors;
   editingId.value = null;
 }
 
@@ -249,14 +273,31 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
                   </IconButton>
                 </div>
 
-                <div v-else class="flex items-center gap-1.5 bg-surface-2 rounded-lg p-1.5">
-                  <input
-                    v-model="set._editWeight"
-                    inputmode="decimal"
-                    type="text"
-                    placeholder="Wt"
-                    class="w-16 h-11 rounded-lg bg-surface border border-border-strong px-2 text-center"
-                  />
+                <div v-else class="flex items-center gap-1.5 bg-surface-2 rounded-lg p-1.5 flex-wrap">
+                  <template v-if="exercise.resistanceType === 'weight'">
+                    <input
+                      v-model="set._editWeight"
+                      inputmode="decimal"
+                      type="text"
+                      placeholder="Wt"
+                      class="w-16 h-11 rounded-lg bg-surface border border-border-strong px-2 text-center"
+                    />
+                  </template>
+
+                  <div v-else-if="exercise.resistanceType === 'bands'" class="flex flex-wrap gap-1 max-w-[180px]">
+                    <button
+                      v-for="color in THERABAND_COLORS"
+                      :key="color"
+                      @click="toggleEditBandColor(set, color)"
+                      :aria-label="color + ' band'"
+                      :aria-pressed="(set._editBandColors || []).includes(color)"
+                      class="px-2 h-7 rounded-full border text-[10px] font-semibold"
+                      :class="(set._editBandColors || []).includes(color) ? 'bg-primary border-primary text-on-primary' : 'bg-surface border-border-strong text-foreground-subtle'"
+                    >
+                      {{ color }}
+                    </button>
+                  </div>
+
                   <input
                     v-model="set._editReps"
                     inputmode="numeric"
@@ -265,11 +306,12 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
                     class="w-14 h-11 rounded-lg bg-surface border border-border-strong px-2 text-center"
                   />
                   <button
+                    v-if="exercise.resistanceType === 'weight'"
                     @click="toggleEditUnit(set)"
                     class="w-14 h-11 flex-shrink-0 rounded-full bg-surface border border-border-strong text-xs font-semibold uppercase"
                   >{{ set._editUnit }}</button>
                   <button
-                    @click="saveEdit(set)"
+                    @click="saveEdit(exercise, set)"
                     :disabled="!editIsValid(set)"
                     aria-label="Save set"
                     class="w-11 h-11 flex-shrink-0 rounded-lg bg-primary text-on-primary flex items-center justify-center disabled:opacity-30"
