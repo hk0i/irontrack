@@ -8,7 +8,7 @@
 withDefaults(
   defineProps<{
     size?: 'sm' | 'md';
-    tone?: 'default' | 'danger';
+    tone?: 'default' | 'danger' | 'success';
   }>(),
   { size: 'md', tone: 'default' }
 );
@@ -16,8 +16,10 @@ withDefaults(
 const VARIANT_CLASSES: Record<string, string> = {
   'md-default': 'w-11 h-11 rounded-full bg-surface-2 active:bg-surface-3',
   'md-danger': 'w-11 h-11 rounded-full bg-danger/15 text-danger active:bg-danger/25',
+  'md-success': 'w-11 h-11 rounded-full bg-success/15 text-success active:bg-success/25',
   'sm-default': 'w-7 h-7 flex-shrink-0 rounded-md text-secondary active:bg-surface-3',
   'sm-danger': 'w-7 h-7 flex-shrink-0 rounded-md text-danger active:bg-surface-3',
+  'sm-success': 'w-7 h-7 flex-shrink-0 rounded-md text-success active:bg-surface-3',
 };
 </script>
 
