@@ -4,10 +4,11 @@ import { getAllExercises, getSetsForExercise, formatWeight, type Exercise, type 
 import { settings } from '../../shared/store';
 import { useMultiTrendChart } from '../../shared/composables/useMultiTrendChart';
 import { aggregateSetsByDay, type DailyProgressPoint } from '../../shared/setAggregation';
-import type { TrendChartPoint } from '../../shared/composables/useTrendChart';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import EmptyState from '../../shared/components/EmptyState.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
+
+type SeriesKey = 'weight' | 'volume';
 
 const CHART_WIDTH = 320;
 const CHART_HEIGHT = 200;
@@ -23,7 +24,9 @@ const emit = defineEmits<{
 const exercises = ref<Exercise[]>([]);
 const selectedExerciseId = ref(props.navParams?.initialExerciseId || '');
 const sets = ref<SetEntry[]>([]);
-const activeModalDay = ref<DailyProgressPoint | null>(null);
+const chartSvg = ref<SVGSVGElement | null>(null);
+const selectedSeriesKey = ref<SeriesKey>('weight');
+const selectedIndex = ref(0);
 
 onMounted(async () => {
   exercises.value = await getAllExercises();
@@ -38,6 +41,12 @@ watch(selectedExerciseId, async (id) => {
 
 const dailyPoints = computed<DailyProgressPoint[]>(() => aggregateSetsByDay(sets.value));
 
+// Default to the most recent day whenever the underlying data changes, so
+// the detail view is never empty.
+watch(dailyPoints, (points) => {
+  selectedIndex.value = points.length ? points.length - 1 : 0;
+}, { immediate: true });
+
 const { seriesPoints, seriesPolylines } = useMultiTrendChart(
   dailyPoints,
   [
@@ -47,18 +56,45 @@ const { seriesPoints, seriesPolylines } = useMultiTrendChart(
   { width: CHART_WIDTH, height: CHART_HEIGHT, padding: PADDING }
 );
 
-function openModal(point: TrendChartPoint<DailyProgressPoint>) {
-  activeModalDay.value = point.item;
+const selectedDay = computed<DailyProgressPoint | null>(() => dailyPoints.value[selectedIndex.value] ?? null);
+
+const selectedPoint = computed(() => {
+  const points = seriesPoints.value[selectedSeriesKey.value];
+  return points?.[selectedIndex.value] ?? null;
+});
+
+const selectedDaySetCount = computed(() => {
+  const day = selectedDay.value;
+  return day ? sets.value.filter((s) => s.date === day.date).length : 0;
+});
+
+// Maps a pointer's clientX to the nearest day index, in the chart's own SVG
+// coordinate space (the SVG is scaled by CSS, so we can't compare clientX
+// to CHART_WIDTH directly).
+function clientXToIndex(clientX: number): number {
+  const svg = chartSvg.value;
+  const count = dailyPoints.value.length;
+  if (!svg || count <= 1) return 0;
+  const rect = svg.getBoundingClientRect();
+  const svgX = ((clientX - rect.left) / rect.width) * CHART_WIDTH;
+  const usableWidth = CHART_WIDTH - PADDING * 2;
+  const step = usableWidth / (count - 1);
+  const rawIndex = (svgX - PADDING) / step;
+  return Math.min(count - 1, Math.max(0, Math.round(rawIndex)));
 }
 
-function closeModal() {
-  activeModalDay.value = null;
+// Starting a gesture on a point locks in which series (weight or volume) is
+// being scrubbed for the whole gesture — only x movement is tracked from
+// here on, so a drag can't accidentally hop from one line to the other.
+function startScrub(seriesKey: SeriesKey, index: number, event: PointerEvent) {
+  selectedSeriesKey.value = seriesKey;
+  selectedIndex.value = index;
+  (event.target as Element).setPointerCapture(event.pointerId);
 }
 
-function formattedEntry(day: DailyProgressPoint) {
-  const weight = formatWeight(day.weight, settings.preferredUnit);
-  const volume = formatWeight(day.volume, settings.preferredUnit);
-  return `${day.date}: ${weight} ${settings.preferredUnit} top set · ${volume} ${settings.preferredUnit} volume`;
+function scrubMove(event: PointerEvent) {
+  if (event.buttons === 0) return;
+  selectedIndex.value = clientXToIndex(event.clientX);
 }
 </script>
 
@@ -87,30 +123,46 @@ function formattedEntry(day: DailyProgressPoint) {
             Volume
           </span>
         </div>
-        <svg :viewBox="'0 0 ' + CHART_WIDTH + ' ' + CHART_HEIGHT" class="w-full h-auto">
+        <svg ref="chartSvg" :viewBox="'0 0 ' + CHART_WIDTH + ' ' + CHART_HEIGHT" class="w-full h-auto touch-none">
           <polyline :points="seriesPolylines.volume" fill="none" stroke="var(--color-chart-2)" stroke-width="2" />
           <polyline :points="seriesPolylines.weight" fill="none" stroke="var(--color-primary)" stroke-width="2" />
-          <g v-for="(point, i) in seriesPoints.volume" :key="'volume-' + i" @click="openModal(point)" class="cursor-pointer">
-            <circle :cx="point.x" :cy="point.y" r="14" fill="transparent" />
-            <circle :cx="point.x" :cy="point.y" r="4" fill="var(--color-chart-2)" />
+          <g v-for="(point, i) in seriesPoints.volume" :key="'volume-' + i">
+            <circle
+              :cx="point.x" :cy="point.y" r="14" fill="transparent" class="cursor-pointer"
+              @pointerdown="startScrub('volume', i, $event)"
+              @pointermove="scrubMove($event)"
+            />
+            <circle :cx="point.x" :cy="point.y" r="4" fill="var(--color-chart-2)" class="pointer-events-none" />
           </g>
-          <g v-for="(point, i) in seriesPoints.weight" :key="'weight-' + i" @click="openModal(point)" class="cursor-pointer">
-            <circle :cx="point.x" :cy="point.y" r="14" fill="transparent" />
-            <circle :cx="point.x" :cy="point.y" r="5" fill="var(--color-primary)" />
+          <g v-for="(point, i) in seriesPoints.weight" :key="'weight-' + i">
+            <circle
+              :cx="point.x" :cy="point.y" r="14" fill="transparent" class="cursor-pointer"
+              @pointerdown="startScrub('weight', i, $event)"
+              @pointermove="scrubMove($event)"
+            />
+            <circle :cx="point.x" :cy="point.y" r="5" fill="var(--color-primary)" class="pointer-events-none" />
           </g>
+          <circle
+            v-if="selectedPoint"
+            :cx="selectedPoint.x" :cy="selectedPoint.y" r="9" fill="none"
+            :stroke="selectedSeriesKey === 'weight' ? 'var(--color-primary)' : 'var(--color-chart-2)'"
+            stroke-width="2" class="pointer-events-none"
+          />
         </svg>
+
+        <div v-if="selectedDay" class="mt-4 pt-4 border-t border-border flex items-center justify-between">
+          <span class="text-sm text-foreground-muted">{{ selectedDay.date }}</span>
+          <span class="text-base font-semibold">
+            <template v-if="selectedSeriesKey === 'weight'">
+              {{ formatWeight(selectedDay.weight, settings.preferredUnit) }} {{ settings.preferredUnit }} top set
+            </template>
+            <template v-else>
+              {{ formatWeight(selectedDay.volume, settings.preferredUnit) }} {{ settings.preferredUnit }} volume
+            </template>
+            <span class="text-foreground-muted font-normal"> · {{ selectedDaySetCount }} sets</span>
+          </span>
+        </div>
       </div>
     </main>
-
-    <div
-      v-if="activeModalDay"
-      @click.self="closeModal"
-      class="fixed inset-0 bg-overlay/60 flex items-center justify-center px-6"
-    >
-      <div class="bg-surface border border-border rounded-2xl p-6 w-full max-w-sm">
-        <p class="text-base mb-4">{{ formattedEntry(activeModalDay) }}</p>
-        <button @click="closeModal" class="w-full py-3 rounded-xl bg-surface-2 font-semibold">Close</button>
-      </div>
-    </div>
   </div>
 </template>
