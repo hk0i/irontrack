@@ -4,6 +4,7 @@ import { getAllRoutines, deleteRoutine, getAllSets, type Routine } from '../../s
 import { activeSession, clearActiveSession } from '../../shared/active-session';
 import { confirmThenDelete } from '../../shared/confirm';
 import IconButton from '../../shared/components/IconButton.vue';
+import EmptyState from '../../shared/components/EmptyState.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
 
 defineProps<{
@@ -108,9 +109,7 @@ async function removeRoutine(routine: Routine) {
     </header>
 
     <main class="px-4 py-4 space-y-3">
-      <div v-if="routines.length === 0" class="text-foreground-muted text-center mt-16">
-        No routines yet. Tap + to build your first one.
-      </div>
+      <EmptyState v-if="routines.length === 0">No routines yet. Tap + to build your first one.</EmptyState>
 
       <button
         v-if="resumableRoutine"

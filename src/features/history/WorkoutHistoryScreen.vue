@@ -16,6 +16,7 @@ import { settings } from '../../shared/store';
 import { confirmThenDelete } from '../../shared/confirm';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import IconButton from '../../shared/components/IconButton.vue';
+import EmptyState from '../../shared/components/EmptyState.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
 
 defineProps<{
@@ -206,9 +207,7 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
     <ScreenHeader title="Workout History" @back="emit('navigate', 'dashboard')" />
 
     <main class="px-4 py-4 space-y-4">
-      <div v-if="days.length === 0" class="text-foreground-muted text-center mt-16">
-        No workouts logged yet.
-      </div>
+      <EmptyState v-if="days.length === 0">No workouts logged yet.</EmptyState>
 
       <div
         v-for="day in days"

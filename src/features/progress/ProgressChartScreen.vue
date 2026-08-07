@@ -3,6 +3,7 @@ import { ref, watch, onMounted, computed } from 'vue';
 import { getAllExercises, getSetsForExercise, formatWeight, type Exercise, type SetEntry } from '../../shared/db';
 import { settings } from '../../shared/store';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
+import EmptyState from '../../shared/components/EmptyState.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
 
 const CHART_WIDTH = 320;
@@ -83,9 +84,7 @@ function formattedEntry(set: SetEntry) {
         <option v-for="exercise in exercises" :key="exercise.id" :value="exercise.id">{{ exercise.name }}</option>
       </select>
 
-      <div v-if="sets.length === 0" class="text-foreground-muted text-center mt-16">
-        No logged sets for this exercise yet.
-      </div>
+      <EmptyState v-if="sets.length === 0">No logged sets for this exercise yet.</EmptyState>
 
       <div v-else class="bg-surface border border-border rounded-2xl p-4">
         <svg :viewBox="'0 0 ' + CHART_WIDTH + ' ' + CHART_HEIGHT" class="w-full h-auto">
