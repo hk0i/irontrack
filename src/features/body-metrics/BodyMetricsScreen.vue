@@ -13,6 +13,7 @@ import {
   type Unit,
 } from '../../shared/db';
 import { settings } from '../../shared/store';
+import { useTrendChart, type TrendChartPoint } from '../../shared/composables/useTrendChart';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
 
@@ -27,14 +28,10 @@ const emit = defineEmits<{
   navigate: [screen: ScreenName, params?: NavParams];
 }>();
 
-interface ChartPoint {
-  x: number;
-  y: number;
-}
-
 const blueprints = ref<MetricBlueprint[]>([]);
 const selectedBlueprintId = ref('');
 const recentLogs = ref<MetricLog[]>([]);
+const activeModalLog = ref<MetricLog | null>(null);
 
 const newTrackerName = ref('');
 const newTrackerType = ref<MetricType>('mass');
@@ -117,25 +114,30 @@ const chartPreferredUnit = computed<Unit | ''>(() => {
   return selectedBlueprint.value.type === 'mass' ? settings.preferredUnit : settings.preferredLengthUnit;
 });
 
-const points = computed<ChartPoint[]>(() => {
-  if (!selectedBlueprint.value || recentLogs.value.length === 0) return [];
-  const type = selectedBlueprint.value.type;
-  const unit = chartPreferredUnit.value;
-  if (!unit) return [];
-  const values = recentLogs.value.map((log) => formatMetricValue(log.valueBaseline, type, unit));
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-  const usableWidth = CHART_WIDTH - PADDING * 2;
-  const usableHeight = CHART_HEIGHT - PADDING * 2;
-  const step = values.length > 1 ? usableWidth / (values.length - 1) : 0;
-  return values.map((value, i) => ({
-    x: PADDING + step * i,
-    y: PADDING + usableHeight - ((value - min) / range) * usableHeight,
-  }));
-});
+// Empty when there's no valid blueprint/unit to plot against — the
+// composable's own "0 items" guard then keeps points empty too, same as
+// the inline check this replaced.
+const chartLogs = computed<MetricLog[]>(() => (selectedBlueprint.value && chartPreferredUnit.value ? recentLogs.value : []));
 
-const polylinePoints = computed(() => points.value.map((p) => `${p.x},${p.y}`).join(' '));
+const { points, polylinePoints } = useTrendChart(
+  chartLogs,
+  (log) => formatMetricValue(log.valueBaseline, selectedBlueprint.value!.type, chartPreferredUnit.value as Unit),
+  { width: CHART_WIDTH, height: CHART_HEIGHT, padding: PADDING }
+);
+
+function openModal(point: TrendChartPoint<MetricLog>) {
+  activeModalLog.value = point.item;
+}
+
+function closeModal() {
+  activeModalLog.value = null;
+}
+
+function formattedLogEntry(log: MetricLog) {
+  if (!selectedBlueprint.value || !chartPreferredUnit.value) return '';
+  const value = formatMetricValue(log.valueBaseline, selectedBlueprint.value.type, chartPreferredUnit.value);
+  return `${log.date}: ${value} ${chartPreferredUnit.value}`;
+}
 </script>
 
 <template>
@@ -220,9 +222,23 @@ const polylinePoints = computed(() => points.value.map((p) => `${p.x},${p.y}`).j
         <div v-if="points.length === 0" class="text-foreground-faint text-sm py-8 text-center">No logged entries yet.</div>
         <svg v-else :viewBox="'0 0 ' + CHART_WIDTH + ' ' + CHART_HEIGHT" class="w-full h-auto">
           <polyline :points="polylinePoints" fill="none" stroke="var(--color-primary)" stroke-width="2" />
-          <circle v-for="(point, i) in points" :key="i" :cx="point.x" :cy="point.y" r="4" fill="var(--color-primary)" />
+          <g v-for="(point, i) in points" :key="i" @click="openModal(point)" class="cursor-pointer">
+            <circle :cx="point.x" :cy="point.y" r="14" fill="transparent" />
+            <circle :cx="point.x" :cy="point.y" r="4" fill="var(--color-primary)" />
+          </g>
         </svg>
       </div>
     </main>
+
+    <div
+      v-if="activeModalLog"
+      @click.self="closeModal"
+      class="fixed inset-0 bg-overlay/60 flex items-center justify-center px-6"
+    >
+      <div class="bg-surface border border-border rounded-2xl p-6 w-full max-w-sm">
+        <p class="text-base mb-4">{{ formattedLogEntry(activeModalLog) }}</p>
+        <button @click="closeModal" class="w-full py-3 rounded-xl bg-surface-2 font-semibold">Close</button>
+      </div>
+    </div>
   </div>
 </template>
