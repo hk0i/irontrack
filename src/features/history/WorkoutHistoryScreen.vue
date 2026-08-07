@@ -14,6 +14,7 @@ import {
 } from '../../shared/db';
 import { settings } from '../../shared/store';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
+import IconButton from '../../shared/components/IconButton.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
 
 defineProps<{
@@ -235,24 +236,16 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
                   class="flex items-center gap-1 text-xs pl-2 pr-1 py-1 rounded-lg bg-surface-2 text-foreground-subtle"
                 >
                   <span>{{ formattedSet(set) }}</span>
-                  <button
-                    @click="startEdit(set)"
-                    :aria-label="'Edit set'"
-                    class="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-md text-secondary active:bg-surface-3"
-                  >
+                  <IconButton @click="startEdit(set)" aria-label="Edit set" size="sm">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 112.914 2.914L7.5 19.675l-4 1 1-4L16.862 4.487z" />
                     </svg>
-                  </button>
-                  <button
-                    @click="deleteEntry(day, exercise, set)"
-                    aria-label="Delete set"
-                    class="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-md text-danger active:bg-surface-3"
-                  >
+                  </IconButton>
+                  <IconButton @click="deleteEntry(day, exercise, set)" aria-label="Delete set" size="sm" tone="danger">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0l1 13a2 2 0 002 2h4a2 2 0 002-2l1-13" />
                     </svg>
-                  </button>
+                  </IconButton>
                 </div>
 
                 <div v-else class="flex items-center gap-1.5 bg-surface-2 rounded-lg p-1.5">
