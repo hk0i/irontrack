@@ -13,6 +13,7 @@ import {
   type WorkoutSession,
 } from '../../shared/db';
 import { settings } from '../../shared/store';
+import { confirmThenDelete } from '../../shared/confirm';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import IconButton from '../../shared/components/IconButton.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
@@ -187,15 +188,16 @@ async function saveEdit(set: EditableSet) {
 // Prunes empty exercise groups/days after a delete so the screen never
 // shows a leftover heading with nothing under it.
 async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: EditableSet) {
-  if (!confirm('Delete this set? This cannot be undone.')) return;
-  await deleteSet(set.id);
-  exercise.sets = exercise.sets.filter((s) => s.id !== set.id);
-  if (exercise.sets.length === 0) {
-    day.exercises = day.exercises.filter((e) => e !== exercise);
-  }
-  if (day.exercises.length === 0) {
-    days.value = days.value.filter((d) => d !== day);
-  }
+  await confirmThenDelete('Delete this set? This cannot be undone.', async () => {
+    await deleteSet(set.id);
+    exercise.sets = exercise.sets.filter((s) => s.id !== set.id);
+    if (exercise.sets.length === 0) {
+      day.exercises = day.exercises.filter((e) => e !== exercise);
+    }
+    if (day.exercises.length === 0) {
+      days.value = days.value.filter((d) => d !== day);
+    }
+  });
 }
 </script>
 

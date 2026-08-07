@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { getAllRoutines, deleteRoutine, getAllSets, type Routine } from '../../shared/db';
 import { activeSession, clearActiveSession } from '../../shared/active-session';
+import { confirmThenDelete } from '../../shared/confirm';
 import IconButton from '../../shared/components/IconButton.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
 
@@ -67,9 +68,10 @@ function editRoutine(routine: Routine) {
 }
 
 async function removeRoutine(routine: Routine) {
-  if (!confirm(`Delete "${routine.name}"? This cannot be undone.`)) return;
-  await deleteRoutine(routine.id);
-  await loadRoutines();
+  await confirmThenDelete(`Delete "${routine.name}"? This cannot be undone.`, async () => {
+    await deleteRoutine(routine.id);
+    await loadRoutines();
+  });
 }
 </script>
 
