@@ -31,8 +31,15 @@ const chartSvg = ref<SVGSVGElement | null>(null);
 const selectedSeriesKey = ref<SeriesKey>('weight');
 const selectedIndex = ref(0);
 const selectedView = ref<ChartView>('all');
-const showWeight = computed(() => selectedView.value !== 'volume');
-const showVolume = computed(() => selectedView.value !== 'weight');
+
+// weightInLbs is only ever a real, entered figure for 'weight' exercises —
+// bodyweight/bands/mobility rows never collect it (see SetRow.vue), so it's
+// always 0 for them. Showing that "weight" line was confusing even to the
+// person who built it, so it's hidden entirely rather than left selectable.
+const selectedExercise = computed(() => exercisesById.value.get(selectedExerciseId.value));
+const weightApplies = computed(() => (selectedExercise.value?.resistanceType ?? 'weight') === 'weight');
+const showWeight = computed(() => weightApplies.value && selectedView.value !== 'volume');
+const showVolume = computed(() => !weightApplies.value || selectedView.value !== 'weight');
 
 onMounted(async () => {
   exercises.value = await getAllExercises();
@@ -44,6 +51,13 @@ onMounted(async () => {
 
 watch(selectedExerciseId, async (id) => {
   sets.value = id ? await getSetsForExercise(id) : [];
+}, { immediate: true });
+
+// Pin the detail panel to volume whenever weight isn't a real figure for the
+// current exercise, so switching exercises never leaves a stale "weight"
+// selection pointed at a line that's no longer shown.
+watch(weightApplies, (applies) => {
+  if (!applies) selectedSeriesKey.value = 'volume';
 }, { immediate: true });
 
 const dailyPoints = computed<DailyProgressPoint[]>(() => aggregateSetsByDay(sets.value, exercisesById.value, bodyWeightLogs.value));
@@ -141,7 +155,7 @@ function selectView(view: ChartView) {
           </span>
         </div>
 
-        <div class="inline-flex items-center gap-1 mb-2 p-1 rounded-full bg-surface-2 text-sm">
+        <div v-if="weightApplies" class="inline-flex items-center gap-1 mb-2 p-1 rounded-full bg-surface-2 text-sm">
           <button
             type="button"
             @click="selectView('weight')"
