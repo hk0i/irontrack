@@ -150,6 +150,19 @@ async function loadWorkout() {
   // resuming one already left in progress.
   const sessionSets = await getSetsForSession(sessionId);
 
+  // Sets logged this session against an exercise the routine doesn't list
+  // are from an ad-hoc exercise added mid-workout before the user left.
+  // Add those exercises in too so resuming reconstructs them as standalone
+  // blocks — this is what makes ad-hoc exercises survive a resume. Their
+  // supersetWith (if any) is deliberately ignored below: ad-hoc additions
+  // are always standalone, never paired into a superset.
+  const routineExerciseIds = new Set(exercises.map((e) => e.id));
+  const adhocExerciseIds = [...new Set(sessionSets.map((s) => s.exerciseId))].filter((id) => !routineExerciseIds.has(id));
+  for (const id of adhocExerciseIds) {
+    const exercise = await getExerciseById(id);
+    if (exercise) exercises.push(exercise);
+  }
+
   // Populate every exercise's row array and ghost text *before* exposing
   // blocks to the template. pairedRows() reads straight from
   // setRowsByExercise for both sides of a superset without a null-check,
@@ -172,7 +185,14 @@ async function loadWorkout() {
   for (const exercise of exercises) {
     if (seen.has(exercise.id)) continue;
     seen.add(exercise.id);
-    const partner = exercise.supersetWith ? exercises.find((e) => e.id === exercise.supersetWith) : undefined;
+    // Only pairs two routine-defined exercises — an ad-hoc exercise is
+    // always standalone, even if its supersetWith happens to point at
+    // (or be pointed at by) something else, so a resumed session's
+    // layout matches what "+ Add exercise" produces live.
+    const partner =
+      routineExerciseIds.has(exercise.id) && exercise.supersetWith
+        ? exercises.find((e) => e.id === exercise.supersetWith && routineExerciseIds.has(e.id))
+        : undefined;
     if (partner) {
       seen.add(partner.id);
       builtBlocks.push({ exercises: [exercise, partner] });
