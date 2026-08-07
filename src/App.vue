@@ -8,6 +8,7 @@ import WorkoutHistoryScreen from './features/history/WorkoutHistoryScreen.vue';
 import BodyMetricsScreen from './features/body-metrics/BodyMetricsScreen.vue';
 import ProgressChartScreen from './features/progress/ProgressChartScreen.vue';
 import RestTimerBanner from './shared/components/RestTimerBanner.vue';
+import ToastHost from './shared/components/ToastHost.vue';
 import type { ScreenName, NavParams } from './shared/types';
 
 const screens: Record<ScreenName, Component> = {
@@ -36,4 +37,5 @@ function navigate(screen: ScreenName, params: NavParams = {}): void {
     @navigate="navigate"
   />
   <RestTimerBanner />
+  <ToastHost />
 </template>
