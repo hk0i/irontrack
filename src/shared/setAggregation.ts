@@ -1,7 +1,7 @@
 // Aggregates SetEntry rows (one row per logged set) into one point per
-// calendar date, for the progress chart. Pure, dependency-free — no db
-// import — so it stays easy to reason about and reuse.
-import type { SetEntry } from './db';
+// calendar date, for the progress chart.
+import type { Exercise, SetEntry } from './db';
+import { sumBandResistanceLbs } from './band-colors';
 
 export interface DailyProgressPoint {
   date: string;
@@ -9,15 +9,30 @@ export interface DailyProgressPoint {
   volume: number;
 }
 
-// Same formula for every resistanceType (weight/bodyweight/bands) — no
-// branching. Flooring the weight factor at 1 lets a 0 lbs bodyweight/band
-// set still contribute `reps` to volume instead of zeroing it out, while
-// loaded sets behave as ordinary reps x weight.
-export function computeSetVolume(set: SetEntry): number {
-  return set.reps * Math.max(set.weightInLbs, 1);
+// Volume load per resistanceType — reps x resistance whenever a real
+// resistance figure is knowable, raw reps otherwise:
+//  - weight: reps x the weight actually entered.
+//  - bands: reps x the summed resistance of every color on the set.
+//  - bodyweight: reps x the user's latest logged body weight, or just reps
+//    if they've never logged one (no fabricated load).
+//  - mobility: always just reps — no load, by definition, so it never gets
+//    multiplied by anything (keeps mobility drills like cat-cow from
+//    inheriting a bodyweight multiplier they don't represent).
+export function computeSetVolume(set: SetEntry, resistanceType: Exercise['resistanceType'], bodyWeightLbs: number | null): number {
+  switch (resistanceType) {
+    case 'bands':
+      return set.reps * sumBandResistanceLbs(set.bandColors ?? []);
+    case 'bodyweight':
+      return bodyWeightLbs === null ? set.reps : set.reps * bodyWeightLbs;
+    case 'mobility':
+      return set.reps;
+    case 'weight':
+    default:
+      return set.reps * set.weightInLbs;
+  }
 }
 
-export function aggregateSetsByDay(sets: SetEntry[]): DailyProgressPoint[] {
+export function aggregateSetsByDay(sets: SetEntry[], exercisesById: Map<string, Exercise>, bodyWeightLbs: number | null): DailyProgressPoint[] {
   const byDate = new Map<string, SetEntry[]>();
   for (const set of sets) {
     const existing = byDate.get(set.date);
@@ -33,7 +48,10 @@ export function aggregateSetsByDay(sets: SetEntry[]): DailyProgressPoint[] {
     points.push({
       date,
       weight: Math.max(...daySets.map((s) => s.weightInLbs)),
-      volume: daySets.reduce((sum, s) => sum + computeSetVolume(s), 0),
+      volume: daySets.reduce((sum, s) => {
+        const resistanceType = exercisesById.get(s.exerciseId)?.resistanceType ?? 'weight';
+        return sum + computeSetVolume(s, resistanceType, bodyWeightLbs);
+      }, 0),
     });
   }
 
