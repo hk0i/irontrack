@@ -15,7 +15,7 @@ function runAction(toast: ToastItem) {
     <div
       v-for="toast in toasts"
       :key="toast.id"
-      class="pointer-events-auto w-full max-w-sm bg-surface border border-border rounded-2xl px-4 py-3 shadow-lg flex items-center gap-3"
+      class="pointer-events-auto w-full max-w-sm bg-surface text-foreground border border-border rounded-2xl px-4 py-3 shadow-lg flex items-center gap-3"
     >
       <span class="flex-1 text-sm">{{ toast.message }}</span>
       <button
