@@ -29,9 +29,19 @@ function hashString(str) {
 const CACHE_NAME = `irontrack-precache-${hashString(JSON.stringify(manifestEntries))}`;
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSET_LIST)).then(() => self.skipWaiting())
-  );
+  // No self.skipWaiting() here — a new worker installs and then genuinely
+  // waits until the page explicitly asks it to take over (see the message
+  // listener below). That "waiting" state is what the app's update UI
+  // hooks into; skipping it unconditionally (the old behavior) meant every
+  // update silently activated in the background with no way to prompt the
+  // user, or even know a reload was needed.
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSET_LIST)));
+});
+
+// Lets the client (see src/shared/app-update.ts) hand control to a worker
+// that's been sitting in the waiting state, once the user consents.
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
