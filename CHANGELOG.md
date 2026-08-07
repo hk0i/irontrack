@@ -2,6 +2,11 @@
 
 User-facing changes only — internal refactors, the TypeScript migration, and the Vue SFC rewrite aren't listed individually here, but are the main reason this release is versioned as a major bump rather than a minor one.
 
+## 2.1.0
+
+- **Progress chart**: added a training volume line alongside weight, so bodyweight and band-resistance exercises (which always show 0 lbs) still show real progress via reps/sets performed. Switch between Weight, Volume, or Show all with the pill control above the chart.
+- **Progress chart**: tap-and-drag any point to scrub through your history — a panel above the chart updates live with that day's date, top-set weight or volume, and number of sets, without covering the chart.
+
 ## 2.0.0
 
 - **App updates**: new versions now show up as a green install icon plus a dismissible toast ("A new version is available") with an "Update now" button — tap either to reload instantly instead of waiting on the browser's own update timing.
