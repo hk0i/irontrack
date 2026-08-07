@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue';
-import { getAllExercises, getSetsForExercise, getLatestBodyWeightLbs, formatWeight, type Exercise, type SetEntry } from '../../shared/db';
+import { getAllExercises, getSetsForExercise, getBodyWeightLogs, formatWeight, type Exercise, type MetricLog, type SetEntry } from '../../shared/db';
 import { settings } from '../../shared/store';
 import { useMultiTrendChart } from '../../shared/composables/useMultiTrendChart';
 import { aggregateSetsByDay, type DailyProgressPoint } from '../../shared/setAggregation';
@@ -24,7 +24,7 @@ const emit = defineEmits<{
 
 const exercises = ref<Exercise[]>([]);
 const exercisesById = computed(() => new Map(exercises.value.map((e) => [e.id, e])));
-const bodyWeightLbs = ref<number | null>(null);
+const bodyWeightLogs = ref<MetricLog[]>([]);
 const selectedExerciseId = ref(props.navParams?.initialExerciseId || '');
 const sets = ref<SetEntry[]>([]);
 const chartSvg = ref<SVGSVGElement | null>(null);
@@ -39,14 +39,14 @@ onMounted(async () => {
   if (!selectedExerciseId.value && exercises.value.length) {
     selectedExerciseId.value = exercises.value[0].id;
   }
-  bodyWeightLbs.value = await getLatestBodyWeightLbs();
+  bodyWeightLogs.value = await getBodyWeightLogs();
 });
 
 watch(selectedExerciseId, async (id) => {
   sets.value = id ? await getSetsForExercise(id) : [];
 }, { immediate: true });
 
-const dailyPoints = computed<DailyProgressPoint[]>(() => aggregateSetsByDay(sets.value, exercisesById.value, bodyWeightLbs.value));
+const dailyPoints = computed<DailyProgressPoint[]>(() => aggregateSetsByDay(sets.value, exercisesById.value, bodyWeightLogs.value));
 
 // Default to the most recent day whenever the underlying data changes, so
 // the detail view is never empty.

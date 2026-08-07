@@ -489,12 +489,13 @@ export async function getRecentLogsForBlueprint(blueprintId: string, limit = 8):
   return logs.slice(-limit);
 }
 
-// Most recent logged body weight, in lbs — used to give bodyweight-exercise
-// sets a real load figure for the volume metric. null when the user has
-// never logged one, so callers can fall back to a raw-reps volume instead.
-export async function getLatestBodyWeightLbs(): Promise<number | null> {
-  const logs = await getRecentLogsForBlueprint('m-weight', 1);
-  return logs.length > 0 ? logs[0].valueBaseline : null;
+// Every logged body weight, oldest first — used to give bodyweight-exercise
+// sets a real load figure for the volume metric, as of each set's own date
+// (not today's weight), so a historical set's volume doesn't drift every
+// time a new body weight is logged.
+export async function getBodyWeightLogs(): Promise<MetricLog[]> {
+  const logs = await db.metric_logs.where('blueprintId').equals('m-weight').toArray();
+  return logs.sort((a, b) => a.date.localeCompare(b.date));
 }
 
 // ---------- Backup / restore ----------
