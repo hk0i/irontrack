@@ -13,6 +13,7 @@ import {
   type WorkoutSession,
 } from '../../shared/db';
 import { settings } from '../../shared/store';
+import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
 
 defineProps<{
@@ -199,14 +200,7 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
 
 <template>
   <div class="min-h-screen bg-background text-foreground pb-10">
-    <header class="flex items-center gap-3 px-4 py-5 sticky top-0 bg-background/95 backdrop-blur border-b border-border">
-      <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full bg-surface-2 active:bg-surface-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-      <h1 class="text-lg font-bold">Workout History</h1>
-    </header>
+    <ScreenHeader title="Workout History" @back="emit('navigate', 'dashboard')" />
 
     <main class="px-4 py-4 space-y-4">
       <div v-if="days.length === 0" class="text-foreground-muted text-center mt-16">

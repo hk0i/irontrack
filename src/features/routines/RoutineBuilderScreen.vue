@@ -15,6 +15,7 @@ import {
   type ResistanceType,
 } from '../../shared/db';
 import { COMMON_EXERCISES } from '../../shared/common-exercises';
+import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
 
 // mergedResults mixes real Exercise rows with not-yet-created suggestions
@@ -207,14 +208,7 @@ async function save() {
 
 <template>
   <div class="min-h-screen bg-background text-foreground pb-10">
-    <header class="flex items-center gap-3 px-4 py-5 sticky top-0 bg-background/95 backdrop-blur border-b border-border">
-      <button @click="emit('navigate', 'dashboard')" aria-label="Back" class="w-11 h-11 flex items-center justify-center rounded-full bg-surface-2 active:bg-surface-3">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-      <h1 class="text-lg font-bold">{{ editingRoutineId ? 'Edit Routine' : 'New Routine' }}</h1>
-    </header>
+    <ScreenHeader :title="editingRoutineId ? 'Edit Routine' : 'New Routine'" @back="emit('navigate', 'dashboard')" />
 
     <main class="px-4 py-4 space-y-6">
       <div>
