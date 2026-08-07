@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue';
 import {
   getRoutineById,
   getExerciseById,
   getLastWorkoutBestSetForExercise,
   getSetsForSession,
+  searchExercises,
+  createExercise,
   logSet,
   updateSet,
   formatWeight,
@@ -13,10 +15,16 @@ import {
   type SetEntry,
   type WeightUnit,
 } from '../../shared/db';
+import { COMMON_EXERCISES } from '../../shared/common-exercises';
 import { settings } from '../../shared/store';
 import { activeSession, setActiveSession, clearActiveSession } from '../../shared/active-session';
 import type { NavParams, ScreenName, SetRowState } from '../../shared/types';
 import SetRow from './SetRow.vue';
+
+// Mirrors RoutineBuilderScreen's search pattern: mixes real Exercise rows
+// with not-yet-created suggestions from COMMON_EXERCISES (id: null until
+// selected).
+type ExerciseOption = Exercise | { id: null; name: string };
 
 const REST_SECONDS = 90;
 
@@ -135,6 +143,18 @@ function rowFromSet(set: SetEntry): SetRowState {
   });
 }
 
+// Seeds one exercise's row array (pre-checked rows rebuilt from any sets
+// already logged this session, plus a trailing empty row) and ghost text.
+// Shared by loadWorkout(), for every routine/ad-hoc exercise present when
+// the screen loads, and appendAdhocBlock(), for one added live mid-workout
+// (where existingSets is empty — nothing's been logged for it yet).
+async function seedExerciseState(exercise: Exercise, existingSets: SetEntry[] = []) {
+  const rows = existingSets.filter((s) => s.exerciseId === exercise.id).map(rowFromSet);
+  setRowsByExercise[exercise.id] = reactive([...rows, makeEmptyRow()]);
+  const lastSet = await getLastWorkoutBestSetForExercise(exercise.id, sessionId);
+  ghostTextByExercise[exercise.id] = lastSet ? formatGhostText(lastSet.weightInLbs, lastSet.unit, lastSet.reps) : null;
+}
+
 async function loadWorkout() {
   if (!routineId || !sessionId) return;
   const routine = await getRoutineById(routineId);
@@ -169,15 +189,12 @@ async function loadWorkout() {
   // so blocks must never become visible while a partner's rows haven't
   // been seeded yet — otherwise a render could land in that gap (this
   // loop awaits getLastWorkoutBestSetForExercise per exercise) and throw.
+  // Superset pairs are always logged/added/removed in lockstep (see
+  // addSupersetRow/removeSupersetRow), so rebuilding each exercise's rows
+  // independently from its own sets, in logged order, still keeps both
+  // sides index-aligned for pairedRows().
   for (const exercise of exercises) {
-    // Superset pairs are always logged/added/removed in lockstep (see
-    // addSupersetRow/removeSupersetRow), so rebuilding each exercise's
-    // rows independently from its own sets, in logged order, still keeps
-    // both sides index-aligned for pairedRows().
-    const existingRows = sessionSets.filter((s) => s.exerciseId === exercise.id).map(rowFromSet);
-    setRowsByExercise[exercise.id] = reactive([...existingRows, makeEmptyRow()]);
-    const lastSet = await getLastWorkoutBestSetForExercise(exercise.id, sessionId);
-    ghostTextByExercise[exercise.id] = lastSet ? formatGhostText(lastSet.weightInLbs, lastSet.unit, lastSet.reps) : null;
+    await seedExerciseState(exercise, sessionSets);
   }
 
   const seen = new Set<string>();
@@ -363,6 +380,67 @@ async function finishWorkout() {
   clearActiveSession();
   emit('navigate', 'dashboard');
 }
+
+// Ad-hoc exercise search — same pattern as RoutineBuilderScreen's, trimmed
+// down (no resistance-type picker, no drag-reorder): search/create here is
+// session-only. The exercise gets logged and shows up in this workout's
+// history, but is never written back into the routine's saved
+// exerciseIds — Routine Builder stays the only place that permanently
+// changes a routine's exercise list.
+const showAddExercise = ref(false);
+const searchQuery = ref('');
+const searchResults = ref<Exercise[]>([]);
+
+watch(
+  searchQuery,
+  async (query) => {
+    searchResults.value = await searchExercises(query);
+  },
+  { immediate: true }
+);
+
+const mergedResults = computed<ExerciseOption[]>(() => {
+  const query = searchQuery.value.trim().toLowerCase();
+  if (!query) return [];
+  const dbNames = new Set(searchResults.value.map((e) => e.name.toLowerCase()));
+  const commonMatches = COMMON_EXERCISES.filter((name) => name.toLowerCase().includes(query) && !dbNames.has(name.toLowerCase())).map(
+    (name) => ({ id: null, name })
+  );
+  return [...searchResults.value, ...commonMatches];
+});
+
+const exactMatchExists = computed(() => mergedResults.value.some((e) => e.name.toLowerCase() === searchQuery.value.trim().toLowerCase()));
+
+// Already part of this workout — a routine exercise or one added ad-hoc
+// earlier in the session — so it's grayed out instead of offered again.
+function isInWorkout(exercise: ExerciseOption): boolean {
+  if (exercise.id) return exercise.id in setRowsByExercise;
+  return blocks.value.some((b) => b.exercises.some((e) => e.name.toLowerCase() === exercise.name.toLowerCase()));
+}
+
+async function appendAdhocBlock(exercise: Exercise) {
+  await seedExerciseState(exercise);
+  blocks.value.push({ exercises: [exercise] });
+  showAddExercise.value = false;
+  searchQuery.value = '';
+}
+
+async function addAdhocExercise(exercise: ExerciseOption) {
+  if (isInWorkout(exercise)) return;
+  if (exercise.id) {
+    await appendAdhocBlock(exercise);
+    return;
+  }
+  const created = await createExercise({ name: exercise.name });
+  await appendAdhocBlock(created);
+}
+
+async function createAndAddAdhocExercise() {
+  const name = searchQuery.value.trim();
+  if (!name) return;
+  const created = await createExercise({ name });
+  await appendAdhocBlock(created);
+}
 </script>
 
 <template>
@@ -463,6 +541,55 @@ async function finishWorkout() {
         </div>
       </div>
     </main>
+
+    <div class="px-4 mb-3">
+      <button
+        v-if="!showAddExercise"
+        @click="showAddExercise = true"
+        class="w-full py-3 rounded-xl bg-surface-2 text-sm font-semibold text-secondary active:bg-surface-3"
+      >
+        + Add exercise
+      </button>
+
+      <div v-else class="bg-surface border border-border rounded-2xl p-4 space-y-2">
+        <div class="flex items-center justify-between mb-1">
+          <label class="text-sm text-foreground-muted">Add exercise</label>
+          <button
+            @click="
+              showAddExercise = false;
+              searchQuery = '';
+            "
+            class="text-sm text-foreground-muted"
+          >
+            Cancel
+          </button>
+        </div>
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search exercises..."
+          class="w-full rounded-xl bg-surface border border-border px-4 py-3 text-base"
+        />
+        <div v-if="searchQuery.trim()" class="space-y-1">
+          <button
+            v-if="!exactMatchExists"
+            @click="createAndAddAdhocExercise"
+            class="w-full text-left px-4 py-3 rounded-xl bg-primary/10 border border-primary/40 text-primary-bright"
+          >
+            + Create "{{ searchQuery }}" as new exercise
+          </button>
+          <button
+            v-for="exercise in mergedResults"
+            :key="exercise.id || exercise.name"
+            @click="addAdhocExercise(exercise)"
+            :disabled="isInWorkout(exercise)"
+            class="w-full text-left px-4 py-3 rounded-xl bg-surface border border-border disabled:opacity-40"
+          >
+            {{ exercise.name }}
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div class="px-4">
       <button
