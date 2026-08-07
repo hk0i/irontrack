@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue';
 import { getAllRoutines, deleteRoutine, getAllSets, type Routine } from '../../shared/db';
 import { activeSession, clearActiveSession } from '../../shared/active-session';
+import IconButton from '../../shared/components/IconButton.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
 
 defineProps<{
@@ -77,46 +78,30 @@ async function removeRoutine(routine: Routine) {
     <header class="flex items-center justify-between px-4 py-5 sticky top-0 bg-background/95 backdrop-blur border-b border-border">
       <h1 class="text-xl font-bold tracking-tight">IronTrack</h1>
       <div class="flex items-center gap-3">
-        <button
-          @click="emit('navigate', 'body-metrics')"
-          aria-label="Body metrics"
-          class="w-11 h-11 flex items-center justify-center rounded-full bg-surface-2 active:bg-surface-3"
-        >
+        <IconButton @click="emit('navigate', 'body-metrics')" aria-label="Body metrics">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="4" y="4" width="16" height="16" rx="3" stroke-linecap="round" stroke-linejoin="round" />
             <circle cx="12" cy="13" r="1" fill="currentColor" stroke="none" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 13l2.5-2M9 7h6" />
           </svg>
-        </button>
-        <button
-          @click="emit('navigate', 'progress-chart')"
-          aria-label="Progress charts"
-          class="w-11 h-11 flex items-center justify-center rounded-full bg-surface-2 active:bg-surface-3"
-        >
+        </IconButton>
+        <IconButton @click="emit('navigate', 'progress-chart')" aria-label="Progress charts">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 15l4-4 3 3 5-6" />
           </svg>
-        </button>
-        <button
-          @click="emit('navigate', 'workout-history')"
-          aria-label="Workout history"
-          class="w-11 h-11 flex items-center justify-center rounded-full bg-surface-2 active:bg-surface-3"
-        >
+        </IconButton>
+        <IconButton @click="emit('navigate', 'workout-history')" aria-label="Workout history">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="9" stroke-linecap="round" stroke-linejoin="round" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3.5 2" />
           </svg>
-        </button>
-        <button
-          @click="emit('navigate', 'settings')"
-          aria-label="Settings"
-          class="w-11 h-11 flex items-center justify-center rounded-full bg-surface-2 active:bg-surface-3"
-        >
+        </IconButton>
+        <IconButton @click="emit('navigate', 'settings')" aria-label="Settings">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-        </button>
+        </IconButton>
       </div>
     </header>
 
@@ -156,24 +141,16 @@ async function removeRoutine(routine: Routine) {
           <div class="text-lg font-semibold">{{ routine.name }}</div>
           <div class="text-sm text-foreground-muted mt-1">{{ routine.exerciseIds.length }} exercises</div>
         </button>
-        <button
-          @click="editRoutine(routine)"
-          :aria-label="'Edit ' + routine.name"
-          class="absolute top-1/2 -translate-y-1/2 right-16 w-11 h-11 flex items-center justify-center rounded-full bg-surface-2 active:bg-surface-3"
-        >
+        <IconButton @click="editRoutine(routine)" :aria-label="'Edit ' + routine.name" class="absolute top-1/2 -translate-y-1/2 right-16">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 112.914 2.914L7.5 19.675l-4 1 1-4L16.862 4.487z" />
           </svg>
-        </button>
-        <button
-          @click="removeRoutine(routine)"
-          :aria-label="'Delete ' + routine.name"
-          class="absolute top-1/2 -translate-y-1/2 right-3 w-11 h-11 flex items-center justify-center rounded-full bg-danger/15 text-danger active:bg-danger/25"
-        >
+        </IconButton>
+        <IconButton @click="removeRoutine(routine)" :aria-label="'Delete ' + routine.name" tone="danger" class="absolute top-1/2 -translate-y-1/2 right-3">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0l1 13a2 2 0 002 2h4a2 2 0 002-2l1-13" />
           </svg>
-        </button>
+        </IconButton>
       </div>
     </main>
 
