@@ -18,6 +18,9 @@
                 was logged, an import finished) — not a general "positive"
                 decoration color, keep this one narrow.
    - danger:    delete actions, validation errors.
+   - chart-2:   second line color on multi-series data-viz charts (e.g. the
+                training-volume line alongside the primary-colored weight
+                line) — only needed where two series share one chart.
 
    "Soft" tinted backgrounds (badges, soft buttons) are NOT separate stored
    shades — they're the base token at reduced opacity via Tailwind's slash
@@ -66,6 +69,9 @@
   /* Danger */
   --color-danger: var(--color-rose-400);
   --color-danger-border: var(--color-rose-500);
+
+  /* Data viz */
+  --color-chart-2: var(--color-sky-400);
 }
 
 /* Second theme: onebigfunction platform design system
@@ -120,4 +126,7 @@
   /* Danger (Error/red) */
   --color-danger: #ef2929; /* 500 */
   --color-danger-border: #cc0000; /* 700 Main */
+
+  /* Data viz */
+  --color-chart-2: #38bdf8; /* sky 400 — distinct from orange primary/purple secondary */
 }
