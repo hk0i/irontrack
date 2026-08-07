@@ -137,7 +137,7 @@ function selectView(view: ChartView) {
             <template v-else>
               {{ formatWeight(selectedDay.volume, settings.preferredUnit) }} {{ settings.preferredUnit }} volume
             </template>
-            <span class="block text-sm text-foreground-muted font-normal">{{ selectedDaySetCount }} sets</span>
+            <span class="block text-sm text-foreground-muted font-normal">{{ selectedDaySetCount }} sets &middot; {{ selectedDay.reps }} reps</span>
           </span>
         </div>
 

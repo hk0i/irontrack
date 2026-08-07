@@ -7,6 +7,7 @@ export interface DailyProgressPoint {
   date: string;
   weight: number;
   volume: number;
+  reps: number;
 }
 
 // The body weight in effect on a given day — the most recent log dated on
@@ -72,6 +73,7 @@ export function aggregateSetsByDay(sets: SetEntry[], exercisesById: Map<string, 
         const resistanceType = exercisesById.get(s.exerciseId)?.resistanceType ?? 'weight';
         return sum + computeSetVolume(s, resistanceType, bodyWeightLbs);
       }, 0),
+      reps: daySets.reduce((sum, s) => sum + s.reps, 0),
     });
   }
 
