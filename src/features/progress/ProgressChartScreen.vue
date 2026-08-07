@@ -9,6 +9,7 @@ import EmptyState from '../../shared/components/EmptyState.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
 
 type SeriesKey = 'weight' | 'volume';
+type ChartView = SeriesKey | 'all';
 
 const CHART_WIDTH = 320;
 const CHART_HEIGHT = 200;
@@ -27,7 +28,9 @@ const sets = ref<SetEntry[]>([]);
 const chartSvg = ref<SVGSVGElement | null>(null);
 const selectedSeriesKey = ref<SeriesKey>('weight');
 const selectedIndex = ref(0);
-const visibleSeries = ref<Record<SeriesKey, boolean>>({ weight: true, volume: true });
+const selectedView = ref<ChartView>('all');
+const showWeight = computed(() => selectedView.value !== 'volume');
+const showVolume = computed(() => selectedView.value !== 'weight');
 
 onMounted(async () => {
   exercises.value = await getAllExercises();
@@ -98,15 +101,12 @@ function scrubMove(event: PointerEvent) {
   selectedIndex.value = clientXToIndex(event.clientX);
 }
 
-// Overlapping points can make the wrong one hard to grab — hiding a line
-// clears the ambiguity. Always keep at least one line visible.
-function toggleSeries(key: SeriesKey) {
-  const other: SeriesKey = key === 'weight' ? 'volume' : 'weight';
-  if (visibleSeries.value[key] && !visibleSeries.value[other]) return;
-  visibleSeries.value[key] = !visibleSeries.value[key];
-  if (!visibleSeries.value[key] && selectedSeriesKey.value === key) {
-    selectedSeriesKey.value = other;
-  }
+// Overlapping points can make the wrong one hard to grab — switching to a
+// single-series view clears the ambiguity. Picking a single view also
+// pins the detail panel to that series, since the other one is hidden.
+function selectView(view: ChartView) {
+  selectedView.value = view;
+  if (view !== 'all') selectedSeriesKey.value = view;
 }
 </script>
 
@@ -138,30 +138,42 @@ function toggleSeries(key: SeriesKey) {
           </span>
         </div>
 
-        <div class="flex items-center gap-4 mb-2 text-sm">
+        <div class="inline-flex items-center gap-1 mb-2 p-1 rounded-full bg-surface-2 text-sm">
           <button
             type="button"
-            @click="toggleSeries('weight')"
-            class="flex items-center gap-1.5"
-            :class="visibleSeries.weight ? 'text-foreground-muted' : 'text-foreground-faint opacity-50'"
+            @click="selectView('weight')"
+            class="flex items-center gap-1.5 px-3 py-1 rounded-full"
+            :class="selectedView === 'weight' ? 'bg-surface-3 text-foreground' : 'text-foreground-muted'"
           >
             <span class="w-2.5 h-2.5 rounded-full" style="background: var(--color-primary)"></span>
             Weight
           </button>
           <button
             type="button"
-            @click="toggleSeries('volume')"
-            class="flex items-center gap-1.5"
-            :class="visibleSeries.volume ? 'text-foreground-muted' : 'text-foreground-faint opacity-50'"
+            @click="selectView('volume')"
+            class="flex items-center gap-1.5 px-3 py-1 rounded-full"
+            :class="selectedView === 'volume' ? 'bg-surface-3 text-foreground' : 'text-foreground-muted'"
           >
             <span class="w-2.5 h-2.5 rounded-full" style="background: var(--color-chart-2)"></span>
             Volume
           </button>
+          <button
+            type="button"
+            @click="selectView('all')"
+            class="flex items-center gap-1.5 px-3 py-1 rounded-full"
+            :class="selectedView === 'all' ? 'bg-surface-3 text-foreground' : 'text-foreground-muted'"
+          >
+            <span
+              class="w-2.5 h-2.5 rounded-full"
+              style="background: linear-gradient(90deg, var(--color-primary) 50%, var(--color-chart-2) 50%)"
+            ></span>
+            Show all
+          </button>
         </div>
         <svg ref="chartSvg" :viewBox="'0 0 ' + CHART_WIDTH + ' ' + CHART_HEIGHT" class="w-full h-auto touch-none">
-          <polyline v-if="visibleSeries.volume" :points="seriesPolylines.volume" fill="none" stroke="var(--color-chart-2)" stroke-width="2" />
-          <polyline v-if="visibleSeries.weight" :points="seriesPolylines.weight" fill="none" stroke="var(--color-primary)" stroke-width="2" />
-          <template v-if="visibleSeries.volume">
+          <polyline v-if="showVolume" :points="seriesPolylines.volume" fill="none" stroke="var(--color-chart-2)" stroke-width="2" />
+          <polyline v-if="showWeight" :points="seriesPolylines.weight" fill="none" stroke="var(--color-primary)" stroke-width="2" />
+          <template v-if="showVolume">
             <g v-for="(point, i) in seriesPoints.volume" :key="'volume-' + i">
               <circle
                 :cx="point.x" :cy="point.y" r="14" fill="transparent" class="cursor-pointer"
@@ -171,7 +183,7 @@ function toggleSeries(key: SeriesKey) {
               <circle :cx="point.x" :cy="point.y" r="4" fill="var(--color-chart-2)" class="pointer-events-none" />
             </g>
           </template>
-          <template v-if="visibleSeries.weight">
+          <template v-if="showWeight">
             <g v-for="(point, i) in seriesPoints.weight" :key="'weight-' + i">
               <circle
                 :cx="point.x" :cy="point.y" r="14" fill="transparent" class="cursor-pointer"
