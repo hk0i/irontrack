@@ -40,7 +40,10 @@ const dailyPoints = computed<DailyProgressPoint[]>(() => aggregateSetsByDay(sets
 
 const { seriesPoints, seriesPolylines } = useMultiTrendChart(
   dailyPoints,
-  [{ key: 'weight', valueOf: (d) => d.weight }],
+  [
+    { key: 'weight', valueOf: (d) => d.weight },
+    { key: 'volume', valueOf: (d) => d.volume },
+  ],
   { width: CHART_WIDTH, height: CHART_HEIGHT, padding: PADDING }
 );
 
@@ -54,7 +57,8 @@ function closeModal() {
 
 function formattedEntry(day: DailyProgressPoint) {
   const weight = formatWeight(day.weight, settings.preferredUnit);
-  return `${day.date}: ${weight} ${settings.preferredUnit} top set`;
+  const volume = formatWeight(day.volume, settings.preferredUnit);
+  return `${day.date}: ${weight} ${settings.preferredUnit} top set · ${volume} ${settings.preferredUnit} volume`;
 }
 </script>
 
@@ -73,9 +77,24 @@ function formattedEntry(day: DailyProgressPoint) {
       <EmptyState v-if="sets.length === 0">No logged sets for this exercise yet.</EmptyState>
 
       <div v-else class="bg-surface border border-border rounded-2xl p-4">
+        <div class="flex items-center gap-4 mb-2 text-sm text-foreground-muted">
+          <span class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full" style="background: var(--color-primary)"></span>
+            Weight
+          </span>
+          <span class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full" style="background: var(--color-chart-2)"></span>
+            Volume
+          </span>
+        </div>
         <svg :viewBox="'0 0 ' + CHART_WIDTH + ' ' + CHART_HEIGHT" class="w-full h-auto">
+          <polyline :points="seriesPolylines.volume" fill="none" stroke="var(--color-chart-2)" stroke-width="2" />
           <polyline :points="seriesPolylines.weight" fill="none" stroke="var(--color-primary)" stroke-width="2" />
-          <g v-for="(point, i) in seriesPoints.weight" :key="i" @click="openModal(point)" class="cursor-pointer">
+          <g v-for="(point, i) in seriesPoints.volume" :key="'volume-' + i" @click="openModal(point)" class="cursor-pointer">
+            <circle :cx="point.x" :cy="point.y" r="14" fill="transparent" />
+            <circle :cx="point.x" :cy="point.y" r="4" fill="var(--color-chart-2)" />
+          </g>
+          <g v-for="(point, i) in seriesPoints.weight" :key="'weight-' + i" @click="openModal(point)" class="cursor-pointer">
             <circle :cx="point.x" :cy="point.y" r="14" fill="transparent" />
             <circle :cx="point.x" :cy="point.y" r="5" fill="var(--color-primary)" />
           </g>
