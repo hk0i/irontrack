@@ -169,6 +169,6 @@ async function removeRoutine(routine: Routine) {
       +
     </button>
 
-    <div class="fixed bottom-4 left-4 text-xs text-foreground-faintest select-none">v{{ APP_VERSION }} ({{ COMMIT_HASH }})</div>
+    <div class="fixed bottom-10 left-8 text-xs text-foreground-faintest select-none">v{{ APP_VERSION }} ({{ COMMIT_HASH }})</div>
   </div>
 </template>
