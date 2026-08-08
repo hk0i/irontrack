@@ -78,7 +78,7 @@ async function removeRoutine(routine: Routine) {
 </script>
 
 <template>
-  <div class="min-h-screen bg-background text-foreground pb-24">
+  <div class="min-h-dvh bg-background text-foreground pb-24">
     <header class="flex items-center justify-between px-4 py-5 sticky top-0 bg-background/95 backdrop-blur border-b border-border">
       <h1 class="text-xl font-bold tracking-tight">IronTrack</h1>
       <div class="flex items-center gap-3">
