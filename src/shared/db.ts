@@ -1,6 +1,8 @@
-// Dexie schema + every read/write helper. No other file should touch
-// db.routines / db.exercises / db.sets directly — this keeps "weightInLbs is
-// the only source of truth" invariant in one place.
+/**
+ * Dexie schema + every read/write helper.
+ * No other file should touch db.routines / db.exercises / db.sets directly —
+ * this keeps "weightInLbs is the only source of truth" invariant in one place.
+ */
 
 import Dexie, { type Table } from 'dexie';
 
@@ -13,9 +15,11 @@ export type Unit = WeightUnit | LengthUnit;
 export type MetricType = 'mass' | 'length';
 export type ResistanceType = 'bodyweight' | 'bands' | 'weight' | 'mobility';
 
-// Display metadata for every picker that lets a user set an exercise's
-// resistance type at creation time (RoutineBuilderScreen, ActiveWorkoutScreen's
-// ad-hoc add panel).
+/**
+ * Display metadata for every picker that lets a user set an exercise's
+ * resistance type at creation time (RoutineBuilderScreen, ActiveWorkoutScreen's
+ * ad-hoc add panel).
+ */
 export const RESISTANCE_TYPES: { value: ResistanceType; label: string }[] = [
   { value: 'weight', label: 'Weight' },
   { value: 'bodyweight', label: 'Bodyweight' },
@@ -33,9 +37,11 @@ export interface Exercise {
   id: string;
   name: string;
   supersetWith: string | null;
-  // Optional — exercises created before this field existed have no key at
-  // all, not just a falsy value. Every read site must fall back to
-  // 'weight' (the prior implicit behavior) rather than assume presence.
+  /**
+   * Optional — exercises created before this field existed have no key at
+   * all, not just a falsy value. Every read site must fall back to
+   * 'weight' (the prior implicit behavior) rather than assume presence.
+   */
   resistanceType?: ResistanceType;
 }
 
@@ -50,9 +56,11 @@ export interface SetEntry {
   routineId: string | null;
   sessionId: string | null;
   createdAt: number;
-  // Only meaningful for band-resistance exercises — plain field, not
-  // indexed, so no Dexie version bump needed (same pattern as routineId).
-  // Optional: sets logged before this field existed have no key at all.
+  /**
+   * Only meaningful for band-resistance exercises — plain field, not
+   * indexed, so no Dexie version bump needed (same pattern as routineId).
+   * Optional: sets logged before this field existed have no key at all.
+   */
   bandColors?: string[];
 }
 
@@ -135,8 +143,10 @@ export function lbsToKg(lbs: number): number {
   return lbs / KG_TO_LBS;
 }
 
-// Single source every display surface should call so rounding/conversion
-// never drifts between the ghost text, chart tooltips, and set rows.
+/**
+ * Single source every display surface should call so rounding/conversion
+ * never drifts between the ghost text, chart tooltips, and set rows.
+ */
 export function formatWeight(weightInLbs: number, preferredUnit: WeightUnit): number {
   const value = preferredUnit === 'kg' ? lbsToKg(weightInLbs) : weightInLbs;
   return Math.round(value * 10) / 10;
@@ -150,9 +160,11 @@ export function inToCm(inches: number): number {
   return inches / CM_TO_IN;
 }
 
-// Single source for displaying a metric_logs.valueBaseline in whichever unit
-// the caller wants, across both metric types (mass baseline = lbs, length
-// baseline = inches).
+/**
+ * Single source for displaying a metric_logs.valueBaseline in whichever unit
+ * the caller wants, across both metric types (mass baseline = lbs, length
+ * baseline = inches).
+ */
 export function formatMetricValue(valueBaseline: number, type: MetricType, preferredUnit: Unit): number {
   let value = valueBaseline;
   if (type === 'mass' && preferredUnit === 'kg') value = lbsToKg(valueBaseline);
@@ -162,9 +174,11 @@ export function formatMetricValue(valueBaseline: number, type: MetricType, prefe
 
 // ---------- Dates ----------
 
-// The app's logical-workout-day string (YYYY-MM-DD), same convention as
-// SetEntry.date/MetricLog.date — local time, not UTC, so "today" matches
-// what the clock on the device actually reads.
+/**
+ * The app's logical-workout-day string (YYYY-MM-DD), same convention as
+ * SetEntry.date/MetricLog.date — local time, not UTC, so "today" matches
+ * what the clock on the device actually reads.
+ */
 export function todayString(): string {
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -195,8 +209,10 @@ export function deleteRoutine(id: string): Promise<void> {
   return db.routines.delete(id);
 }
 
-// Resolves a routine's exerciseIds into their Exercise records, in order,
-// silently skipping any id whose exercise has since been deleted.
+/**
+ * Resolves a routine's exerciseIds into their Exercise records, in order,
+ * silently skipping any id whose exercise has since been deleted.
+ */
 export async function getExercisesForRoutine(routine: Routine): Promise<Exercise[]> {
   const exercises: Exercise[] = [];
   for (const id of routine.exerciseIds) {
@@ -234,8 +250,11 @@ export function updateExercise(id: string, patch: Partial<Exercise>): Promise<nu
   return db.exercises.update(id, patch);
 }
 
-// Client-side substring match. Exercise counts are small (tens to low
-// hundreds of rows) so a real fuzzy-search index isn't warranted for v1.
+/**
+ * Client-side substring match.
+ * Exercise counts are small (tens to low hundreds of rows) so a real
+ * fuzzy-search index isn't warranted for v1.
+ */
 export async function searchExercises(query: string): Promise<Exercise[]> {
   const all = await db.exercises.toArray();
   const needle = query.trim().toLowerCase();
@@ -243,10 +262,13 @@ export async function searchExercises(query: string): Promise<Exercise[]> {
   return all.filter((e) => e.name.toLowerCase().includes(needle));
 }
 
-// Links two exercises as a superset pair. supersetWith only has room for one
-// partner per exercise, so this is scoped to pairs, not multi-exercise
-// circuits. Defensively clears any pre-existing link on either side first so
-// the invariant "supersetWith is always mutual or null" can't be violated.
+/**
+ * Links two exercises as a superset pair.
+ * supersetWith only has room for one partner per exercise, so this is scoped
+ * to pairs, not multi-exercise circuits. Defensively clears any pre-existing
+ * link on either side first so the invariant "supersetWith is always mutual
+ * or null" can't be violated.
+ */
 export async function setSupersetLink(exerciseIdA: string, exerciseIdB: string): Promise<void> {
   await db.transaction('rw', db.exercises, async () => {
     await clearSupersetLink(exerciseIdA);
@@ -269,22 +291,24 @@ export async function clearSupersetLink(exerciseId: string): Promise<void> {
 
 // ---------- Sets (history) ----------
 
-// The only place weightInLbs gets computed, per the spec's exact formula.
-// routineId is optional context (which routine the set was logged under) —
-// stored as a plain field, not a declared/indexed schema column, so it needs
-// no Dexie version bump. It powers the workout history screen's per-routine
-// grouping and the dashboard's "suggested routine" rotation.
-// createdAt is a plain (unindexed) precise timestamp, distinct from `date`
-// (a YYYY-MM-DD logical workout day). date alone can't order two sets logged
-// on the same calendar day — e.g. two different routines done today — so
-// createdAt is used as a tiebreaker anywhere sets are sorted "most recent
-// first".
-// sessionId ties a set to the specific workout instance it was logged
-// during (see logWorkoutSession) — it's what lets the history screen tell
-// two same-day sessions of the same routine apart instead of merging their
-// sets onto one card. Optional and unindexed, like routineId, so older sets
-// logged before this existed still import/display fine (grouped by
-// date+routineId as a fallback).
+/**
+ * The only place weightInLbs gets computed, per the spec's exact formula.
+ * routineId is optional context (which routine the set was logged under) —
+ * stored as a plain field, not a declared/indexed schema column, so it needs
+ * no Dexie version bump. It powers the workout history screen's per-routine
+ * grouping and the dashboard's "suggested routine" rotation.
+ * createdAt is a plain (unindexed) precise timestamp, distinct from `date`
+ * (a YYYY-MM-DD logical workout day). date alone can't order two sets logged
+ * on the same calendar day — e.g. two different routines done today — so
+ * createdAt is used as a tiebreaker anywhere sets are sorted "most recent
+ * first".
+ * sessionId ties a set to the specific workout instance it was logged
+ * during (see logWorkoutSession) — it's what lets the history screen tell
+ * two same-day sessions of the same routine apart instead of merging their
+ * sets onto one card. Optional and unindexed, like routineId, so older sets
+ * logged before this existed still import/display fine (grouped by
+ * date+routineId as a fallback).
+ */
 export async function logSet({
   exerciseId,
   date,
@@ -322,8 +346,10 @@ export async function logSet({
   return set;
 }
 
-// Same write-time conversion rule as logSet, for correcting an existing
-// entry from the workout history screen rather than creating a new one.
+/**
+ * Same write-time conversion rule as logSet, for correcting an existing
+ * entry from the workout history screen rather than creating a new one.
+ */
 export async function updateSet(
   id: string,
   { reps, weightEntered, unit, bandColors }: { reps: number; weightEntered: number; unit: WeightUnit; bandColors?: string[] }
@@ -334,8 +360,10 @@ export async function updateSet(
   return patch;
 }
 
-// Every logged set, most recent day first — the source for the workout
-// history screen, which groups these by date then by exercise.
+/**
+ * Every logged set, most recent day first — the source for the workout
+ * history screen, which groups these by date then by exercise.
+ */
 export async function getAllSets(): Promise<SetEntry[]> {
   const sets = await db.sets.toArray();
   return sets.sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt || 0) - (a.createdAt || 0));
@@ -349,21 +377,26 @@ export function getSetsForExercise(exerciseId: string): Promise<SetEntry[]> {
     .then((sets) => sets.sort((a, b) => a.date.localeCompare(b.date) || (a.createdAt || 0) - (b.createdAt || 0)));
 }
 
-// All sets logged under one workout instance, oldest first — used to
-// rehydrate ActiveWorkoutScreen's checked rows when resuming a session
-// left in progress. sessionId is a plain (unindexed) field like routineId,
-// so this filters client-side rather than using .where().equals().
+/**
+ * All sets logged under one workout instance, oldest first — used to
+ * rehydrate ActiveWorkoutScreen's checked rows when resuming a session
+ * left in progress. sessionId is a plain (unindexed) field like routineId,
+ * so this filters client-side rather than using .where().equals().
+ */
 export async function getSetsForSession(sessionId: string): Promise<SetEntry[]> {
   const sets = await db.sets.filter((s) => s.sessionId === sessionId).toArray();
   return sets.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 }
 
-// Heaviest set from the most recent OTHER workout that included this
-// exercise — used for the active workout screen's ghost text. currentSessionId
-// excludes the in-progress session's own sets, so mid-workout logging never
-// makes the ghost text show what you just did; it always reflects the prior
-// workout. Regardless of recency window — a lift not trained in a while
-// should still show its last weight, that's when the hint is most useful.
+/**
+ * Heaviest set from the most recent OTHER workout that included this
+ * exercise — used for the active workout screen's ghost text.
+ * currentSessionId excludes the in-progress session's own sets, so
+ * mid-workout logging never makes the ghost text show what you just did; it
+ * always reflects the prior workout. Regardless of recency window — a lift
+ * not trained in a while should still show its last weight, that's when the
+ * hint is most useful.
+ */
 export async function getLastWorkoutBestSetForExercise(exerciseId: string, currentSessionId: string | null = null): Promise<SetEntry | null> {
   const sets = await db.sets.where('exerciseId').equals(exerciseId).toArray();
   const candidates = currentSessionId ? sets.filter((s) => s.sessionId !== currentSessionId) : sets;
@@ -382,13 +415,16 @@ export function deleteSet(id: string): Promise<void> {
 
 // ---------- Workout sessions (duration tracking) ----------
 
-// One row per finished workout. startedAt is captured and held in the active
-// workout screen's own state; this is only called once, when the user taps
-// Finish, so an abandoned session never leaves a partial row here.
-// id defaults to a fresh uuid, but the active workout screen passes the same
-// sessionId it tagged this session's logSet calls with, so this row's id
-// doubles as the join key the history screen uses to group a session's sets
-// together instead of merging same-day-same-routine sessions.
+/**
+ * One row per finished workout.
+ * startedAt is captured and held in the active workout screen's own state;
+ * this is only called once, when the user taps Finish, so an abandoned
+ * session never leaves a partial row here.
+ * id defaults to a fresh uuid, but the active workout screen passes the same
+ * sessionId it tagged this session's logSet calls with, so this row's id
+ * doubles as the join key the history screen uses to group a session's sets
+ * together instead of merging same-day-same-routine sessions.
+ */
 export async function logWorkoutSession({
   id = crypto.randomUUID(),
   routineId,
@@ -428,8 +464,10 @@ const DEFAULT_METRIC_BLUEPRINTS: MetricBlueprint[] = [
   { id: 'm-quads', name: 'Thigh Size', type: 'length' },
 ];
 
-// Idempotent — only seeds if the table is empty, so it's safe to call on
-// every app start without duplicating rows on subsequent loads.
+/**
+ * Idempotent — only seeds if the table is empty, so it's safe to call on
+ * every app start without duplicating rows on subsequent loads.
+ */
 export async function ensureMetricBlueprintsSeeded(): Promise<void> {
   const count = await db.metric_blueprints.count();
   if (count > 0) return;
@@ -450,9 +488,11 @@ export function getMetricBlueprintById(id: string): Promise<MetricBlueprint | un
   return db.metric_blueprints.get(id);
 }
 
-// The only place a metric log's valueBaseline gets computed: mass blueprints
-// store lbs, length blueprints store inches, per the same
-// convert-at-write-time pattern as logSet's weightInLbs.
+/**
+ * The only place a metric log's valueBaseline gets computed: mass blueprints
+ * store lbs, length blueprints store inches, per the same
+ * convert-at-write-time pattern as logSet's weightInLbs.
+ */
 export async function logMetric({
   blueprintId,
   date,
@@ -481,18 +521,22 @@ export async function logMetric({
   return log;
 }
 
-// Chronologically-ascending last `limit` entries for a blueprint — directly
-// plottable left-to-right on a chart with no further sorting needed.
+/**
+ * Chronologically-ascending last `limit` entries for a blueprint — directly
+ * plottable left-to-right on a chart with no further sorting needed.
+ */
 export async function getRecentLogsForBlueprint(blueprintId: string, limit = 8): Promise<MetricLog[]> {
   const logs = await db.metric_logs.where('blueprintId').equals(blueprintId).toArray();
   logs.sort((a, b) => a.date.localeCompare(b.date));
   return logs.slice(-limit);
 }
 
-// Every logged body weight, oldest first — used to give bodyweight-exercise
-// sets a real load figure for the volume metric, as of each set's own date
-// (not today's weight), so a historical set's volume doesn't drift every
-// time a new body weight is logged.
+/**
+ * Every logged body weight, oldest first — used to give bodyweight-exercise
+ * sets a real load figure for the volume metric, as of each set's own date
+ * (not today's weight), so a historical set's volume doesn't drift every
+ * time a new body weight is logged.
+ */
 export async function getBodyWeightLogs(): Promise<MetricLog[]> {
   const logs = await db.metric_logs.where('blueprintId').equals('m-weight').toArray();
   return logs.sort((a, b) => a.date.localeCompare(b.date));
@@ -521,10 +565,13 @@ export async function exportAllData(): Promise<BackupPayload> {
   };
 }
 
-// bulkPut (not bulkAdd) so re-importing the same file is idempotent. Wrapped
-// in a transaction so a failure partway through can't leave mixed state.
-// metricBlueprints/metricLogs/workouts are optional so older backups — taken
-// before body metrics or duration tracking existed — still import cleanly.
+/**
+ * bulkPut (not bulkAdd) so re-importing the same file is idempotent.
+ * Wrapped in a transaction so a failure partway through can't leave mixed
+ * state. metricBlueprints/metricLogs/workouts are optional so older backups
+ * — taken before body metrics or duration tracking existed — still import
+ * cleanly.
+ */
 export async function importAllData(payload: unknown): Promise<void> {
   const data = payload as Partial<BackupPayload> | null | undefined;
   if (!data || !Array.isArray(data.routines) || !Array.isArray(data.exercises) || !Array.isArray(data.sets)) {
