@@ -57,6 +57,8 @@ interface DayGroup {
   label: string;
   routineName: string | null;
   durations: string[];
+  mood?: string;
+  note?: string;
   exercises: ExerciseGroup[];
 }
 
@@ -126,9 +128,16 @@ onMounted(async () => {
 
   days.value = [...bySession.entries()].map(([key, session]) => {
     let durations: string[];
+    let mood: string | undefined;
+    let note: string | undefined;
     if (session.sessionId) {
       const match = workoutById.get(session.sessionId);
       durations = match ? [formatDuration(match.durationMs)] : [];
+      // Only set for a direct sessionId match — a legacy-grouped card can
+      // represent more than one session, and there's no single mood/note to
+      // attribute the merged card to, so those cards simply show neither.
+      mood = match?.mood;
+      note = match?.note;
     } else {
       const legacyKey = `${session.date}::${session.routineId || 'none'}`;
       durations = (legacySessionsByKey.get(legacyKey) || []).map((s) => formatDuration(s.durationMs));
@@ -141,6 +150,8 @@ onMounted(async () => {
       label: formatDate(session.date),
       routineName: (session.routineId && routineById.get(session.routineId)?.name) || null,
       durations,
+      mood,
+      note,
       exercises: [...session.byExercise.entries()].map(([exerciseId, exerciseSets]) => ({
         name: exerciseById.get(exerciseId)?.name || 'Unknown exercise',
         resistanceType: exerciseById.get(exerciseId)?.resistanceType || 'weight',
@@ -244,7 +255,11 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
         <div class="mb-3">
           <div class="flex items-start justify-between gap-2">
             <h2 class="font-semibold text-base">{{ day.routineName || 'Workout' }}</h2>
-            <div v-if="day.durations.length" class="flex flex-wrap justify-end gap-1">
+            <div v-if="day.durations.length || day.mood" class="flex flex-wrap justify-end gap-1">
+              <span
+                v-if="day.mood"
+                class="text-xs font-semibold bg-surface-2 px-2 py-1 rounded-full whitespace-nowrap"
+              >{{ day.mood }}</span>
               <span
                 v-for="(duration, i) in day.durations"
                 :key="i"
@@ -253,6 +268,7 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
             </div>
           </div>
           <div class="text-xs text-foreground-muted">{{ day.label }}</div>
+          <p v-if="day.note" class="text-xs text-foreground-muted mt-1 italic">{{ day.note }}</p>
         </div>
         <div class="space-y-3">
           <div v-for="exercise in day.exercises" :key="exercise.name">
