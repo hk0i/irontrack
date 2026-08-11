@@ -29,25 +29,31 @@ import { requestRestTimerPermission } from '../../shared/rest-alert';
 import type { NavParams, ScreenName, SetRowState } from '../../shared/types';
 import SetRow from './SetRow.vue';
 
-// Mirrors RoutineBuilderScreen's search pattern: mixes real Exercise rows
-// with not-yet-created suggestions from COMMON_EXERCISES (id: null until
-// selected).
+/**
+ * Mirrors RoutineBuilderScreen's search pattern: mixes real Exercise rows
+ * with not-yet-created suggestions from COMMON_EXERCISES (id: null until
+ * selected).
+ */
 type ExerciseOption = Exercise | { id: null; name: string };
 
 const REST_SECONDS = 90;
 
-// Deliberately not a strict 1-or-2-length tuple — the block-building loop in
-// loadWorkout() constructs these dynamically and enforcing a tuple type
-// there would add generic-narrowing ceremony for no real safety gain; the
-// 1-or-2 invariant stays enforced by the template's v-if on .length, same
-// as today.
+/**
+ * Deliberately not a strict 1-or-2-length tuple — the block-building loop in
+ * loadWorkout() constructs these dynamically and enforcing a tuple type
+ * there would add generic-narrowing ceremony for no real safety gain; the
+ * 1-or-2 invariant stays enforced by the template's v-if on .length, same
+ * as today.
+ */
 interface WorkoutBlock {
   exercises: Exercise[];
 }
 
-// Weight is optional (bodyweight/banded exercises), so a 0 weight is a
-// normal, common case — showing "0 lbs x 12" would read like a mistake, so
-// the weight portion is omitted entirely when there's none logged.
+/**
+ * Weight is optional (bodyweight/banded exercises), so a 0 weight is a
+ * normal, common case — showing "0 lbs x 12" would read like a mistake, so
+ * the weight portion is omitted entirely when there's none logged.
+ */
 function formatGhostText(weightInLbs: number, unit: WeightUnit, reps: number) {
   if (!weightInLbs) return `${reps} reps`;
   return `${formatWeight(weightInLbs, unit)} ${unit} x ${reps}`;
@@ -73,16 +79,20 @@ const emit = defineEmits<{
   navigate: [screen: ScreenName, params?: NavParams];
 }>();
 
-// Read once — navParams doesn't change over this screen's lifetime.
-// Threaded through to logSet so history can be grouped by routine.
+/**
+ * Read once — navParams doesn't change over this screen's lifetime.
+ * Threaded through to logSet so history can be grouped by routine.
+ */
 const routineId = props.navParams?.routineId || null;
 
-// Resolves which session this screen should use: reuse one already left
-// in progress for this routine (so loadWorkout() can rehydrate its rows),
-// discard-and-replace one left in progress for a different routine after
-// confirming (single active session app-wide, mirrors DashboardScreen's
-// delete confirmation), or start a brand-new one. Returns null only when
-// the user declines to discard a different routine's in-progress session.
+/**
+ * Resolves which session this screen should use: reuse one already left
+ * in progress for this routine (so loadWorkout() can rehydrate its rows),
+ * discard-and-replace one left in progress for a different routine after
+ * confirming (single active session app-wide, mirrors DashboardScreen's
+ * delete confirmation), or start a brand-new one. Returns null only when
+ * the user declines to discard a different routine's in-progress session.
+ */
 function resolveWorkoutSession(forRoutineId: string): { sessionId: string; startedAt: number } | null {
   const prior = activeSession.current;
   if (prior && prior.routineId === forRoutineId) {
@@ -101,16 +111,20 @@ if (routineId && !session) {
   emit('navigate', 'dashboard');
 }
 
-// Captured once, then reused for the lifetime of this screen instance —
-// including across a resume, so Finish still records the full workout
-// duration, not just time spent in this particular visit. See
-// docs/edd-workout-duration.md.
+/**
+ * Captured once, then reused for the lifetime of this screen instance —
+ * including across a resume, so Finish still records the full workout
+ * duration, not just time spent in this particular visit. See
+ * docs/edd-workout-duration.md.
+ */
 const startedAt = session?.startedAt ?? null;
 
-// Identifies this one workout instance. Tagged onto every set logged
-// during this screen's lifetime and reused as the workouts row's id on
-// Finish, so history can group this session's sets together instead of
-// merging them with any other same-day session of the same routine.
+/**
+ * Identifies this one workout instance. Tagged onto every set logged
+ * during this screen's lifetime and reused as the workouts row's id on
+ * Finish, so history can group this session's sets together instead of
+ * merging them with any other same-day session of the same routine.
+ */
 const sessionId = session?.sessionId ?? null;
 
 // Marks this session resumable the moment it starts, not just on Finish —
@@ -129,11 +143,13 @@ const blocks = ref<WorkoutBlock[]>([]);
 const ghostTextByExercise: Record<string, string | null> = reactive({});
 const setRowsByExercise: Record<string, SetRowState[]> = reactive({});
 
-// Rebuilds a checked row from a previously logged set, so resuming a
-// session shows exactly what was already done. Reuses the persisted
-// values verbatim — there's no way to tell "typed 0" apart from "left
-// blank" once collapsed into a SetEntry, so a genuine 0 just redisplays
-// as 0, same as any other logged value.
+/**
+ * Rebuilds a checked row from a previously logged set, so resuming a
+ * session shows exactly what was already done. Reuses the persisted
+ * values verbatim — there's no way to tell "typed 0" apart from "left
+ * blank" once collapsed into a SetEntry, so a genuine 0 just redisplays
+ * as 0, same as any other logged value.
+ */
 function rowFromSet(set: SetEntry): SetRowState {
   return reactive({
     weightEntered: String(set.weightEntered),
@@ -147,11 +163,13 @@ function rowFromSet(set: SetEntry): SetRowState {
   });
 }
 
-// Seeds one exercise's row array (pre-checked rows rebuilt from any sets
-// already logged this session, plus a trailing empty row) and ghost text.
-// Shared by loadWorkout(), for every routine/ad-hoc exercise present when
-// the screen loads, and appendAdhocBlock(), for one added live mid-workout
-// (where existingSets is empty — nothing's been logged for it yet).
+/**
+ * Seeds one exercise's row array (pre-checked rows rebuilt from any sets
+ * already logged this session, plus a trailing empty row) and ghost text.
+ * Shared by loadWorkout(), for every routine/ad-hoc exercise present when
+ * the screen loads, and appendAdhocBlock(), for one added live mid-workout
+ * (where existingSets is empty — nothing's been logged for it yet).
+ */
 async function seedExerciseState(exercise: Exercise, existingSets: SetEntry[] = []) {
   const rows = existingSets.filter((s) => s.exerciseId === exercise.id).map(rowFromSet);
   setRowsByExercise[exercise.id] = reactive([...rows, makeEmptyRow()]);
@@ -226,8 +244,10 @@ function addRow(exerciseId: string) {
   setRowsByExercise[exerciseId].push(makeEmptyRow());
 }
 
-// Supersets always add a set to both exercises together, keeping their
-// row arrays index-synced so "Set N" always pairs the right two rows.
+/**
+ * Supersets always add a set to both exercises together, keeping their
+ * row arrays index-synced so "Set N" always pairs the right two rows.
+ */
 function addSupersetRow(exerciseIdA: string, exerciseIdB: string) {
   setRowsByExercise[exerciseIdA].push(makeEmptyRow());
   setRowsByExercise[exerciseIdB].push(makeEmptyRow());
@@ -238,9 +258,11 @@ function getRow(exerciseId: string, index: number): SetRowState | undefined {
   return rows ? rows[index] : undefined;
 }
 
-// Only the trailing row is ever eligible for removal — see SetRow's
-// `removable` prop comment. Also keeps at least one row per exercise, so
-// there's always somewhere to log a set.
+/**
+ * Only the trailing row is ever eligible for removal — see SetRow's
+ * `removable` prop comment. Also keeps at least one row per exercise, so
+ * there's always somewhere to log a set.
+ */
 function isLastRow(exerciseId: string, index: number): boolean {
   const rows = setRowsByExercise[exerciseId];
   return rows.length > 1 && index === rows.length - 1;
@@ -251,19 +273,23 @@ function removeRow(exerciseId: string, index: number) {
   setRowsByExercise[exerciseId].splice(index, 1);
 }
 
-// Mirrors addSupersetRow — a superset's two row arrays are added to and
-// removed from together, keeping them index-synced.
+/**
+ * Mirrors addSupersetRow — a superset's two row arrays are added to and
+ * removed from together, keeping them index-synced.
+ */
 function removeSupersetRow(exerciseIdA: string, exerciseIdB: string, index: number) {
   if (!isLastRow(exerciseIdA, index) || !isLastRow(exerciseIdB, index)) return;
   setRowsByExercise[exerciseIdA].splice(index, 1);
   setRowsByExercise[exerciseIdB].splice(index, 1);
 }
 
-// Zips a superset pair's two row arrays into { index, rowA, rowB } tuples
-// so the template can render Set 1 of A immediately above Set 1 of B,
-// then Set 2 of A above Set 2 of B, etc. rowA/rowB are references to the
-// same reactive row objects the arrays hold, so v-model bindings on them
-// still mutate the real state.
+/**
+ * Zips a superset pair's two row arrays into { index, rowA, rowB } tuples
+ * so the template can render Set 1 of A immediately above Set 1 of B,
+ * then Set 2 of A above Set 2 of B, etc. rowA/rowB are references to the
+ * same reactive row objects the arrays hold, so v-model bindings on them
+ * still mutate the real state.
+ */
 function pairedRows(block: WorkoutBlock): { index: number; rowA: SetRowState; rowB: SetRowState }[] {
   const [exerciseA, exerciseB] = block.exercises;
   const rowsA = setRowsByExercise[exerciseA.id];
@@ -277,12 +303,14 @@ function toggleUnit(row: SetRowState) {
   row.unit = row.unit === 'lbs' ? 'kg' : 'lbs';
 }
 
-// partnerRow is only passed for superset rows. The rest banner should
-// fire once per superset pair, after whichever exercise is checked off
-// last — not after each individual component set — so it only starts
-// here when there's no partner (standalone exercise) or the partner's
-// matching row is already checked. Only fires on a first-time log, not
-// when re-saving an edit made after unlockRow.
+/**
+ * partnerRow is only passed for superset rows. The rest banner should
+ * fire once per superset pair, after whichever exercise is checked off
+ * last — not after each individual component set — so it only starts
+ * here when there's no partner (standalone exercise) or the partner's
+ * matching row is already checked. Only fires on a first-time log, not
+ * when re-saving an edit made after unlockRow.
+ */
 async function checkRow(exerciseId: string, row: SetRowState, partnerRow: SetRowState | null = null) {
   if (row.checked) return;
   // Weight is optional — bodyweight/banded exercises (scapular wall
@@ -329,9 +357,11 @@ async function checkRow(exerciseId: string, row: SetRowState, partnerRow: SetRow
   }
 }
 
-// Re-opens an already-logged row for editing. Doesn't touch the
-// database — the existing set stays as-is until the next reps change
-// re-saves it via checkRow's update path above.
+/**
+ * Re-opens an already-logged row for editing. Doesn't touch the
+ * database — the existing set stays as-is until the next reps change
+ * re-saves it via checkRow's update path above.
+ */
 function unlockRow(row: SetRowState) {
   row.checked = false;
 }
@@ -340,13 +370,15 @@ function viewHistory(exerciseId: string) {
   emit('navigate', 'progress-chart', { initialExerciseId: exerciseId });
 }
 
-// The only path that records a session duration — the header back-arrow
-// still just navigates away with no write, since leaving mid-workout
-// isn't "finishing" it.
-// finishing guards against a second tap landing before the first async
-// write + navigation completes (no loading state on the button, so a
-// double-tap or a device double-firing the click event would otherwise
-// write duplicate session rows).
+/**
+ * The only path that records a session duration — the header back-arrow
+ * still just navigates away with no write, since leaving mid-workout
+ * isn't "finishing" it.
+ * finishing guards against a second tap landing before the first async
+ * write + navigation completes (no loading state on the button, so a
+ * double-tap or a device double-firing the click event would otherwise
+ * write duplicate session rows).
+ */
 const finishing = ref(false);
 async function finishWorkout() {
   if (finishing.value) return;
@@ -358,20 +390,24 @@ async function finishWorkout() {
   emit('navigate', 'dashboard');
 }
 
-// Ad-hoc exercise search — same pattern as RoutineBuilderScreen's, trimmed
-// down (no drag-reorder): search/create here is session-only. The exercise
-// gets logged and shows up in this workout's history, but is never written
-// back into the routine's saved exerciseIds — Routine Builder stays the
-// only place that permanently changes a routine's exercise list.
+/**
+ * Ad-hoc exercise search — same pattern as RoutineBuilderScreen's, trimmed
+ * down (no drag-reorder): search/create here is session-only. The exercise
+ * gets logged and shows up in this workout's history, but is never written
+ * back into the routine's saved exerciseIds — Routine Builder stays the
+ * only place that permanently changes a routine's exercise list.
+ */
 const showAddExercise = ref(false);
 const searchQuery = ref('');
 const searchResults = ref<Exercise[]>([]);
 
-// Applied to whatever exercise gets created next via search/create-new.
-// Existing exercises keep whatever type they already have; there's no
-// per-row cycle button here to change it post-add, only at creation time.
-// Sticky across multiple ad-hoc adds in the same workout, not reset after
-// each one.
+/**
+ * Applied to whatever exercise gets created next via search/create-new.
+ * Existing exercises keep whatever type they already have; there's no
+ * per-row cycle button here to change it post-add, only at creation time.
+ * Sticky across multiple ad-hoc adds in the same workout, not reset after
+ * each one.
+ */
 const newExerciseResistanceType = ref<ResistanceType>('weight');
 
 watch(
@@ -394,8 +430,10 @@ const mergedResults = computed<ExerciseOption[]>(() => {
 
 const exactMatchExists = computed(() => mergedResults.value.some((e) => e.name.toLowerCase() === searchQuery.value.trim().toLowerCase()));
 
-// Already part of this workout — a routine exercise or one added ad-hoc
-// earlier in the session — so it's grayed out instead of offered again.
+/**
+ * Already part of this workout — a routine exercise or one added ad-hoc
+ * earlier in the session — so it's grayed out instead of offered again.
+ */
 function isInWorkout(exercise: ExerciseOption): boolean {
   if (exercise.id) return exercise.id in setRowsByExercise;
   return blocks.value.some((b) => b.exercises.some((e) => e.name.toLowerCase() === exercise.name.toLowerCase()));
