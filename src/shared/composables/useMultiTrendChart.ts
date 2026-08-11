@@ -1,9 +1,11 @@
-// Multi-series variant of useTrendChart: same idea (scale a series of
-// numeric values to SVG x/y for a polyline + point markers), but supports
-// several series over the same item list, each independently normalized on
-// its own min/max. Kept separate from useTrendChart (rather than
-// refactored to share internals) so BodyMetricsScreen's single-series usage
-// is untouched.
+/**
+ * Multi-series variant of useTrendChart: same idea (scale a series of
+ * numeric values to SVG x/y for a polyline + point markers), but supports
+ * several series over the same item list, each independently normalized on
+ * its own min/max. Kept separate from useTrendChart (rather than
+ * refactored to share internals) so BodyMetricsScreen's single-series usage
+ * is untouched.
+ */
 import { computed, type Ref } from 'vue';
 import type { TrendChartOptions, TrendChartPoint } from './useTrendChart';
 

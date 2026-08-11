@@ -2,9 +2,11 @@
 defineProps<{
   options: { value: T; label: string }[];
   modelValue: T;
-  // 'md' reproduces the Settings screen's toggles (py-3 font-semibold);
-  // 'sm' reproduces the resistance-type picker's smaller size (py-2
-  // text-xs font-semibold).
+  /**
+   * 'md' reproduces the Settings screen's toggles (py-3 font-semibold);
+   * 'sm' reproduces the resistance-type picker's smaller size (py-2
+   * text-xs font-semibold).
+   */
   size?: 'sm' | 'md';
 }>();
 const emit = defineEmits<{

@@ -1,8 +1,10 @@
-// Small shared reactive singleton for cross-screen UI state that isn't
-// persisted workout data (that all lives in db.js/IndexedDB). Preferred
-// display units, backed by localStorage — mass (lbs/kg) applies to workout
-// weights and mass-type body metrics; length (in/cm) applies to length-type
-// body metrics (waist, arm size, etc).
+/**
+ * Small shared reactive singleton for cross-screen UI state that isn't
+ * persisted workout data (that all lives in db.js/IndexedDB). Preferred
+ * display units, backed by localStorage — mass (lbs/kg) applies to workout
+ * weights and mass-type body metrics; length (in/cm) applies to length-type
+ * body metrics (waist, arm size, etc).
+ */
 
 import { reactive } from 'vue';
 import type { WeightUnit, LengthUnit } from './db';
@@ -11,9 +13,11 @@ const STORAGE_KEY = 'preferredUnit';
 const LENGTH_STORAGE_KEY = 'preferredLengthUnit';
 const THEME_STORAGE_KEY = 'theme';
 
-// 'irontrack' is the app's original color scheme; 'onebigfunction' is the
-// platform-wide design system (see style.css's [data-theme] block for the
-// actual token values each one maps to).
+/**
+ * 'irontrack' is the app's original color scheme; 'onebigfunction' is the
+ * platform-wide design system (see style.css's [data-theme] block for the
+ * actual token values each one maps to).
+ */
 export type Theme = 'irontrack' | 'onebigfunction';
 
 interface Settings {

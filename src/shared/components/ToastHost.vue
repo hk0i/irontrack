@@ -1,7 +1,9 @@
 <script setup lang="ts">
-// Mounted once, app-wide, in App.vue (alongside RestTimerBanner) — renders
-// whatever's currently queued in toast.ts. Purely generic/presentational:
-// knows nothing about what pushed a given toast or why.
+/**
+ * Mounted once, app-wide, in App.vue (alongside RestTimerBanner) — renders
+ * whatever's currently queued in toast.ts. Purely generic/presentational:
+ * knows nothing about what pushed a given toast or why.
+ */
 import { toasts, dismissToast, type ToastItem } from '../toast';
 
 function runAction(toast: ToastItem) {

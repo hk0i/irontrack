@@ -1,9 +1,11 @@
-// Tracks the single in-progress workout session, if any, so it survives
-// navigating away from ActiveWorkoutScreen (which otherwise unmounts and
-// discards all its local state — see App.vue's screen switcher). Mirrors
-// store.ts's localStorage-backed reactive singleton pattern; kept separate
-// from store.ts since that file is scoped to UI preferences, not workout
-// data. Only one active session is tracked app-wide.
+/**
+ * Tracks the single in-progress workout session, if any, so it survives
+ * navigating away from ActiveWorkoutScreen (which otherwise unmounts and
+ * discards all its local state — see App.vue's screen switcher). Mirrors
+ * store.ts's localStorage-backed reactive singleton pattern; kept separate
+ * from store.ts since that file is scoped to UI preferences, not workout
+ * data. Only one active session is tracked app-wide.
+ */
 
 import { reactive } from 'vue';
 

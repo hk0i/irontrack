@@ -5,13 +5,17 @@ const props = withDefaults(
   defineProps<{
     modelValue: string[];
     disabled?: boolean;
-    // Reset button is only useful where there's no other way to discard a
-    // band selection (SetRow, mid-entry) — History's edit form already has
-    // an explicit Cancel button, so it turns this off.
+    /**
+     * Reset button is only useful where there's no other way to discard a
+     * band selection (SetRow, mid-entry) — History's edit form already has
+     * an explicit Cancel button, so it turns this off.
+     */
     showReset?: boolean;
-    // The chip's inactive background needs to contrast with whatever
-    // surface it sits on — SetRow's cards are `bg-surface`, History's edit
-    // row is `bg-surface-2`, so each picks the other for its "off" chips.
+    /**
+     * The chip's inactive background needs to contrast with whatever
+     * surface it sits on — SetRow's cards are `bg-surface`, History's edit
+     * row is `bg-surface-2`, so each picks the other for its "off" chips.
+     */
     variant?: 'surface' | 'surface-2';
   }>(),
   { disabled: false, showReset: true, variant: 'surface-2' }

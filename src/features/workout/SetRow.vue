@@ -1,10 +1,12 @@
 <script setup lang="ts">
-// Weight/unit/reps/checkmark group shared by both the standalone-exercise
-// case and both sides of a superset pair — previously duplicated three times
-// across active-workout.js's template (see docs/edd-vue-sfc-migration.md
-// step 5). Deliberately "dumb": it only knows about `row`'s own fields, not
-// exerciseId/partnerRow/sessionId, so it emits intent and lets the parent
-// (which already has that context) decide what checking/unlocking means.
+/**
+ * Weight/unit/reps/checkmark group shared by both the standalone-exercise
+ * case and both sides of a superset pair — previously duplicated three times
+ * across active-workout.js's template (see docs/edd-vue-sfc-migration.md
+ * step 5). Deliberately "dumb": it only knows about `row`'s own fields, not
+ * exerciseId/partnerRow/sessionId, so it emits intent and lets the parent
+ * (which already has that context) decide what checking/unlocking means.
+ */
 import { computed } from 'vue';
 import type { SetRowState } from '../../shared/types';
 import type { ResistanceType } from '../../shared/db';
@@ -13,20 +15,28 @@ import BandColorPicker from '../../shared/components/BandColorPicker.vue';
 const props = withDefaults(
   defineProps<{
     row: SetRowState;
-    // Set index for a standalone exercise's row list; omitted (null) for
-    // superset rows, which are labeled by exercise name above instead.
+    /**
+     * Set index for a standalone exercise's row list; omitted (null) for
+     * superset rows, which are labeled by exercise name above instead.
+     */
     index?: number | null;
-    // Superset rows sit in a narrower nested box, so their reps input and
-    // row gap are slightly tighter than a standalone row's.
+    /**
+     * Superset rows sit in a narrower nested box, so their reps input and
+     * row gap are slightly tighter than a standalone row's.
+     */
     compact?: boolean;
-    // Comes from the exercise, not the row — weight input/unit pill only
-    // render for 'weight', band chips only for 'bands', neither for
-    // 'bodyweight' (just reps + checkmark).
+    /**
+     * Comes from the exercise, not the row — weight input/unit pill only
+     * render for 'weight', band chips only for 'bands', neither for
+     * 'bodyweight' (just reps + checkmark).
+     */
     resistanceType?: ResistanceType;
-    // Only the trailing row of a set list is ever removable — set by the
-    // parent, which knows the row's position. Removing a non-trailing row
-    // would desync a superset pair's index-paired arrays, so that's not
-    // offered at all rather than handled riskily.
+    /**
+     * Only the trailing row of a set list is ever removable — set by the
+     * parent, which knows the row's position. Removing a non-trailing row
+     * would desync a superset pair's index-paired arrays, so that's not
+     * offered at all rather than handled riskily.
+     */
     removable?: boolean;
   }>(),
   { index: null, compact: false, resistanceType: 'weight', removable: false }
@@ -38,9 +48,11 @@ const emit = defineEmits<{
   remove: [];
 }>();
 
-// A row is only removable once it's also empty — untouched since
-// makeEmptyRow() created it. Prevents the X from ever discarding
-// weight/reps/bands the user actually entered.
+/**
+ * A row is only removable once it's also empty — untouched since
+ * makeEmptyRow() created it. Prevents the X from ever discarding
+ * weight/reps/bands the user actually entered.
+ */
 const isEmpty = computed(
   () => !props.row.checked && props.row.weightEntered === '' && props.row.reps === '' && props.row.bandColors.length === 0
 );

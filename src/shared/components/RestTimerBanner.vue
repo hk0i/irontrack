@@ -1,8 +1,10 @@
 <script setup lang="ts">
-// Mounted once, app-wide, in App.vue (outside the screen switcher) — that's
-// what makes the rest timer survive navigation: this component stays
-// mounted no matter which screen is showing, so it keeps ticking and stays
-// visible even after backing out of ActiveWorkoutScreen mid-rest.
+/**
+ * Mounted once, app-wide, in App.vue (outside the screen switcher) — that's
+ * what makes the rest timer survive navigation: this component stays
+ * mounted no matter which screen is showing, so it keeps ticking and stays
+ * visible even after backing out of ActiveWorkoutScreen mid-rest.
+ */
 import { onMounted, watch } from 'vue';
 import { restTimer, secondsLeft, clearRestTimer } from '../rest-timer';
 import { playRestSound, showRestOverNotification } from '../rest-alert';

@@ -1,8 +1,10 @@
-// Shared by ProgressChartScreen and BodyMetricsScreen: scales a series of
-// numeric values to SVG x/y coordinates for a trend line chart (polyline +
-// point markers). Each returned point carries the source item alongside
-// x/y (not just the number) so callers can wire up tap-to-view without a
-// second parallel array to index back into.
+/**
+ * Shared by ProgressChartScreen and BodyMetricsScreen: scales a series of
+ * numeric values to SVG x/y coordinates for a trend line chart (polyline +
+ * point markers). Each returned point carries the source item alongside
+ * x/y (not just the number) so callers can wire up tap-to-view without a
+ * second parallel array to index back into.
+ */
 import { computed, type Ref } from 'vue';
 
 export interface TrendChartPoint<T> {

@@ -62,8 +62,10 @@ onMounted(async () => {
 
 watch(selectedBlueprintId, loadRecentLogs);
 
-// Default the entry unit to whichever unit matches the selected
-// blueprint's type, following the app's global preferred unit.
+/**
+ * Default the entry unit to whichever unit matches the selected
+ * blueprint's type, following the app's global preferred unit.
+ */
 watch(selectedBlueprint, (blueprint) => {
   if (!blueprint) return;
   entryUnit.value = blueprint.type === 'mass' ? settings.preferredUnit : settings.preferredLengthUnit;
@@ -106,17 +108,21 @@ async function submitLogEntry() {
   await loadRecentLogs();
 }
 
-// The chart always renders in the app's global preferred unit for the
-// metric's dimension (mass or length), independent of whatever unit the
-// entry form's toggle pill happens to be set to right now.
+/**
+ * The chart always renders in the app's global preferred unit for the
+ * metric's dimension (mass or length), independent of whatever unit the
+ * entry form's toggle pill happens to be set to right now.
+ */
 const chartPreferredUnit = computed<Unit | ''>(() => {
   if (!selectedBlueprint.value) return '';
   return selectedBlueprint.value.type === 'mass' ? settings.preferredUnit : settings.preferredLengthUnit;
 });
 
-// Empty when there's no valid blueprint/unit to plot against — the
-// composable's own "0 items" guard then keeps points empty too, same as
-// the inline check this replaced.
+/**
+ * Empty when there's no valid blueprint/unit to plot against — the
+ * composable's own "0 items" guard then keeps points empty too, same as
+ * the inline check this replaced.
+ */
 const chartLogs = computed<MetricLog[]>(() => (selectedBlueprint.value && chartPreferredUnit.value ? recentLogs.value : []));
 
 const { points, polylinePoints } = useTrendChart(

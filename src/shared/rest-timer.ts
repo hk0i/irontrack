@@ -1,12 +1,14 @@
-// Wall-clock rest timer, mirroring active-session.ts's localStorage-backed
-// reactive singleton pattern. Tracking an end timestamp instead of
-// decrementing a counter is what makes this correct across both mobile
-// backgrounding (a plain setInterval throttles/pauses in a backgrounded
-// tab and drifts) and navigating away from ActiveWorkoutScreen (which
-// unmounts and would otherwise destroy component-local timer state).
-// Deliberately has no sound/notification side effects of its own — single
-// responsibility, kept in rest-alert.ts / the component that watches
-// secondsLeft for the 0-crossing.
+/**
+ * Wall-clock rest timer, mirroring active-session.ts's localStorage-backed
+ * reactive singleton pattern. Tracking an end timestamp instead of
+ * decrementing a counter is what makes this correct across both mobile
+ * backgrounding (a plain setInterval throttles/pauses in a backgrounded
+ * tab and drifts) and navigating away from ActiveWorkoutScreen (which
+ * unmounts and would otherwise destroy component-local timer state).
+ * Deliberately has no sound/notification side effects of its own — single
+ * responsibility, kept in rest-alert.ts / the component that watches
+ * secondsLeft for the 0-crossing.
+ */
 
 import { reactive, ref, computed } from 'vue';
 
@@ -23,10 +25,12 @@ export const restTimer: { endAt: number | null } = reactive({
   endAt: loadEndAt(),
 });
 
-// Only ticks while a timer is actually running — no interval sitting idle
-// the rest of the time. visibilitychange/focus force an immediate
-// recompute the moment the tab wakes, rather than waiting for the next
-// scheduled tick (which itself may have been throttled while hidden).
+/**
+ * Only ticks while a timer is actually running — no interval sitting idle
+ * the rest of the time. visibilitychange/focus force an immediate
+ * recompute the moment the tab wakes, rather than waiting for the next
+ * scheduled tick (which itself may have been throttled while hidden).
+ */
 const now = ref(Date.now());
 let tickInterval: ReturnType<typeof setInterval> | null = null;
 

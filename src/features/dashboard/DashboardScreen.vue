@@ -15,10 +15,12 @@ const emit = defineEmits<{
   navigate: [screen: ScreenName, params?: NavParams];
 }>();
 
-// __APP_VERSION__/__COMMIT_HASH__ are Vite `define` constants (see
-// vite.config.js) substituted at build time — assigned to local consts here
-// rather than referenced directly in the template, since <script setup>'s
-// template only reliably resolves identifiers it has itself exposed.
+/**
+ * __APP_VERSION__/__COMMIT_HASH__ are Vite `define` constants (see
+ * vite.config.js) substituted at build time — assigned to local consts here
+ * rather than referenced directly in the template, since <script setup>'s
+ * template only reliably resolves identifiers it has itself exposed.
+ */
 const APP_VERSION = __APP_VERSION__;
 const COMMIT_HASH = __COMMIT_HASH__;
 
@@ -32,11 +34,13 @@ async function loadRoutines() {
   suggestedRoutine.value = await computeSuggestedRoutine(routines.value);
 }
 
-// An unfinished workout takes priority over the normal rotation
-// suggestion — it's the thing the user was already in the middle of. If
-// its routine has since been deleted, the session can't be shown or
-// resumed meaningfully, so the stale pointer is cleared here rather than
-// left to surface a broken "Resume" card.
+/**
+ * An unfinished workout takes priority over the normal rotation
+ * suggestion — it's the thing the user was already in the middle of. If
+ * its routine has since been deleted, the session can't be shown or
+ * resumed meaningfully, so the stale pointer is cleared here rather than
+ * left to surface a broken "Resume" card.
+ */
 async function resolveResumableRoutine(currentRoutines: Routine[]): Promise<Routine | null> {
   if (!activeSession.current) return null;
   const routine = currentRoutines.find((r) => r.id === activeSession.current!.routineId) || null;
@@ -44,12 +48,14 @@ async function resolveResumableRoutine(currentRoutines: Routine[]): Promise<Rout
   return routine;
 }
 
-// Rotates through the routine list in whatever order it's displayed:
-// find the routine the most recently logged set belonged to, and
-// suggest the next one after it, wrapping back to the start. Completion
-// -based rather than calendar-based, so rest days don't throw it off.
-// Defaults to the first routine if there's no history yet, or the last
-// one performed has since been deleted.
+/**
+ * Rotates through the routine list in whatever order it's displayed:
+ * find the routine the most recently logged set belonged to, and
+ * suggest the next one after it, wrapping back to the start. Completion
+ * -based rather than calendar-based, so rest days don't throw it off.
+ * Defaults to the first routine if there's no history yet, or the last
+ * one performed has since been deleted.
+ */
 async function computeSuggestedRoutine(currentRoutines: Routine[]): Promise<Routine | null> {
   if (currentRoutines.length === 0) return null;
   const sets = await getAllSets();

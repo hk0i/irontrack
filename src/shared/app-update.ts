@@ -1,8 +1,10 @@
-// Tracks whether a new service-worker version is installed and waiting to
-// take over (see src/sw.js — it deliberately no longer auto-activates).
-// Plain per-page-load runtime state, no localStorage: a reload is the
-// entire point of "installing" an update, so there's nothing here worth
-// surviving one.
+/**
+ * Tracks whether a new service-worker version is installed and waiting to
+ * take over (see src/sw.js — it deliberately no longer auto-activates).
+ * Plain per-page-load runtime state, no localStorage: a reload is the
+ * entire point of "installing" an update, so there's nothing here worth
+ * surviving one.
+ */
 
 import { reactive } from 'vue';
 import { showToast } from './toast';
@@ -11,10 +13,12 @@ export const appUpdate: { available: boolean } = reactive({ available: false });
 
 let waitingWorker: ServiceWorker | null = null;
 
-// Guards the toast to once per update — if a second version somehow
-// becomes available before the first is installed, waitingWorker is still
-// kept current (installAppUpdate always targets whichever worker is
-// actually waiting), it just doesn't queue a second toast on top.
+/**
+ * Guards the toast to once per update — if a second version somehow
+ * becomes available before the first is installed, waitingWorker is still
+ * kept current (installAppUpdate always targets whichever worker is
+ * actually waiting), it just doesn't queue a second toast on top.
+ */
 function markAvailable(worker: ServiceWorker) {
   waitingWorker = worker;
   if (appUpdate.available) return;
@@ -26,10 +30,12 @@ function markAvailable(worker: ServiceWorker) {
   });
 }
 
-// A worker reaching 'installed' only means "a new version is ready" when
-// there's already a controller — on a first-ever visit (no prior service
-// worker), the very first install also passes through 'installed' with no
-// existing controller, and that's not an "update", just normal startup.
+/**
+ * A worker reaching 'installed' only means "a new version is ready" when
+ * there's already a controller — on a first-ever visit (no prior service
+ * worker), the very first install also passes through 'installed' with no
+ * existing controller, and that's not an "update", just normal startup.
+ */
 function trackInstalling(worker: ServiceWorker) {
   worker.addEventListener('statechange', () => {
     if (worker.state === 'installed' && navigator.serviceWorker.controller) {

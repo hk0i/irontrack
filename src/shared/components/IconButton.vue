@@ -1,10 +1,12 @@
 <script setup lang="ts">
-// Icon-only button chrome, in the two size/tone combinations already used
-// across the app. aria-label and @click aren't declared as props/emits —
-// Vue's attribute/listener fallthrough puts them straight on the <button>
-// root, so callers use this exactly like a native <button>. The icon SVG
-// itself is caller-supplied via the default slot, since every use has a
-// different icon.
+/**
+ * Icon-only button chrome, in the two size/tone combinations already used
+ * across the app. aria-label and @click aren't declared as props/emits —
+ * Vue's attribute/listener fallthrough puts them straight on the <button>
+ * root, so callers use this exactly like a native <button>. The icon SVG
+ * itself is caller-supplied via the default slot, since every use has a
+ * different icon.
+ */
 withDefaults(
   defineProps<{
     size?: 'sm' | 'md';

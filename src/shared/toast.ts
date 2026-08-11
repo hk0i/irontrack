@@ -1,7 +1,9 @@
-// General-purpose toast queue — any feature that wants to surface a
-// dismissible, optionally-actionable message imports showToast/dismissToast
-// directly; no new component per use case. ToastHost.vue is the one place
-// that renders whatever's currently queued here.
+/**
+ * General-purpose toast queue — any feature that wants to surface a
+ * dismissible, optionally-actionable message imports showToast/dismissToast
+ * directly; no new component per use case. ToastHost.vue is the one place
+ * that renders whatever's currently queued here.
+ */
 
 import { reactive } from 'vue';
 
@@ -10,8 +12,10 @@ export interface ToastItem {
   message: string;
   actionLabel?: string;
   onAction?: () => void;
-  // Omitted: the toast persists until manually dismissed or its action is
-  // taken. Given: auto-dismisses after that many ms.
+  /**
+   * Omitted: the toast persists until manually dismissed or its action is
+   * taken. Given: auto-dismisses after that many ms.
+   */
   duration?: number;
 }
 
