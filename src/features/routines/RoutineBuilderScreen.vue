@@ -19,8 +19,10 @@ import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import SegmentedToggle from '../../shared/components/SegmentedToggle.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
 
-// mergedResults mixes real Exercise rows with not-yet-created suggestions
-// from COMMON_EXERCISES (id: null until the user selects one).
+/**
+ * mergedResults mixes real Exercise rows with not-yet-created suggestions
+ * from COMMON_EXERCISES (id: null until the user selects one).
+ */
 type ExerciseOption = Exercise | { id: null; name: string };
 
 const props = defineProps<{
@@ -37,9 +39,11 @@ const searchResults = ref<Exercise[]>([]);
 const selectedExercises = ref<Exercise[]>([]);
 const linkModeExerciseId = ref<string | null>(null);
 
-// Applied to whatever exercise gets created next via search/create-new —
-// existing exercises keep whatever type they already have, edited via the
-// per-row cycle button in "Routine order" instead.
+/**
+ * Applied to whatever exercise gets created next via search/create-new —
+ * existing exercises keep whatever type they already have, edited via the
+ * per-row cycle button in "Routine order" instead.
+ */
 const newExerciseResistanceType = ref<ResistanceType>('weight');
 
 async function setResistanceType(exercise: Exercise, value: ResistanceType) {
@@ -105,10 +109,12 @@ watch(searchQuery, async (query) => {
   searchResults.value = await searchExercises(query);
 }, { immediate: true });
 
-// Merges the user's own saved exercises with the common-exercise
-// suggestion list, so autocomplete works even before any exercise has
-// ever been created. Common suggestions with no DB record yet are
-// represented with id: null and get created on first selection.
+/**
+ * Merges the user's own saved exercises with the common-exercise
+ * suggestion list, so autocomplete works even before any exercise has
+ * ever been created. Common suggestions with no DB record yet are
+ * represented with id: null and get created on first selection.
+ */
 const mergedResults = computed<ExerciseOption[]>(() => {
   const query = searchQuery.value.trim().toLowerCase();
   if (!query) return [];
@@ -150,8 +156,10 @@ function removeExercise(exercise: Exercise) {
   selectedExercises.value = selectedExercises.value.filter((e) => e.id !== exercise.id);
 }
 
-// Tap a link icon to enter "link mode"; tap a second row's link icon to
-// complete the pair. Tapping an already-linked row's icon unlinks it.
+/**
+ * Tap a link icon to enter "link mode"; tap a second row's link icon to
+ * complete the pair. Tapping an already-linked row's icon unlinks it.
+ */
 async function toggleLink(exercise: Exercise) {
   if (exercise.supersetWith) {
     await clearSupersetLink(exercise.id);
