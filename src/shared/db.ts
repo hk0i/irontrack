@@ -77,10 +77,10 @@ export interface WorkoutSession {
    * bump needed (same pattern as SetEntry.bandColors). Sessions logged
    * before this field existed have no key at all.
    */
-  feeling?: string;
+  mood?: string;
   /**
    * Optional free-text note captured at finish time, same optionality and
-   * versioning story as `feeling`.
+   * versioning story as `mood`.
    */
   note?: string;
 }
@@ -443,7 +443,7 @@ export async function logWorkoutSession({
   date,
   startedAt,
   endedAt,
-  feeling,
+  mood,
   note,
 }: {
   id?: string;
@@ -451,7 +451,7 @@ export async function logWorkoutSession({
   date: string;
   startedAt: number;
   endedAt: number;
-  feeling?: string;
+  mood?: string;
   note?: string;
 }): Promise<WorkoutSession> {
   const session: WorkoutSession = {
@@ -461,7 +461,7 @@ export async function logWorkoutSession({
     startedAt,
     endedAt,
     durationMs: endedAt - startedAt,
-    ...(feeling && { feeling }),
+    ...(mood && { mood }),
     ...(note && { note }),
   };
   await db.workouts.add(session);
