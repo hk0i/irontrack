@@ -28,8 +28,10 @@ const emit = defineEmits<{
   navigate: [screen: ScreenName, params?: NavParams];
 }>();
 
-// Transient inline-edit fields bolted onto a real SetEntry, never persisted
-// as-is — startEdit()/cancelEdit() add/remove them on the object in place.
+/**
+ * Transient inline-edit fields bolted onto a real SetEntry, never persisted
+ * as-is — startEdit()/cancelEdit() add/remove them on the object in place.
+ */
 type EditableSet = SetEntry & {
   _editWeight?: string;
   _editReps?: string;
@@ -39,10 +41,12 @@ type EditableSet = SetEntry & {
 
 interface ExerciseGroup {
   name: string;
-  // Determines which fields the inline edit form shows — mirrors
-  // SetRow.vue's own resistanceType branching (weight+unit / band chips /
-  // reps-only), so editing a historical bodyweight or band-resistance set
-  // no longer shows an irrelevant weight field or loses band-color edits.
+  /**
+   * Determines which fields the inline edit form shows — mirrors
+   * SetRow.vue's own resistanceType branching (weight+unit / band chips /
+   * reps-only), so editing a historical bodyweight or band-resistance set
+   * no longer shows an irrelevant weight field or loses band-color edits.
+   */
   resistanceType: ResistanceType;
   sets: EditableSet[];
 }
@@ -62,8 +66,10 @@ function formatDate(dateStr: string) {
   return date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-// Rounds up to the nearest minute so a very short test/real session still
-// reads as "1m" rather than a confusing "0m".
+/**
+ * Rounds up to the nearest minute so a very short test/real session still
+ * reads as "1m" rather than a confusing "0m".
+ */
 function formatDuration(ms: number) {
   const totalMinutes = Math.max(1, Math.round(ms / 60000));
   const hours = Math.floor(totalMinutes / 60);
@@ -149,10 +155,12 @@ function formattedSet(set: SetEntry) {
   return set.weightInLbs ? `${weight} ${settings.preferredUnit} x ${set.reps}` : `${set.reps} reps`;
 }
 
-// Edits happen inline against a copy of the values (set._editWeight etc.)
-// so the read-only pill doesn't change mid-edit — only Save persists and
-// updates the real fields, matching the weight-optional/reps-required
-// rule the active workout screen uses.
+/**
+ * Edits happen inline against a copy of the values (set._editWeight etc.)
+ * so the read-only pill doesn't change mid-edit — only Save persists and
+ * updates the real fields, matching the weight-optional/reps-required
+ * rule the active workout screen uses.
+ */
 function startEdit(set: EditableSet) {
   set._editWeight = String(set.weightEntered);
   set._editReps = String(set.reps);
@@ -203,8 +211,10 @@ async function saveEdit(exercise: ExerciseGroup, set: EditableSet) {
   editingId.value = null;
 }
 
-// Prunes empty exercise groups/days after a delete so the screen never
-// shows a leftover heading with nothing under it.
+/**
+ * Prunes empty exercise groups/days after a delete so the screen never
+ * shows a leftover heading with nothing under it.
+ */
 async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: EditableSet) {
   await confirmThenDelete('Delete this set? This cannot be undone.', async () => {
     await deleteSet(set.id);
