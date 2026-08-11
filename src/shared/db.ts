@@ -71,6 +71,18 @@ export interface WorkoutSession {
   startedAt: number;
   endedAt: number;
   durationMs: number;
+  /**
+   * Optional — an emoji (preset or freely typed) the user picked when
+   * finishing this workout. Plain field, not indexed, so no Dexie version
+   * bump needed (same pattern as SetEntry.bandColors). Sessions logged
+   * before this field existed have no key at all.
+   */
+  feeling?: string;
+  /**
+   * Optional free-text note captured at finish time, same optionality and
+   * versioning story as `feeling`.
+   */
+  note?: string;
 }
 
 export interface MetricBlueprint {
@@ -431,12 +443,16 @@ export async function logWorkoutSession({
   date,
   startedAt,
   endedAt,
+  feeling,
+  note,
 }: {
   id?: string;
   routineId: string;
   date: string;
   startedAt: number;
   endedAt: number;
+  feeling?: string;
+  note?: string;
 }): Promise<WorkoutSession> {
   const session: WorkoutSession = {
     id,
@@ -445,6 +461,8 @@ export async function logWorkoutSession({
     startedAt,
     endedAt,
     durationMs: endedAt - startedAt,
+    ...(feeling && { feeling }),
+    ...(note && { note }),
   };
   await db.workouts.add(session);
   return session;
