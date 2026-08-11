@@ -32,10 +32,12 @@ const selectedSeriesKey = ref<SeriesKey>('weight');
 const selectedIndex = ref(0);
 const selectedView = ref<ChartView>('all');
 
-// weightInLbs is only ever a real, entered figure for 'weight' exercises —
-// bodyweight/bands/mobility rows never collect it (see SetRow.vue), so it's
-// always 0 for them. Showing that "weight" line was confusing even to the
-// person who built it, so it's hidden entirely rather than left selectable.
+/**
+ * weightInLbs is only ever a real, entered figure for 'weight' exercises —
+ * bodyweight/bands/mobility rows never collect it (see SetRow.vue), so it's
+ * always 0 for them. Showing that "weight" line was confusing even to the
+ * person who built it, so it's hidden entirely rather than left selectable.
+ */
 const selectedExercise = computed(() => exercisesById.value.get(selectedExerciseId.value));
 const weightApplies = computed(() => (selectedExercise.value?.resistanceType ?? 'weight') === 'weight');
 const showWeight = computed(() => weightApplies.value && selectedView.value !== 'volume');
@@ -53,17 +55,21 @@ watch(selectedExerciseId, async (id) => {
   sets.value = id ? await getSetsForExercise(id) : [];
 }, { immediate: true });
 
-// Pin the detail panel to volume whenever weight isn't a real figure for the
-// current exercise, so switching exercises never leaves a stale "weight"
-// selection pointed at a line that's no longer shown.
+/**
+ * Pin the detail panel to volume whenever weight isn't a real figure for the
+ * current exercise, so switching exercises never leaves a stale "weight"
+ * selection pointed at a line that's no longer shown.
+ */
 watch(weightApplies, (applies) => {
   if (!applies) selectedSeriesKey.value = 'volume';
 }, { immediate: true });
 
 const dailyPoints = computed<DailyProgressPoint[]>(() => aggregateSetsByDay(sets.value, exercisesById.value, bodyWeightLogs.value));
 
-// Default to the most recent day whenever the underlying data changes, so
-// the detail view is never empty.
+/**
+ * Default to the most recent day whenever the underlying data changes, so
+ * the detail view is never empty.
+ */
 watch(dailyPoints, (points) => {
   selectedIndex.value = points.length ? points.length - 1 : 0;
 }, { immediate: true });
@@ -89,9 +95,11 @@ const selectedDaySetCount = computed(() => {
   return day ? sets.value.filter((s) => s.date === day.date).length : 0;
 });
 
-// Maps a pointer's clientX to the nearest day index, in the chart's own SVG
-// coordinate space (the SVG is scaled by CSS, so we can't compare clientX
-// to CHART_WIDTH directly).
+/**
+ * Maps a pointer's clientX to the nearest day index, in the chart's own SVG
+ * coordinate space (the SVG is scaled by CSS, so we can't compare clientX
+ * to CHART_WIDTH directly).
+ */
 function clientXToIndex(clientX: number): number {
   const svg = chartSvg.value;
   const count = dailyPoints.value.length;
@@ -104,9 +112,11 @@ function clientXToIndex(clientX: number): number {
   return Math.min(count - 1, Math.max(0, Math.round(rawIndex)));
 }
 
-// Starting a gesture on a point locks in which series (weight or volume) is
-// being scrubbed for the whole gesture — only x movement is tracked from
-// here on, so a drag can't accidentally hop from one line to the other.
+/**
+ * Starting a gesture on a point locks in which series (weight or volume) is
+ * being scrubbed for the whole gesture — only x movement is tracked from
+ * here on, so a drag can't accidentally hop from one line to the other.
+ */
 function startScrub(seriesKey: SeriesKey, index: number, event: PointerEvent) {
   selectedSeriesKey.value = seriesKey;
   selectedIndex.value = index;
@@ -118,9 +128,11 @@ function scrubMove(event: PointerEvent) {
   selectedIndex.value = clientXToIndex(event.clientX);
 }
 
-// Overlapping points can make the wrong one hard to grab — switching to a
-// single-series view clears the ambiguity. Picking a single view also
-// pins the detail panel to that series, since the other one is hidden.
+/**
+ * Overlapping points can make the wrong one hard to grab — switching to a
+ * single-series view clears the ambiguity. Picking a single view also
+ * pins the detail panel to that series, since the other one is hidden.
+ */
 function selectView(view: ChartView) {
   selectedView.value = view;
   if (view !== 'all') selectedSeriesKey.value = view;
