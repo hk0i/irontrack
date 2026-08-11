@@ -28,6 +28,7 @@ import { startRestTimer } from '../../shared/rest-timer';
 import { requestRestTimerPermission } from '../../shared/rest-alert';
 import type { NavParams, ScreenName, SetRowState } from '../../shared/types';
 import SetRow from './SetRow.vue';
+import FinishWorkoutModal from './FinishWorkoutModal.vue';
 
 /**
  * Mirrors RoutineBuilderScreen's search pattern: mixes real Exercise rows
@@ -380,11 +381,13 @@ function viewHistory(exerciseId: string) {
  * write duplicate session rows).
  */
 const finishing = ref(false);
-async function finishWorkout() {
+const showFinishModal = ref(false);
+async function finishWorkout(payload: { mood?: string; note?: string } = {}) {
   if (finishing.value) return;
   finishing.value = true;
+  showFinishModal.value = false;
   if (routineId && startedAt) {
-    await logWorkoutSession({ id: sessionId!, routineId, date: todayString(), startedAt, endedAt: Date.now() });
+    await logWorkoutSession({ id: sessionId!, routineId, date: todayString(), startedAt, endedAt: Date.now(), ...payload });
   }
   clearActiveSession();
   emit('navigate', 'dashboard');
@@ -611,12 +614,14 @@ async function createAndAddAdhocExercise() {
 
     <div class="px-4">
       <button
-        @click="finishWorkout"
+        @click="showFinishModal = true"
         :disabled="finishing"
         class="w-full py-4 rounded-xl bg-primary text-on-primary font-semibold text-base active:bg-primary-bright disabled:opacity-60"
       >
         Finish Workout
       </button>
     </div>
+
+    <FinishWorkoutModal v-if="showFinishModal" @finish="finishWorkout" @cancel="showFinishModal = false" />
   </div>
 </template>
