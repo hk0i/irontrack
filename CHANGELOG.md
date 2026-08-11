@@ -2,6 +2,11 @@
 
 User-facing changes only — internal refactors, the TypeScript migration, and the Vue SFC rewrite aren't listed individually here, but are the main reason this release is versioned as a major bump rather than a minor one.
 
+## 2.2.0
+
+- **Finish Workout**: tapping Finish now shows an optional "How'd it go?" step — pick a mood emoji (3 quick presets, or type your own) and/or leave a free-text note before the workout is saved. Skip both to finish exactly as before.
+- **Workout History**: mood and notes captured on finish now show on that workout's history card.
+
 ## 2.1.0
 
 - **Progress chart**: added a training volume line alongside weight, so bodyweight and band-resistance exercises (which always show 0 lbs) still show real progress via reps/sets performed. Switch between Weight, Volume, or Show all with the pill control above the chart.
