@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { getAllRoutines, deleteRoutine, getAllSets, type Routine } from '../../shared/db';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { getAllRoutines, deleteRoutine, duplicateRoutine, getAllSets, type Routine } from '../../shared/db';
 import { activeSession, clearActiveSession } from '../../shared/active-session';
 import { appUpdate, installAppUpdate } from '../../shared/app-update';
 import { confirmThenDelete } from '../../shared/confirm';
@@ -67,7 +67,83 @@ async function computeSuggestedRoutine(currentRoutines: Routine[]): Promise<Rout
 
 onMounted(loadRoutines);
 
+/**
+ * Swipe-left reveals a 3-segment Edit/Duplicate/Delete panel behind the
+ * card, mirroring RoutineBuilderScreen's exercise drag-reorder: raw
+ * Pointer Events, window-level move/up listeners attached on pointerdown.
+ * Only one card's panel is open at a time. `touch-action: pan-y` on the
+ * card lets the browser keep handling vertical scroll natively — we only
+ * take over once a move is detected to be horizontal.
+ */
+const SWIPE_OPEN_PX = 216;
+const openSwipeId = ref<string | null>(null);
+const swipeOffset = ref(0);
+const swipeDraggingId = ref<string | null>(null);
+let swipeStartX = 0;
+let swipeStartY = 0;
+let swipeBaseOffset = 0;
+let swipeDirection: 'horizontal' | 'vertical' | null = null;
+let justSwiped = false;
+
+function onCardPointerDown(event: PointerEvent, routine: Routine) {
+  swipeDraggingId.value = routine.id;
+  swipeStartX = event.clientX;
+  swipeStartY = event.clientY;
+  swipeDirection = null;
+  justSwiped = false;
+  if (openSwipeId.value && openSwipeId.value !== routine.id) {
+    // Closing another open card consumes this tap — it shouldn't also navigate.
+    openSwipeId.value = null;
+    justSwiped = true;
+  }
+  swipeBaseOffset = openSwipeId.value === routine.id ? -SWIPE_OPEN_PX : 0;
+  swipeOffset.value = swipeBaseOffset;
+  window.addEventListener('pointermove', onCardPointerMove);
+  window.addEventListener('pointerup', onCardPointerUp);
+}
+
+function onCardPointerMove(event: PointerEvent) {
+  if (!swipeDraggingId.value) return;
+  const dx = event.clientX - swipeStartX;
+  const dy = event.clientY - swipeStartY;
+  if (!swipeDirection) {
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+    swipeDirection = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical';
+    if (swipeDirection === 'vertical') {
+      onCardPointerUp();
+      return;
+    }
+    justSwiped = true;
+  }
+  event.preventDefault();
+  swipeOffset.value = Math.max(-SWIPE_OPEN_PX, Math.min(0, swipeBaseOffset + dx));
+}
+
+function onCardPointerUp() {
+  if (swipeDraggingId.value && swipeDirection === 'horizontal') {
+    openSwipeId.value = swipeOffset.value < -SWIPE_OPEN_PX / 2 ? swipeDraggingId.value : null;
+  }
+  swipeDraggingId.value = null;
+  swipeDirection = null;
+  swipeOffset.value = 0;
+  window.removeEventListener('pointermove', onCardPointerMove);
+  window.removeEventListener('pointerup', onCardPointerUp);
+}
+
+onUnmounted(() => {
+  window.removeEventListener('pointermove', onCardPointerMove);
+  window.removeEventListener('pointerup', onCardPointerUp);
+});
+
 function openRoutine(routine: Routine) {
+  if (justSwiped) {
+    justSwiped = false;
+    return;
+  }
+  if (openSwipeId.value === routine.id) {
+    openSwipeId.value = null;
+    return;
+  }
   emit('navigate', 'active-workout', { routineId: routine.id });
 }
 
@@ -75,9 +151,16 @@ function editRoutine(routine: Routine) {
   emit('navigate', 'routine-builder', { routineId: routine.id });
 }
 
+async function copyRoutine(routine: Routine) {
+  openSwipeId.value = null;
+  const copy = await duplicateRoutine(routine.id);
+  emit('navigate', 'routine-builder', { routineId: copy.id });
+}
+
 async function removeRoutine(routine: Routine) {
   await confirmThenDelete(`Delete "${routine.name}"? This cannot be undone.`, async () => {
     await deleteRoutine(routine.id);
+    if (openSwipeId.value === routine.id) openSwipeId.value = null;
     await loadRoutines();
   });
 }
@@ -145,25 +228,51 @@ async function removeRoutine(routine: Routine) {
       <div
         v-for="routine in routines"
         :key="routine.id"
-        class="relative bg-surface border border-border rounded-2xl"
+        class="relative border border-border rounded-2xl overflow-hidden"
       >
+        <div class="absolute inset-y-0 right-0 flex" style="width: 216px">
+          <button
+            @click="editRoutine(routine)"
+            :aria-label="'Edit ' + routine.name"
+            class="w-[72px] h-full flex-shrink-0 flex items-center justify-center bg-surface-2 text-foreground-muted active:bg-surface-3"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 112.914 2.914L7.5 19.675l-4 1 1-4L16.862 4.487z" />
+            </svg>
+          </button>
+          <button
+            @click="copyRoutine(routine)"
+            :aria-label="'Duplicate ' + routine.name"
+            class="w-[72px] h-full flex-shrink-0 flex items-center justify-center bg-surface-2 text-foreground-muted active:bg-surface-3"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="11" height="11" rx="2" stroke-linecap="round" stroke-linejoin="round" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 15H4a1 1 0 01-1-1V4a1 1 0 011-1h10a1 1 0 011 1v1" />
+            </svg>
+          </button>
+          <button
+            @click="removeRoutine(routine)"
+            :aria-label="'Delete ' + routine.name"
+            class="w-[72px] h-full flex-shrink-0 flex items-center justify-center bg-danger/15 text-danger active:bg-danger/25"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0l1 13a2 2 0 002 2h4a2 2 0 002-2l1-13" />
+            </svg>
+          </button>
+        </div>
         <button
+          @pointerdown="onCardPointerDown($event, routine)"
           @click="openRoutine(routine)"
-          class="w-full text-left pl-5 pr-28 py-4 active:bg-surface-2 rounded-2xl"
+          style="touch-action: pan-y"
+          :style="{
+            transform: 'translateX(' + (routine.id === swipeDraggingId ? swipeOffset : (openSwipeId === routine.id ? -SWIPE_OPEN_PX : 0)) + 'px)',
+            transition: routine.id === swipeDraggingId ? 'none' : 'transform 150ms ease-out',
+          }"
+          class="relative z-10 w-full text-left pl-5 pr-5 py-4 bg-surface active:bg-surface-2 rounded-2xl select-none"
         >
           <div class="text-lg font-semibold">{{ routine.name }}</div>
           <div class="text-sm text-foreground-muted mt-1">{{ routine.exerciseIds.length }} exercises</div>
         </button>
-        <IconButton @click="editRoutine(routine)" :aria-label="'Edit ' + routine.name" class="absolute top-1/2 -translate-y-1/2 right-16">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 112.914 2.914L7.5 19.675l-4 1 1-4L16.862 4.487z" />
-          </svg>
-        </IconButton>
-        <IconButton @click="removeRoutine(routine)" :aria-label="'Delete ' + routine.name" tone="danger" class="absolute top-1/2 -translate-y-1/2 right-3">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0l1 13a2 2 0 002 2h4a2 2 0 002-2l1-13" />
-          </svg>
-        </IconButton>
       </div>
     </main>
 
