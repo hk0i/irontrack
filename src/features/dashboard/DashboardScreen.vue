@@ -9,7 +9,7 @@ import IconButton from '../../shared/components/IconButton.vue';
 import EmptyState from '../../shared/components/EmptyState.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
 
-defineProps<{
+const props = defineProps<{
   navParams?: NavParams;
 }>();
 const emit = defineEmits<{
@@ -67,6 +67,22 @@ async function computeSuggestedRoutine(currentRoutines: Routine[]): Promise<Rout
 }
 
 onMounted(loadRoutines);
+
+/**
+ * One-time jiggle on the first routine a user ever creates, teaching the
+ * otherwise-undiscoverable swipe gesture. Fires at most once, ever, per
+ * device — irontrack:swipe-hint-shown is a UI/onboarding preference, not
+ * domain data, so it lives in localStorage rather than Dexie.
+ */
+const HINT_SHOWN_KEY = 'irontrack:swipe-hint-shown';
+const hintRoutineId = ref<string | null>(null);
+onMounted(() => {
+  const targetId = props.navParams?.highlightRoutineId;
+  if (targetId && !localStorage.getItem(HINT_SHOWN_KEY)) {
+    hintRoutineId.value = targetId;
+    localStorage.setItem(HINT_SHOWN_KEY, '1');
+  }
+});
 
 // Swipe-left reveals a 3-segment Edit/Duplicate/Delete panel behind each card.
 const SWIPE_OPEN_PX = 216;
@@ -162,7 +178,7 @@ async function removeRoutine(routine: Routine) {
       <div
         v-for="routine in routines"
         :key="routine.id"
-        class="relative border border-border rounded-2xl overflow-hidden"
+        :class="['relative border border-border rounded-2xl overflow-hidden', routine.id === hintRoutineId ? 'animate-swipe-hint' : '']"
       >
         <div class="absolute inset-y-0 right-0 flex" style="width: 216px">
           <button

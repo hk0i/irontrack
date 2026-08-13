@@ -18,6 +18,8 @@ export type ScreenName =
 export interface NavParams {
   routineId?: string;
   initialExerciseId?: string;
+  /** Dashboard: the routine card to play the one-time swipe-hint jiggle on. */
+  highlightRoutineId?: string;
 }
 
 /**

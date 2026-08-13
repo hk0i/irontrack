@@ -196,10 +196,11 @@ async function save() {
   };
   if (editingRoutineId.value) {
     await updateRoutine(editingRoutineId.value, payload);
+    emit('navigate', 'dashboard');
   } else {
-    await createRoutine(payload);
+    const routine = await createRoutine(payload);
+    emit('navigate', 'dashboard', { highlightRoutineId: routine.id });
   }
-  emit('navigate', 'dashboard');
 }
 </script>
 
