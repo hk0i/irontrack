@@ -60,7 +60,8 @@ No gesture library exists in this codebase (`package.json` runtime deps are only
 
 - `RoutineBuilderScreen.vue`'s `save()` create-path (`:191-203`) passes the new routine's id back on navigate: `emit('navigate', 'dashboard', { highlightRoutineId: routine.id })` — extends `NavParams`, using the same param-passing mechanism already used for `routineId` elsewhere (not a new pattern).
 - `DashboardScreen.vue` checks a `localStorage` flag, `irontrack:swipe-hint-shown`. This is a UI/onboarding preference, not domain data, so it belongs in `localStorage` rather than Dexie — `db.ts`'s header comment reserves Dexie exclusively for domain entities.
-- If the flag is unset and `navParams.highlightRoutineId` matches a rendered card, that card gets a one-shot `@keyframes` class (small horizontal oscillation, 2-3 cycles) on mount, then the flag is set so it never fires again for any future routine.
+- If the flag is unset and `navParams.highlightRoutineId` matches a rendered card, that card gets an `animate-swipe-hint` class (`style.css`'s `--animate-swipe-hint`, a small horizontal double-pulse followed by a pause, looping via `animation-iteration-count: infinite`) — not a fixed few cycles, since a user who doesn't notice the first couple of pulses should keep getting nudged rather than the hint silently giving up.
+- Dismissal is behavioral, not time-based: `useSwipeReveal` (`src/shared/useSwipeReveal.ts`) takes an optional `onSwipeStart` callback, invoked the moment a pointer drag is first classified as a horizontal swipe (a genuine gesture attempt, regardless of which card or whether it ends up open or closed). `DashboardScreen.vue` wires this to clear `hintRoutineId` and set the `localStorage` flag — so the loop stops the instant the user tries the gesture for real, not after an arbitrary animation count, and never fires again on any future routine.
 
 ## Known limitation, accepted for v1
 

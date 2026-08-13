@@ -73,16 +73,18 @@
   /* Data viz */
   --color-chart-2: var(--color-sky-400);
 
-  /* One-time hint nudging a routine card left/right to suggest the
-     swipe-to-reveal actions gesture — played once on a user's first-ever
-     created routine (DashboardScreen.vue), never on the swiped card itself
-     to avoid fighting its own JS-driven transform. */
-  --animate-swipe-hint: swipe-hint 0.4s ease-in-out 3;
+  /* Hint nudging a routine card left/right to suggest the swipe-to-reveal
+     actions gesture — loops with a pause between pulses on a user's
+     first-ever created routine (DashboardScreen.vue) until their first
+     real swipe attempt dismisses it for good. Applied to the card's outer
+     wrapper, never the swiped button itself, to avoid fighting its own
+     JS-driven transform. */
+  --animate-swipe-hint: swipe-hint 4.5s ease-in-out infinite;
 }
 
 @keyframes swipe-hint {
-  0%, 100% { transform: translateX(0); }
-  50% { transform: translateX(-14px); }
+  0%, 8%, 16%, 100% { transform: translateX(0); }
+  4%, 12% { transform: translateX(-14px); }
 }
 
 /* Second theme: onebigfunction platform design system

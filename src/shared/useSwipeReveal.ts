@@ -14,7 +14,7 @@ import { ref, onUnmounted } from 'vue';
  * handler — it returns true (and the click should be ignored) whenever the
  * pointer interaction was actually a swipe, or closed a different open card.
  */
-export function useSwipeReveal(openWidthPx: number) {
+export function useSwipeReveal(openWidthPx: number, options: { onSwipeStart?: () => void } = {}) {
   const openId = ref<string | null>(null);
   const offset = ref(0);
   const draggingId = ref<string | null>(null);
@@ -54,6 +54,7 @@ export function useSwipeReveal(openWidthPx: number) {
         return;
       }
       consumedTap = true;
+      options.onSwipeStart?.();
     }
     event.preventDefault();
     offset.value = Math.max(-openWidthPx, Math.min(0, baseOffset + dx));

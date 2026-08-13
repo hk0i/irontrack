@@ -69,10 +69,13 @@ async function computeSuggestedRoutine(currentRoutines: Routine[]): Promise<Rout
 onMounted(loadRoutines);
 
 /**
- * One-time jiggle on the first routine a user ever creates, teaching the
- * otherwise-undiscoverable swipe gesture. Fires at most once, ever, per
- * device — irontrack:swipe-hint-shown is a UI/onboarding preference, not
- * domain data, so it lives in localStorage rather than Dexie.
+ * Looping jiggle on the first routine a user ever creates, teaching the
+ * otherwise-undiscoverable swipe gesture — repeats (with a pause between
+ * pulses, see --animate-swipe-hint in style.css) until dismissed by the
+ * user's first real swipe attempt, not just a fixed number of cycles.
+ * Fires at most once, ever, per device — irontrack:swipe-hint-shown is a
+ * UI/onboarding preference, not domain data, so it lives in localStorage
+ * rather than Dexie.
  */
 const HINT_SHOWN_KEY = 'irontrack:swipe-hint-shown';
 const hintRoutineId = ref<string | null>(null);
@@ -80,13 +83,19 @@ onMounted(() => {
   const targetId = props.navParams?.highlightRoutineId;
   if (targetId && !localStorage.getItem(HINT_SHOWN_KEY)) {
     hintRoutineId.value = targetId;
-    localStorage.setItem(HINT_SHOWN_KEY, '1');
   }
 });
 
 // Swipe-left reveals a 3-segment Edit/Duplicate/Delete panel behind each card.
 const SWIPE_OPEN_PX = 216;
-const swipe = useSwipeReveal(SWIPE_OPEN_PX);
+const swipe = useSwipeReveal(SWIPE_OPEN_PX, {
+  onSwipeStart: () => {
+    if (hintRoutineId.value) {
+      hintRoutineId.value = null;
+      localStorage.setItem(HINT_SHOWN_KEY, '1');
+    }
+  },
+});
 
 function openRoutine(routine: Routine) {
   if (swipe.consumeTap()) return;
