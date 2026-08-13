@@ -222,6 +222,27 @@ export function deleteRoutine(id: string): Promise<void> {
 }
 
 /**
+ * Clones a routine's exerciseIds into a new routine, naming it with the
+ * next unused number in the name's family (e.g. "Push Day" -> "Push Day
+ * (2)"), so duplicating a duplicate produces a well-defined next name
+ * instead of accumulating "(copy) (copy)".
+ */
+export async function duplicateRoutine(id: string): Promise<Routine> {
+  const original = await getRoutineById(id);
+  if (!original) throw new Error(`Routine ${id} not found`);
+  const all = await getAllRoutines();
+  const root = original.name.replace(/ \(\d+\)$/, '');
+  const escapedRoot = root.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const pattern = new RegExp(`^${escapedRoot}(?: \\((\\d+)\\))?$`);
+  let maxN = 1;
+  for (const r of all) {
+    const m = r.name.match(pattern);
+    if (m) maxN = Math.max(maxN, m[1] ? Number(m[1]) : 1);
+  }
+  return createRoutine({ name: `${root} (${maxN + 1})`, exerciseIds: original.exerciseIds });
+}
+
+/**
  * Resolves a routine's exerciseIds into their Exercise records, in order,
  * silently skipping any id whose exercise has since been deleted.
  */
