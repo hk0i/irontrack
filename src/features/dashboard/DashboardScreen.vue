@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { getAllRoutines, deleteRoutine, duplicateRoutine, getAllSets, type Routine } from '../../shared/db';
 import { activeSession, clearActiveSession } from '../../shared/active-session';
 import { appUpdate, installAppUpdate } from '../../shared/app-update';
 import { confirmThenDelete } from '../../shared/confirm';
+import { useSwipeReveal } from '../../shared/useSwipeReveal';
 import IconButton from '../../shared/components/IconButton.vue';
 import EmptyState from '../../shared/components/EmptyState.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
@@ -67,81 +68,14 @@ async function computeSuggestedRoutine(currentRoutines: Routine[]): Promise<Rout
 
 onMounted(loadRoutines);
 
-/**
- * Swipe-left reveals a 3-segment Edit/Duplicate/Delete panel behind the
- * card, mirroring RoutineBuilderScreen's exercise drag-reorder: raw
- * Pointer Events, window-level move/up listeners attached on pointerdown.
- * Only one card's panel is open at a time. `touch-action: pan-y` on the
- * card lets the browser keep handling vertical scroll natively — we only
- * take over once a move is detected to be horizontal.
- */
+// Swipe-left reveals a 3-segment Edit/Duplicate/Delete panel behind each card.
 const SWIPE_OPEN_PX = 216;
-const openSwipeId = ref<string | null>(null);
-const swipeOffset = ref(0);
-const swipeDraggingId = ref<string | null>(null);
-let swipeStartX = 0;
-let swipeStartY = 0;
-let swipeBaseOffset = 0;
-let swipeDirection: 'horizontal' | 'vertical' | null = null;
-let justSwiped = false;
-
-function onCardPointerDown(event: PointerEvent, routine: Routine) {
-  swipeDraggingId.value = routine.id;
-  swipeStartX = event.clientX;
-  swipeStartY = event.clientY;
-  swipeDirection = null;
-  justSwiped = false;
-  if (openSwipeId.value && openSwipeId.value !== routine.id) {
-    // Closing another open card consumes this tap — it shouldn't also navigate.
-    openSwipeId.value = null;
-    justSwiped = true;
-  }
-  swipeBaseOffset = openSwipeId.value === routine.id ? -SWIPE_OPEN_PX : 0;
-  swipeOffset.value = swipeBaseOffset;
-  window.addEventListener('pointermove', onCardPointerMove);
-  window.addEventListener('pointerup', onCardPointerUp);
-}
-
-function onCardPointerMove(event: PointerEvent) {
-  if (!swipeDraggingId.value) return;
-  const dx = event.clientX - swipeStartX;
-  const dy = event.clientY - swipeStartY;
-  if (!swipeDirection) {
-    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-    swipeDirection = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical';
-    if (swipeDirection === 'vertical') {
-      onCardPointerUp();
-      return;
-    }
-    justSwiped = true;
-  }
-  event.preventDefault();
-  swipeOffset.value = Math.max(-SWIPE_OPEN_PX, Math.min(0, swipeBaseOffset + dx));
-}
-
-function onCardPointerUp() {
-  if (swipeDraggingId.value && swipeDirection === 'horizontal') {
-    openSwipeId.value = swipeOffset.value < -SWIPE_OPEN_PX / 2 ? swipeDraggingId.value : null;
-  }
-  swipeDraggingId.value = null;
-  swipeDirection = null;
-  swipeOffset.value = 0;
-  window.removeEventListener('pointermove', onCardPointerMove);
-  window.removeEventListener('pointerup', onCardPointerUp);
-}
-
-onUnmounted(() => {
-  window.removeEventListener('pointermove', onCardPointerMove);
-  window.removeEventListener('pointerup', onCardPointerUp);
-});
+const swipe = useSwipeReveal(SWIPE_OPEN_PX);
 
 function openRoutine(routine: Routine) {
-  if (justSwiped) {
-    justSwiped = false;
-    return;
-  }
-  if (openSwipeId.value === routine.id) {
-    openSwipeId.value = null;
+  if (swipe.consumeTap()) return;
+  if (swipe.openId.value === routine.id) {
+    swipe.close(routine.id);
     return;
   }
   emit('navigate', 'active-workout', { routineId: routine.id });
@@ -152,7 +86,7 @@ function editRoutine(routine: Routine) {
 }
 
 async function copyRoutine(routine: Routine) {
-  openSwipeId.value = null;
+  swipe.close(routine.id);
   const copy = await duplicateRoutine(routine.id);
   emit('navigate', 'routine-builder', { routineId: copy.id });
 }
@@ -160,7 +94,7 @@ async function copyRoutine(routine: Routine) {
 async function removeRoutine(routine: Routine) {
   await confirmThenDelete(`Delete "${routine.name}"? This cannot be undone.`, async () => {
     await deleteRoutine(routine.id);
-    if (openSwipeId.value === routine.id) openSwipeId.value = null;
+    swipe.close(routine.id);
     await loadRoutines();
   });
 }
@@ -261,13 +195,10 @@ async function removeRoutine(routine: Routine) {
           </button>
         </div>
         <button
-          @pointerdown="onCardPointerDown($event, routine)"
+          @pointerdown="swipe.onPointerDown($event, routine.id)"
           @click="openRoutine(routine)"
           style="touch-action: pan-y"
-          :style="{
-            transform: 'translateX(' + (routine.id === swipeDraggingId ? swipeOffset : (openSwipeId === routine.id ? -SWIPE_OPEN_PX : 0)) + 'px)',
-            transition: routine.id === swipeDraggingId ? 'none' : 'transform 150ms ease-out',
-          }"
+          :style="swipe.transformFor(routine.id)"
           class="relative z-10 w-full text-left pl-5 pr-5 py-4 bg-surface active:bg-surface-2 rounded-2xl select-none"
         >
           <div class="text-lg font-semibold">{{ routine.name }}</div>
