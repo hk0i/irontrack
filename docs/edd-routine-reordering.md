@@ -48,13 +48,25 @@ No changes needed to `computeSuggestedRoutine`/`resolveResumableRoutine` — bot
 - `getAllRoutines` sorts by it.
 - New `reorderRoutines()`.
 
-### 2. `src/features/dashboard/DashboardScreen.vue` — drag-handle UI
+### 2. New `src/shared/useDragReorder.ts` — extracted from `RoutineBuilderScreen.vue`
 
-No gesture library exists in this codebase; this mirrors `RoutineBuilderScreen.vue:54-98`'s exercise drag-reorder (raw Pointer Events, `pointerdown` on a dedicated handle attaches `window`-level `pointermove`/`pointerup`, index math via `Math.round(offset / rowStep)` with array splicing, `pointerStartY` re-based after each swap) rather than the horizontal `useSwipeReveal` composable — this is a vertical, index-based reorder, a different shape of gesture.
+`RoutineBuilderScreen.vue:54-98` already implements vertical drag-to-reorder for its exercise list (raw Pointer Events, `pointerdown` on a dedicated handle attaches `window`-level `pointermove`/`pointerup`, index math via `Math.round(offset / rowStep)` with array splicing, `pointerStartY` re-based after each swap). Rather than writing that same pointer math again for the dashboard's routine list, it's extracted into a shared composable — following the same precedent as `useSwipeReveal.ts` (extracted from `DashboardScreen.vue`'s own swipe gesture in `edd-swipeable-routine-actions.md`) — and `RoutineBuilderScreen.vue` is refactored to consume it, so the logic has exactly one implementation instead of two near-identical copies.
+
+`useDragReorder<T>(items: Ref<T[]>, options?: { gap?: number; fallbackHeight?: number; onDrop?: () => void })`:
+- `items` is the reactive array being reordered — spliced live during the drag, exactly as `RoutineBuilderScreen.selectedExercises` is today.
+- `gap`/`fallbackHeight` are supplied per caller, since the dashboard's routine cards (`space-y-3`, ~84-108px tall) are a different size than the builder's exercise rows (`space-y-2`, ~56px) — the composable has no built-in assumption about either.
+- `onDrop`, called on `pointerup`, is optional: `RoutineBuilderScreen` doesn't need it (the reordered `exerciseIds` array is only persisted when the user taps Save), but the dashboard uses it to call `reorderRoutines()` immediately, since there's no separate save step for list order.
+- Returns `{ draggingIndex, dragOffset, setRowEl, onRowPointerDown }` — the same shape `RoutineBuilderScreen`'s template already binds to (`:ref`, `:style` transform, `@pointerdown`), so its template needs no changes beyond reading these off the composable instead of local refs.
+
+### 3. `src/features/routines/RoutineBuilderScreen.vue` — refactor onto the composable
+
+Replace the inline `draggingIndex`/`dragOffset`/`rowEls`/`pointerStartY`/`rowStep` state and the three `onRowPointer*` functions with a single `useDragReorder(selectedExercises, { gap: 8, fallbackHeight: 56 })` call. Template bindings (`:ref`, `:style`, `@pointerdown`) stay the same, just sourced from the composable's return value. Pure refactor — no behavior change, verified by re-running the existing exercise-reorder flow.
+
+### 4. `src/features/dashboard/DashboardScreen.vue` — drag-handle UI
 
 - Add a drag-handle `IconButton` (grip icon, default tone) to each card — the one visible icon reintroduced onto the card, since the Edit/Duplicate/Delete actions already moved behind the swipe panel (`edd-swipeable-routine-actions.md`).
-- `pointerdown` on the handle calls `event.stopPropagation()` so it doesn't also start the card's horizontal swipe-tracking (`useSwipeReveal`'s `onPointerDown` is bound to the card body, a sibling concern), then attaches `window`-level `pointermove`/`pointerup`, splicing the local `routines` array live for visual feedback exactly like `RoutineBuilderScreen`'s exercise reorder.
-- On `pointerup`, calls `reorderRoutines(routines.value.map(r => r.id))` to persist the new order.
+- `useDragReorder(routines, { gap: 12, fallbackHeight: 92, onDrop: () => reorderRoutines(routines.value.map(r => r.id)) })` — `gap: 12` matches the dashboard list's `space-y-3`.
+- `pointerdown` on the handle calls `event.stopPropagation()` so it doesn't also start the card's horizontal swipe-tracking (`useSwipeReveal`'s `onPointerDown` is bound to the card body, a sibling concern).
 - Starting a reorder drag closes any open swipe panel first (simplest correct behavior — avoids two active gesture states on the list at once).
 
 ## Known limitation, accepted for v1
@@ -67,8 +79,9 @@ No reordering via any non-drag input (no up/down buttons, no keyboard reorder). 
 
 ## Sequencing
 
-Three atomic, independently-committable changes, stopping after each:
+Four atomic, independently-committable changes, stopping after each:
 
 1. Write this doc (`docs/edd-routine-reordering.md`) — no code changes.
 2. `src/shared/db.ts` — `sortOrder` field, `createRoutine`/`getAllRoutines` updates, `reorderRoutines()`.
-3. `DashboardScreen.vue` — drag-handle UI wired to `reorderRoutines()`.
+3. New `src/shared/useDragReorder.ts` + `RoutineBuilderScreen.vue` refactored onto it — pure extraction, no behavior change.
+4. `DashboardScreen.vue` — drag-handle UI wired to `useDragReorder()`/`reorderRoutines()`.
