@@ -199,7 +199,12 @@ export function todayString(): string {
 
 // ---------- Routines ----------
 
-export async function createRoutine({ name, exerciseIds }: { name: string; exerciseIds: string[] }): Promise<Routine> {
+export interface NewRoutineInput {
+  name: string;
+  exerciseIds: string[];
+}
+
+export async function createRoutine({ name, exerciseIds }: NewRoutineInput): Promise<Routine> {
   const routine: Routine = { id: crypto.randomUUID(), name, exerciseIds: [...exerciseIds] };
   await db.routines.add(routine);
   return routine;
