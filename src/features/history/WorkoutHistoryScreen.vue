@@ -5,12 +5,9 @@ import {
   getAllExercises,
   getAllRoutines,
   getAllWorkoutSessions,
-  formatWeight,
-  type ResistanceType,
   type SetEntry,
   type WorkoutSession,
 } from '../../shared/db';
-import { settings } from '../../shared/store';
 import { formatDate, formatDuration } from '../../shared/dateFormat';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import EmptyState from '../../shared/components/EmptyState.vue';
@@ -23,12 +20,6 @@ const emit = defineEmits<{
   navigate: [screen: ScreenName, params?: NavParams];
 }>();
 
-interface ExerciseGroup {
-  name: string;
-  resistanceType: ResistanceType;
-  sets: SetEntry[];
-}
-
 interface DayGroup {
   key: string;
   date: string;
@@ -39,7 +30,9 @@ interface DayGroup {
   durations: string[];
   mood?: string;
   note?: string;
-  exercises: ExerciseGroup[];
+  exerciseNames: string[];
+  setCount: number;
+  sortTs: number;
 }
 
 const days = ref<DayGroup[]>([]);
@@ -104,6 +97,13 @@ onMounted(async () => {
       const legacyKey = `${session.date}::${session.routineId || 'none'}`;
       durations = (legacySessionsByKey.get(legacyKey) || []).map((s) => formatDuration(s.durationMs));
     }
+    const allSets = [...session.byExercise.values()].flat();
+    // Recency isn't guaranteed by Map insertion order — a real session uses
+    // its startedAt, a legacy card (no WorkoutSession row) falls back to
+    // the latest createdAt among its own sets.
+    const sortTs = session.sessionId
+      ? (workoutById.get(session.sessionId)?.startedAt ?? 0)
+      : Math.max(0, ...allSets.map((s) => s.createdAt || 0));
     return {
       // Unique per card even when two sessions share a date+routine, so
       // Vue's v-for :key never collides between them.
@@ -116,13 +116,11 @@ onMounted(async () => {
       durations,
       mood,
       note,
-      exercises: [...session.byExercise.entries()].map(([exerciseId, exerciseSets]) => ({
-        name: exerciseById.get(exerciseId)?.name || 'Unknown exercise',
-        resistanceType: exerciseById.get(exerciseId)?.resistanceType || 'weight',
-        sets: exerciseSets,
-      })),
+      exerciseNames: [...session.byExercise.keys()].map((exerciseId) => exerciseById.get(exerciseId)?.name || 'Unknown exercise'),
+      setCount: allSets.length,
+      sortTs,
     };
-  });
+  }).sort((a, b) => b.sortTs - a.sortTs);
 });
 
 function openDetail(day: DayGroup) {
@@ -135,10 +133,6 @@ function openDetail(day: DayGroup) {
   );
 }
 
-function formattedSet(set: SetEntry) {
-  const weight = formatWeight(set.weightInLbs, settings.preferredUnit);
-  return set.weightInLbs ? `${weight} ${settings.preferredUnit} x ${set.reps}` : `${set.reps} reps`;
-}
 </script>
 
 <template>
@@ -148,16 +142,16 @@ function formattedSet(set: SetEntry) {
     <main class="px-4 py-4 space-y-4">
       <EmptyState v-if="days.length === 0">No workouts logged yet.</EmptyState>
 
-      <div
+      <button
         v-for="day in days"
         :key="day.key"
-        class="bg-surface border border-border rounded-2xl p-4"
+        type="button"
+        @click="openDetail(day)"
+        class="w-full text-left bg-surface border border-border rounded-2xl p-4 active:bg-surface-2"
       >
-        <div class="mb-3">
-          <div class="flex items-start justify-between gap-2">
-            <button type="button" @click="openDetail(day)" class="text-left">
-              <h2 class="font-semibold text-base underline decoration-dotted">{{ day.routineName || 'Workout' }}</h2>
-            </button>
+        <div class="flex items-start justify-between gap-2">
+          <h2 class="text-lg font-semibold text-foreground">{{ day.routineName || 'Workout' }}</h2>
+          <div class="flex items-center gap-1 flex-shrink-0">
             <div v-if="day.durations.length || day.mood" class="flex flex-wrap justify-end gap-1">
               <span
                 v-if="day.mood"
@@ -169,23 +163,17 @@ function formattedSet(set: SetEntry) {
                 class="text-xs font-semibold text-primary-bright bg-primary/10 px-2 py-1 rounded-full whitespace-nowrap"
               >{{ duration }}</span>
             </div>
-          </div>
-          <div class="text-xs text-foreground-muted">{{ day.label }}</div>
-          <p v-if="day.note" class="text-xs text-foreground-muted mt-1 italic">{{ day.note }}</p>
-        </div>
-        <div class="space-y-3">
-          <div v-for="exercise in day.exercises" :key="exercise.name">
-            <div class="text-sm font-medium text-foreground mb-1">{{ exercise.name }}</div>
-            <div class="flex flex-wrap gap-2">
-              <div
-                v-for="set in exercise.sets"
-                :key="set.id"
-                class="text-xs px-2 py-1 rounded-lg bg-surface-2 text-foreground-subtle"
-              >{{ formattedSet(set) }}</div>
-            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-foreground-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
           </div>
         </div>
-      </div>
+        <div class="text-base text-foreground-muted mt-0.5">{{ day.label }}</div>
+        <p v-if="day.note" class="text-sm text-foreground-muted mt-1 italic">{{ day.note }}</p>
+        <p class="text-base text-foreground-subtle mt-2">
+          {{ day.exerciseNames.join(', ') }} · {{ day.setCount }} {{ day.setCount === 1 ? 'set' : 'sets' }}
+        </p>
+      </button>
     </main>
   </div>
 </template>
