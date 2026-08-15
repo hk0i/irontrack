@@ -147,32 +147,32 @@ function openDetail(day: DayGroup) {
         :key="day.key"
         type="button"
         @click="openDetail(day)"
-        class="w-full text-left bg-surface border border-border rounded-2xl p-4 active:bg-surface-2"
+        class="w-full flex items-center gap-3 text-left bg-surface border border-border rounded-2xl p-4 active:bg-surface-2"
       >
-        <div class="flex items-start justify-between gap-2">
-          <h2 class="text-lg font-semibold text-foreground">{{ day.routineName || 'Workout' }}</h2>
-          <div class="flex items-center gap-1 flex-shrink-0">
-            <div v-if="day.durations.length || day.mood" class="flex flex-wrap justify-end gap-1">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-start justify-between gap-2">
+            <h2 class="text-lg font-semibold text-foreground">{{ day.routineName || 'Workout' }}</h2>
+            <div v-if="day.durations.length || day.mood" class="flex flex-wrap justify-end gap-1.5">
               <span
                 v-if="day.mood"
-                class="text-xs font-semibold bg-surface-2 px-2 py-1 rounded-full whitespace-nowrap"
+                class="text-base font-semibold bg-surface-2 px-3 py-1.5 rounded-full whitespace-nowrap"
               >{{ day.mood }}</span>
               <span
                 v-for="(duration, i) in day.durations"
                 :key="i"
-                class="text-xs font-semibold text-primary-bright bg-primary/10 px-2 py-1 rounded-full whitespace-nowrap"
+                class="text-sm font-semibold text-primary-bright bg-primary/10 px-3 py-1.5 rounded-full whitespace-nowrap"
               >{{ duration }}</span>
             </div>
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-foreground-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
           </div>
+          <div class="text-base text-foreground-muted mt-0.5">{{ day.label }}</div>
+          <p v-if="day.note" class="text-sm text-foreground-muted mt-1 italic">{{ day.note }}</p>
+          <p class="text-base text-foreground-subtle mt-2">
+            {{ day.exerciseNames.join(', ') }} · {{ day.setCount }} {{ day.setCount === 1 ? 'set' : 'sets' }}
+          </p>
         </div>
-        <div class="text-base text-foreground-muted mt-0.5">{{ day.label }}</div>
-        <p v-if="day.note" class="text-sm text-foreground-muted mt-1 italic">{{ day.note }}</p>
-        <p class="text-base text-foreground-subtle mt-2">
-          {{ day.exerciseNames.join(', ') }} · {{ day.setCount }} {{ day.setCount === 1 ? 'set' : 'sets' }}
-        </p>
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-foreground-muted flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
       </button>
     </main>
   </div>
