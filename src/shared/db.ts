@@ -31,6 +31,10 @@ export interface Routine {
   id: string;
   name: string;
   exerciseIds: string[];
+  /** Dashboard display order. Missing on routines created before manual
+   * reordering existed — getAllRoutines treats that as 0, sorting them
+   * ahead of any dated routine. */
+  sortOrder?: number;
 }
 
 export interface Exercise {
@@ -205,13 +209,14 @@ export interface NewRoutineInput {
 }
 
 export async function createRoutine({ name, exerciseIds }: NewRoutineInput): Promise<Routine> {
-  const routine: Routine = { id: crypto.randomUUID(), name, exerciseIds: [...exerciseIds] };
+  const routine: Routine = { id: crypto.randomUUID(), name, exerciseIds: [...exerciseIds], sortOrder: Date.now() };
   await db.routines.add(routine);
   return routine;
 }
 
-export function getAllRoutines(): Promise<Routine[]> {
-  return db.routines.toArray();
+export async function getAllRoutines(): Promise<Routine[]> {
+  const all = await db.routines.toArray();
+  return all.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 }
 
 export function getRoutineById(id: string): Promise<Routine | undefined> {
@@ -245,6 +250,11 @@ export async function duplicateRoutine(id: string): Promise<Routine> {
     if (m) maxN = Math.max(maxN, m[1] ? Number(m[1]) : 1);
   }
   return createRoutine({ name: `${root} (${maxN + 1})`, exerciseIds: original.exerciseIds });
+}
+
+/** Persists a manually dragged order as sequential sortOrder values. */
+export async function reorderRoutines(orderedIds: string[]): Promise<void> {
+  await Promise.all(orderedIds.map((id, index) => db.routines.update(id, { sortOrder: index })));
 }
 
 /**
