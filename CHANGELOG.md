@@ -2,6 +2,12 @@
 
 User-facing changes only — internal refactors, the TypeScript migration, and the Vue SFC rewrite aren't listed individually here, but are the main reason this release is versioned as a major bump rather than a minor one.
 
+## 2.3.0
+
+- **Rest timer**: warmup and regular exercises can now have their own rest duration instead of sharing one flat timer — set your own defaults for each in Settings, then tag each exercise as Warmup or Regular in the routine builder. A superset pairing both uses the longer of the two.
+- **Dashboard**: routine cards can now be manually reordered via a drag handle — your order is remembered instead of resetting.
+- **Dashboard**: routine cards' Edit/Delete icons moved behind a swipe-left panel, alongside a new **Duplicate** action for cloning a routine's exercise list into a new one. A one-time jiggle hint teaches the swipe gesture on your first routine.
+
 ## 2.2.0
 
 - **Finish Workout**: tapping Finish now shows an optional "How'd it go?" step — pick a mood emoji (3 quick presets, or type your own) and/or leave a free-text note before the workout is saved. Skip both to finish exactly as before.
