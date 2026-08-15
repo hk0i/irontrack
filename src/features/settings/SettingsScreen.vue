@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { exportAllData, importAllData } from '../../shared/db';
+import {
+  exportAllData,
+  importAllData,
+  getRoutineImportConflicts,
+  importRoutines,
+  isRoutineSharePayload,
+  type RoutineSharePayload,
+  type RoutineImportConflicts,
+} from '../../shared/db';
 import {
   settings,
   setPreferredUnit,
@@ -12,6 +20,7 @@ import {
 import type { WeightUnit } from '../../shared/db';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import SegmentedToggle from '../../shared/components/SegmentedToggle.vue';
+import ImportConflictsModal from '../../shared/components/ImportConflictsModal.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
 
 defineProps<{
@@ -33,6 +42,11 @@ const UNITS: { value: WeightUnit; label: string }[] = [
 
 const importStatus = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
+
+const routinesImportStatus = ref('');
+const routinesFileInput = ref<HTMLInputElement | null>(null);
+const pendingRoutinesImport = ref<RoutineSharePayload | null>(null);
+const pendingConflicts = ref<RoutineImportConflicts | null>(null);
 
 async function doExport() {
   const payload = await exportAllData();
@@ -68,6 +82,9 @@ async function handleFileSelected(event: Event) {
   try {
     const text = await file.text();
     const payload = JSON.parse(text);
+    if (isRoutineSharePayload(payload)) {
+      throw new Error('This is a Share Routines file, not a full backup — use Import Shared Routines instead.');
+    }
     await importAllData(payload);
     importStatus.value = 'Import successful.';
   } catch (err) {
@@ -75,6 +92,48 @@ async function handleFileSelected(event: Event) {
   } finally {
     target.value = '';
   }
+}
+
+function triggerRoutinesImport() {
+  routinesFileInput.value?.click();
+}
+
+async function handleRoutinesFileSelected(event: Event) {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const payload = JSON.parse(text);
+    if (!isRoutineSharePayload(payload)) {
+      throw new Error('This is not a Share Routines file — use Import Data File for a full backup instead.');
+    }
+    const conflicts = await getRoutineImportConflicts(payload);
+    if (conflicts.routineConflicts.length === 0 && conflicts.exerciseConflicts.length === 0) {
+      await importRoutines(payload);
+      routinesImportStatus.value = 'Import successful.';
+    } else {
+      pendingRoutinesImport.value = payload;
+      pendingConflicts.value = conflicts;
+    }
+  } catch (err) {
+    routinesImportStatus.value = `Import failed: ${err instanceof Error ? err.message : String(err)}`;
+  } finally {
+    target.value = '';
+  }
+}
+
+async function confirmRoutinesImport(resolutions: Map<string, 'overwrite' | 'copy'>) {
+  if (!pendingRoutinesImport.value) return;
+  await importRoutines(pendingRoutinesImport.value, resolutions);
+  routinesImportStatus.value = 'Import successful.';
+  pendingRoutinesImport.value = null;
+  pendingConflicts.value = null;
+}
+
+function cancelRoutinesImport() {
+  pendingRoutinesImport.value = null;
+  pendingConflicts.value = null;
 }
 </script>
 
@@ -126,6 +185,11 @@ async function handleFileSelected(event: Event) {
         <button @click="emit('navigate', 'share-routines')" class="w-full py-3 rounded-xl bg-surface border border-border font-semibold">
           Share Routines
         </button>
+        <button @click="triggerRoutinesImport" class="w-full py-3 rounded-xl bg-surface border border-border font-semibold">
+          Import Shared Routines
+        </button>
+        <input ref="routinesFileInput" type="file" accept="application/json" class="hidden" @change="handleRoutinesFileSelected" />
+        <p v-if="routinesImportStatus" class="text-sm text-success">{{ routinesImportStatus }}</p>
       </div>
 
       <div class="space-y-2">
@@ -140,5 +204,13 @@ async function handleFileSelected(event: Event) {
         <p v-if="importStatus" class="text-sm text-success">{{ importStatus }}</p>
       </div>
     </main>
+
+    <ImportConflictsModal
+      v-if="pendingConflicts"
+      :routine-conflicts="pendingConflicts.routineConflicts"
+      :exercise-conflicts="pendingConflicts.exerciseConflicts"
+      @confirm="confirmRoutinesImport"
+      @cancel="cancelRoutinesImport"
+    />
   </div>
 </template>
