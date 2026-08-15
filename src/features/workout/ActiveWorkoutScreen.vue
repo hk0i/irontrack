@@ -37,8 +37,6 @@ import FinishWorkoutModal from './FinishWorkoutModal.vue';
  */
 type ExerciseOption = Exercise | { id: null; name: string };
 
-const REST_SECONDS = 90;
-
 /**
  * Deliberately not a strict 1-or-2-length tuple — the block-building loop in
  * loadWorkout() constructs these dynamically and enforcing a tuple type
@@ -305,6 +303,31 @@ function toggleUnit(row: SetRowState) {
 }
 
 /**
+ * Rest duration for one exercise, from its type's global default in
+ * Settings. Exercises created before exerciseType existed (or never
+ * explicitly set) fall back to 'regular' — the pre-existing flat-90s
+ * behavior — never silently treated as a warmup.
+ */
+function restSecondsForExercise(exercise: Exercise): number {
+  return exercise.exerciseType === 'warmup' ? settings.warmupRestSeconds : settings.regularRestSeconds;
+}
+
+/**
+ * A block's rest duration is the longer of its exercise(s)' type
+ * defaults. For a standalone exercise this is just its own default; for
+ * a superset pairing a warmup with a regular exercise (rare, since
+ * supersetWith links aren't type-restricted) it's the max of both, so
+ * the regular side is never shortchanged on rest.
+ */
+function restSecondsForBlock(block: WorkoutBlock): number {
+  return Math.max(...block.exercises.map(restSecondsForExercise));
+}
+
+function findBlockForExercise(exerciseId: string): WorkoutBlock | undefined {
+  return blocks.value.find((block) => block.exercises.some((e) => e.id === exerciseId));
+}
+
+/**
  * partnerRow is only passed for superset rows. The rest banner should
  * fire once per superset pair, after whichever exercise is checked off
  * last — not after each individual component set — so it only starts
@@ -354,7 +377,8 @@ async function checkRow(exerciseId: string, row: SetRowState, partnerRow: SetRow
   // being logged in this session, so set 2 never shows set 1's own data.
 
   if (!isEdit && (!partnerRow || partnerRow.checked)) {
-    startRestTimer(REST_SECONDS);
+    const block = findBlockForExercise(exerciseId);
+    startRestTimer(block ? restSecondsForBlock(block) : settings.regularRestSeconds);
   }
 }
 
