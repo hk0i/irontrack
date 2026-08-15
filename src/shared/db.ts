@@ -27,6 +27,19 @@ export const RESISTANCE_TYPES: { value: ResistanceType; label: string }[] = [
   { value: 'mobility', label: 'Mobility' },
 ];
 
+export type ExerciseType = 'warmup' | 'regular';
+
+/**
+ * Display metadata for every picker that lets a user set an exercise's
+ * type at creation time (RoutineBuilderScreen) or edit it after
+ * (RoutineBuilderScreen's per-row cycle select). Drives which of
+ * Settings' two rest-duration defaults ActiveWorkoutScreen uses.
+ */
+export const EXERCISE_TYPES: { value: ExerciseType; label: string }[] = [
+  { value: 'regular', label: 'Regular' },
+  { value: 'warmup', label: 'Warmup' },
+];
+
 export interface Routine {
   id: string;
   name: string;
@@ -47,6 +60,13 @@ export interface Exercise {
    * 'weight' (the prior implicit behavior) rather than assume presence.
    */
   resistanceType?: ResistanceType;
+  /**
+   * Optional — exercises created before this field existed have no key at
+   * all. Every read site must fall back to 'regular' (the prior implicit
+   * flat-90s rest behavior), never silently treat an absent value as
+   * 'warmup'.
+   */
+  exerciseType?: ExerciseType;
 }
 
 export interface SetEntry {
@@ -276,12 +296,14 @@ export async function createExercise({
   name,
   supersetWith = null,
   resistanceType = 'weight',
+  exerciseType = 'regular',
 }: {
   name: string;
   supersetWith?: string | null;
   resistanceType?: ResistanceType;
+  exerciseType?: ExerciseType;
 }): Promise<Exercise> {
-  const exercise: Exercise = { id: crypto.randomUUID(), name, supersetWith, resistanceType };
+  const exercise: Exercise = { id: crypto.randomUUID(), name, supersetWith, resistanceType, exerciseType };
   await db.exercises.add(exercise);
   return exercise;
 }
