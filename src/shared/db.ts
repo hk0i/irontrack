@@ -530,6 +530,22 @@ export function getAllWorkoutSessions(): Promise<WorkoutSession[]> {
   return db.workouts.toArray();
 }
 
+export function getWorkoutSessionById(id: string): Promise<WorkoutSession | undefined> {
+  return db.workouts.get(id);
+}
+
+/**
+ * Sets for a pre-sessionId session, matched by date+routineId — the same
+ * key WorkoutHistoryScreen's legacy grouping already uses, so legacy rows
+ * stay viewable/editable without a schema migration.
+ */
+export async function getSetsForLegacySession(date: string, routineId: string | null): Promise<SetEntry[]> {
+  const sets = await getAllSets();
+  return sets
+    .filter((s) => !s.sessionId && s.date === date && (s.routineId || null) === routineId)
+    .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+}
+
 // ---------- Body metrics ----------
 
 const DEFAULT_METRIC_BLUEPRINTS: MetricBlueprint[] = [
