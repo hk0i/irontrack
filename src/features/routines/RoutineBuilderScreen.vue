@@ -11,8 +11,10 @@ import {
   setSupersetLink,
   clearSupersetLink,
   RESISTANCE_TYPES,
+  EXERCISE_TYPES,
   type Exercise,
   type ResistanceType,
+  type ExerciseType,
 } from '../../shared/db';
 import { COMMON_EXERCISES } from '../../shared/common-exercises';
 import { useDragReorder } from '../../shared/useDragReorder';
@@ -46,15 +48,21 @@ const linkModeExerciseId = ref<string | null>(null);
  * per-row cycle button in "Routine order" instead.
  */
 const newExerciseResistanceType = ref<ResistanceType>('weight');
+const newExerciseType = ref<ExerciseType>('regular');
 
 async function setResistanceType(exercise: Exercise, value: ResistanceType) {
   await updateExercise(exercise.id, { resistanceType: value });
   exercise.resistanceType = value;
 }
 
+async function setExerciseType(exercise: Exercise, value: ExerciseType) {
+  await updateExercise(exercise.id, { exerciseType: value });
+  exercise.exerciseType = value;
+}
+
 const { draggingIndex, dragOffset, setRowEl, onRowPointerDown } = useDragReorder(selectedExercises, {
   gap: 8, // space-y-2
-  fallbackHeight: 56,
+  fallbackHeight: 108, // two-line row: name + drag/remove line, plus type/link controls line
 });
 
 onMounted(async () => {
@@ -100,14 +108,22 @@ async function addExercise(exercise: ExerciseOption) {
     selectedExercises.value.push(exercise);
     return;
   }
-  const created = await createExercise({ name: exercise.name, resistanceType: newExerciseResistanceType.value });
+  const created = await createExercise({
+    name: exercise.name,
+    resistanceType: newExerciseResistanceType.value,
+    exerciseType: newExerciseType.value,
+  });
   selectedExercises.value.push(created);
 }
 
 async function createAndAddExercise() {
   const name = searchQuery.value.trim();
   if (!name) return;
-  const exercise = await createExercise({ name, resistanceType: newExerciseResistanceType.value });
+  const exercise = await createExercise({
+    name,
+    resistanceType: newExerciseResistanceType.value,
+    exerciseType: newExerciseType.value,
+  });
   selectedExercises.value.push(exercise);
   searchQuery.value = '';
 }
@@ -193,6 +209,11 @@ async function save() {
         </div>
         <p class="text-xs text-foreground-faint mt-1">Resistance type for the next new exercise you add.</p>
 
+        <div class="mt-2">
+          <SegmentedToggle :options="EXERCISE_TYPES" v-model="newExerciseType" size="sm" />
+        </div>
+        <p class="text-xs text-foreground-faint mt-1">Exercise type for the next new exercise you add — controls rest duration.</p>
+
         <div v-if="searchQuery.trim()" class="mt-2 space-y-1">
           <button
             v-if="!exactMatchExists"
@@ -223,47 +244,59 @@ async function save() {
             v-for="(exercise, index) in selectedExercises"
             :key="exercise.id"
             :ref="(el) => setRowEl(index, el as HTMLElement | null)"
-            class="flex items-center gap-2 px-4 py-3 rounded-xl bg-surface border select-none"
+            class="flex flex-col gap-2 px-4 py-3 rounded-xl bg-surface border select-none"
             :class="[exercise.supersetWith ? 'border-primary/40' : 'border-border', draggingIndex === index ? 'relative z-10 shadow-xl' : '']"
             :style="draggingIndex === index ? { transform: 'translateY(' + dragOffset + 'px)' } : {}"
           >
-            <button
-              @pointerdown="onRowPointerDown($event, index)"
-              :aria-label="'Drag to reorder ' + exercise.name"
-              style="touch-action: none"
-              class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full bg-surface-2 text-foreground-muted cursor-grab active:cursor-grabbing"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="9" cy="6" r="1.5" />
-                <circle cx="15" cy="6" r="1.5" />
-                <circle cx="9" cy="12" r="1.5" />
-                <circle cx="15" cy="12" r="1.5" />
-                <circle cx="9" cy="18" r="1.5" />
-                <circle cx="15" cy="18" r="1.5" />
-              </svg>
-            </button>
-            <span class="flex-1">{{ exercise.name }}</span>
-            <select
-              :value="exercise.resistanceType || 'weight'"
-              @change="setResistanceType(exercise, ($event.target as HTMLSelectElement).value as ResistanceType)"
-              :aria-label="'Resistance type for ' + exercise.name"
-              class="pl-2.5 pr-1 h-8 flex-shrink-0 rounded-full bg-surface-2 text-foreground-subtle text-[10px] font-semibold uppercase tracking-wide border-none appearance-none"
-            >
-              <option v-for="opt in RESISTANCE_TYPES" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-            </select>
-            <button
-              @click="toggleLink(exercise)"
-              :aria-label="exercise.supersetWith ? 'Unlink superset' : 'Link as superset'"
-              class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full"
-              :class="exercise.supersetWith || linkModeExerciseId === exercise.id ? 'bg-primary-strong text-on-primary-strong' : 'bg-surface-2 text-foreground-subtle'"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" />
-              </svg>
-            </button>
-            <button @click="removeExercise(exercise)" aria-label="Remove" class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full bg-surface-2 text-foreground-muted text-lg">
-              &times;
-            </button>
+            <div class="flex items-center gap-2">
+              <button
+                @pointerdown="onRowPointerDown($event, index)"
+                :aria-label="'Drag to reorder ' + exercise.name"
+                style="touch-action: none"
+                class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full bg-surface-2 text-foreground-muted cursor-grab active:cursor-grabbing"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="9" cy="6" r="1.5" />
+                  <circle cx="15" cy="6" r="1.5" />
+                  <circle cx="9" cy="12" r="1.5" />
+                  <circle cx="15" cy="12" r="1.5" />
+                  <circle cx="9" cy="18" r="1.5" />
+                  <circle cx="15" cy="18" r="1.5" />
+                </svg>
+              </button>
+              <span class="flex-1">{{ exercise.name }}</span>
+              <button @click="removeExercise(exercise)" aria-label="Remove" class="w-11 h-11 flex-shrink-0 flex items-center justify-center rounded-full bg-surface-2 text-foreground-muted text-lg">
+                &times;
+              </button>
+            </div>
+            <div class="flex items-center gap-2 pl-[52px]">
+              <select
+                :value="exercise.resistanceType || 'weight'"
+                @change="setResistanceType(exercise, ($event.target as HTMLSelectElement).value as ResistanceType)"
+                :aria-label="'Resistance type for ' + exercise.name"
+                class="pl-2.5 pr-1 h-8 flex-shrink-0 rounded-full bg-surface-2 text-foreground-subtle text-[10px] font-semibold uppercase tracking-wide border-none appearance-none"
+              >
+                <option v-for="opt in RESISTANCE_TYPES" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              </select>
+              <select
+                :value="exercise.exerciseType || 'regular'"
+                @change="setExerciseType(exercise, ($event.target as HTMLSelectElement).value as ExerciseType)"
+                :aria-label="'Exercise type for ' + exercise.name"
+                class="pl-2.5 pr-1 h-8 flex-shrink-0 rounded-full bg-surface-2 text-foreground-subtle text-[10px] font-semibold uppercase tracking-wide border-none appearance-none"
+              >
+                <option v-for="opt in EXERCISE_TYPES" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+              </select>
+              <button
+                @click="toggleLink(exercise)"
+                :aria-label="exercise.supersetWith ? 'Unlink superset' : 'Link as superset'"
+                class="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full"
+                :class="exercise.supersetWith || linkModeExerciseId === exercise.id ? 'bg-primary-strong text-on-primary-strong' : 'bg-surface-2 text-foreground-subtle'"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>
