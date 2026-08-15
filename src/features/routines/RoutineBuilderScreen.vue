@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import {
   searchExercises,
   createExercise,
@@ -15,6 +15,7 @@ import {
   type ResistanceType,
 } from '../../shared/db';
 import { COMMON_EXERCISES } from '../../shared/common-exercises';
+import { useDragReorder } from '../../shared/useDragReorder';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import SegmentedToggle from '../../shared/components/SegmentedToggle.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
@@ -51,50 +52,9 @@ async function setResistanceType(exercise: Exercise, value: ResistanceType) {
   exercise.resistanceType = value;
 }
 
-const draggingIndex = ref<number | null>(null);
-const dragOffset = ref(0);
-const rowEls: (HTMLElement | null)[] = [];
-let pointerStartY = 0;
-let rowStep = 0;
-
-function onRowPointerDown(event: PointerEvent, index: number) {
-  event.preventDefault();
-  draggingIndex.value = index;
-  dragOffset.value = 0;
-  pointerStartY = event.clientY;
-  const rect = rowEls[index]?.getBoundingClientRect();
-  rowStep = (rect?.height || 56) + 8; // row height + space-y-2 gap
-  window.addEventListener('pointermove', onRowPointerMove);
-  window.addEventListener('pointerup', onRowPointerUp);
-}
-
-function onRowPointerMove(event: PointerEvent) {
-  if (draggingIndex.value === null) return;
-  dragOffset.value = event.clientY - pointerStartY;
-  const from = draggingIndex.value;
-  const maxIndex = selectedExercises.value.length - 1;
-  let to = from + Math.round(dragOffset.value / rowStep);
-  to = Math.max(0, Math.min(maxIndex, to));
-  if (to !== from) {
-    const arr = selectedExercises.value;
-    const [item] = arr.splice(from, 1);
-    arr.splice(to, 0, item);
-    pointerStartY += (to - from) * rowStep;
-    dragOffset.value = event.clientY - pointerStartY;
-    draggingIndex.value = to;
-  }
-}
-
-function onRowPointerUp() {
-  draggingIndex.value = null;
-  dragOffset.value = 0;
-  window.removeEventListener('pointermove', onRowPointerMove);
-  window.removeEventListener('pointerup', onRowPointerUp);
-}
-
-onUnmounted(() => {
-  window.removeEventListener('pointermove', onRowPointerMove);
-  window.removeEventListener('pointerup', onRowPointerUp);
+const { draggingIndex, dragOffset, setRowEl, onRowPointerDown } = useDragReorder(selectedExercises, {
+  gap: 8, // space-y-2
+  fallbackHeight: 56,
 });
 
 onMounted(async () => {
@@ -262,7 +222,7 @@ async function save() {
           <div
             v-for="(exercise, index) in selectedExercises"
             :key="exercise.id"
-            :ref="(el) => (rowEls[index] = el as HTMLElement | null)"
+            :ref="(el) => setRowEl(index, el as HTMLElement | null)"
             class="flex items-center gap-2 px-4 py-3 rounded-xl bg-surface border select-none"
             :class="[exercise.supersetWith ? 'border-primary/40' : 'border-border', draggingIndex === index ? 'relative z-10 shadow-xl' : '']"
             :style="draggingIndex === index ? { transform: 'translateY(' + dragOffset + 'px)' } : {}"
