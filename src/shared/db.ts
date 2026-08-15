@@ -499,6 +499,22 @@ export async function getPreviousBestSetForExercise(exerciseId: string, beforeDa
   return onThatDate.reduce((heaviest, s) => (s.weightInLbs > heaviest.weightInLbs ? s : heaviest));
 }
 
+export interface ExercisePersonalBests {
+  maxWeightInLbs: number;
+  maxReps: number;
+}
+
+/** Full-history max weight/reps for one exercise. Call once per exercise
+ *  present in the viewed session, not for every exercise in the app. */
+export async function getPersonalBestsForExercise(exerciseId: string): Promise<ExercisePersonalBests | null> {
+  const sets = await getSetsForExercise(exerciseId);
+  if (sets.length === 0) return null;
+  return {
+    maxWeightInLbs: Math.max(...sets.map((s) => s.weightInLbs)),
+    maxReps: Math.max(...sets.map((s) => s.reps)),
+  };
+}
+
 // ---------- Workout sessions (duration tracking) ----------
 
 /**

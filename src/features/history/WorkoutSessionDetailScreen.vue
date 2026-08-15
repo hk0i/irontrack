@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import {
   getWorkoutSessionById,
   getSetsForSession,
@@ -7,10 +7,12 @@ import {
   getAllExercises,
   getAllRoutines,
   getPreviousBestSetForExercise,
+  getPersonalBestsForExercise,
   updateSet,
   deleteSet,
   formatWeight,
   type Exercise,
+  type ExercisePersonalBests,
   type ResistanceType,
   type SetEntry,
   type WeightUnit,
@@ -22,6 +24,7 @@ import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import IconButton from '../../shared/components/IconButton.vue';
 import EmptyState from '../../shared/components/EmptyState.vue';
 import BandColorPicker from '../../shared/components/BandColorPicker.vue';
+import StatBadge from '../../shared/components/StatBadge.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
 
 const props = defineProps<{
@@ -56,6 +59,9 @@ interface ExerciseGroup {
   /** Heaviest set from the previous time this exercise was performed
    *  (strictly before this session's date), or null if never done before. */
   previousBest: SetEntry | null;
+  /** Full-history max weight/reps for this exercise, used to flag any set
+   *  in this session that ties or beats it as an all-time PR. */
+  personalBests: ExercisePersonalBests | null;
 }
 
 const loading = ref(true);
@@ -84,6 +90,7 @@ function groupByExercise(sets: EditableSet[], exerciseById: Map<string, Exercise
     resistanceType: exerciseById.get(exerciseId)?.resistanceType || 'weight',
     sets: exerciseSets,
     previousBest: null,
+    personalBests: null,
   }));
 }
 
@@ -107,6 +114,30 @@ function progressionText(exercise: ExerciseGroup): string {
   const sign = weightDelta > 0 ? '+' : '';
   return `${sign}${weightDelta} ${settings.preferredUnit} vs last time (${previousWeight} → ${currentWeight} ${settings.preferredUnit})`;
 }
+
+/** All-time PR labels for one set, checked against its exercise's full
+ *  history — shows even on an exercise's very first logged set, since a
+ *  first set is trivially both the heaviest-ever and most-reps-ever. */
+function prBadges(set: SetEntry, exercise: ExerciseGroup): string[] {
+  if (!exercise.personalBests) return [];
+  const badges: string[] = [];
+  if (set.weightInLbs > 0 && set.weightInLbs === exercise.personalBests.maxWeightInLbs) badges.push('Heaviest ever');
+  if (set.reps === exercise.personalBests.maxReps) badges.push('Most reps ever');
+  return badges;
+}
+
+const sessionHighlights = computed(() => {
+  const allSets = exercises.value.flatMap((exercise) => exercise.sets.map((set) => ({ set, exercise })));
+  if (allSets.length === 0) return null;
+  const heaviest = allSets.reduce((best, s) => (s.set.weightInLbs > best.set.weightInLbs ? s : best));
+  const mostReps = allSets.reduce((best, s) => (s.set.reps > best.set.reps ? s : best));
+  return {
+    heaviest: heaviest.set.weightInLbs > 0
+      ? `${heaviest.exercise.name}: ${formatWeight(heaviest.set.weightInLbs, settings.preferredUnit)} ${settings.preferredUnit}`
+      : null,
+    mostReps: `${mostReps.exercise.name}: ${mostReps.set.reps} reps`,
+  };
+});
 
 /**
  * Edits happen inline against a copy of the values (set._editWeight etc.)
@@ -214,7 +245,12 @@ onMounted(async () => {
     const date = rawDate;
     await Promise.all(
       exercises.value.map(async (exercise) => {
-        exercise.previousBest = await getPreviousBestSetForExercise(exercise.exerciseId, date);
+        const [previousBest, personalBests] = await Promise.all([
+          getPreviousBestSetForExercise(exercise.exerciseId, date),
+          getPersonalBestsForExercise(exercise.exerciseId),
+        ]);
+        exercise.previousBest = previousBest;
+        exercise.personalBests = personalBests;
       }),
     );
   }
@@ -244,6 +280,11 @@ onMounted(async () => {
         </div>
         <p v-if="note" class="text-sm text-foreground-muted italic mb-3">{{ note }}</p>
 
+        <div v-if="sessionHighlights && (sessionHighlights.heaviest || sessionHighlights.mostReps)" class="flex flex-wrap gap-1.5 mb-4">
+          <StatBadge v-if="sessionHighlights.heaviest" :label="`Heaviest: ${sessionHighlights.heaviest}`" tone="pr" />
+          <StatBadge v-if="sessionHighlights.mostReps" :label="`Most reps: ${sessionHighlights.mostReps}`" tone="pr" />
+        </div>
+
         <EmptyState v-if="exercises.length === 0">No sets logged for this workout.</EmptyState>
 
         <div v-else class="space-y-4">
@@ -251,7 +292,7 @@ onMounted(async () => {
             <div class="text-lg font-semibold text-foreground mb-1">{{ exercise.name }}</div>
             <div class="text-sm text-foreground-muted mb-2">{{ progressionText(exercise) }}</div>
             <div class="flex flex-wrap gap-2">
-              <div v-for="set in exercise.sets" :key="set.id">
+              <div v-for="set in exercise.sets" :key="set.id" class="flex items-center gap-1">
                 <div
                   v-if="editingId !== set.id"
                   class="flex items-center gap-1 text-sm pl-3 pr-1 py-1.5 rounded-lg bg-surface-2 text-foreground-subtle"
@@ -267,6 +308,7 @@ onMounted(async () => {
                       <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0l1 13a2 2 0 002 2h4a2 2 0 002-2l1-13" />
                     </svg>
                   </IconButton>
+                  <StatBadge v-for="badge in prBadges(set, exercise)" :key="badge" :label="badge" tone="pr" />
                 </div>
 
                 <div v-else class="flex items-center gap-1.5 bg-surface-2 rounded-lg p-1.5 flex-wrap">
