@@ -7,7 +7,8 @@ export type ScreenName =
   | 'active-workout'
   | 'workout-history'
   | 'body-metrics'
-  | 'progress-chart';
+  | 'progress-chart'
+  | 'share-routines';
 
 /**
  * Every screen's loose `navParams` prop, today a runtime `Object` with no

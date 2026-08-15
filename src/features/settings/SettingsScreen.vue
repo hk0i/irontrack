@@ -121,6 +121,14 @@ async function handleFileSelected(event: Event) {
       </div>
 
       <div class="space-y-2">
+        <label class="text-sm text-foreground-muted block">Share Routines</label>
+        <p class="text-xs text-foreground-faint">Export just your routines and exercises — no logged sets, workouts, or body-metric data.</p>
+        <button @click="emit('navigate', 'share-routines')" class="w-full py-3 rounded-xl bg-surface border border-border font-semibold">
+          Share Routines
+        </button>
+      </div>
+
+      <div class="space-y-2">
         <label class="text-sm text-foreground-muted block">Cloud portability</label>
         <button @click="doExport" class="w-full py-3 rounded-xl bg-surface border border-border font-semibold">
           Export Backup File
