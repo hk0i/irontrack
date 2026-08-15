@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { getAllRoutines, deleteRoutine, duplicateRoutine, getAllSets, type Routine } from '../../shared/db';
+import { getAllRoutines, deleteRoutine, duplicateRoutine, reorderRoutines, getAllSets, type Routine } from '../../shared/db';
 import { activeSession, clearActiveSession } from '../../shared/active-session';
 import { appUpdate, installAppUpdate } from '../../shared/app-update';
 import { confirmThenDelete } from '../../shared/confirm';
 import { useSwipeReveal } from '../../shared/useSwipeReveal';
+import { useDragReorder } from '../../shared/useDragReorder';
 import IconButton from '../../shared/components/IconButton.vue';
 import EmptyState from '../../shared/components/EmptyState.vue';
 import type { NavParams, ScreenName } from '../../shared/types';
@@ -123,6 +124,19 @@ async function removeRoutine(routine: Routine) {
     await loadRoutines();
   });
 }
+
+// Drag-handle reorders the list; dragging closes whichever card's swipe
+// panel is open first, so the two gestures never fight over the same card.
+const { draggingIndex, dragOffset, setRowEl, onRowPointerDown } = useDragReorder(routines, {
+  gap: 12, // space-y-3
+  fallbackHeight: 92,
+  onDrop: () => reorderRoutines(routines.value.map((r) => r.id)),
+});
+
+function onHandlePointerDown(event: PointerEvent, index: number) {
+  swipe.openId.value = null;
+  onRowPointerDown(event, index);
+}
 </script>
 
 <template>
@@ -185,9 +199,15 @@ async function removeRoutine(routine: Routine) {
       </button>
 
       <div
-        v-for="routine in routines"
+        v-for="(routine, index) in routines"
         :key="routine.id"
-        :class="['relative border border-border rounded-2xl overflow-hidden', routine.id === hintRoutineId ? 'animate-swipe-hint' : '']"
+        :ref="(el) => setRowEl(index, el as HTMLElement | null)"
+        :class="[
+          'relative border border-border rounded-2xl overflow-hidden',
+          routine.id === hintRoutineId ? 'animate-swipe-hint' : '',
+          draggingIndex === index ? 'z-20 shadow-xl' : '',
+        ]"
+        :style="draggingIndex === index ? { transform: 'translateY(' + dragOffset + 'px)' } : {}"
       >
         <div class="absolute inset-y-0 right-0 flex" style="width: 216px">
           <button
@@ -224,11 +244,26 @@ async function removeRoutine(routine: Routine) {
           @click="openRoutine(routine)"
           style="touch-action: pan-y"
           :style="swipe.transformFor(routine.id)"
-          class="relative z-10 w-full text-left pl-5 pr-5 py-4 bg-surface active:bg-surface-2 rounded-2xl select-none"
+          class="relative z-10 w-full text-left pl-16 pr-5 py-4 bg-surface active:bg-surface-2 rounded-2xl select-none"
         >
           <div class="text-lg font-semibold">{{ routine.name }}</div>
           <div class="text-sm text-foreground-muted mt-1">{{ routine.exerciseIds.length }} exercises</div>
         </button>
+        <IconButton
+          @pointerdown="onHandlePointerDown($event, index)"
+          :aria-label="'Drag to reorder ' + routine.name"
+          style="touch-action: none"
+          class="absolute left-2 top-1/2 -translate-y-1/2 z-20 cursor-grab active:cursor-grabbing"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="9" cy="6" r="1.5" />
+            <circle cx="15" cy="6" r="1.5" />
+            <circle cx="9" cy="12" r="1.5" />
+            <circle cx="15" cy="12" r="1.5" />
+            <circle cx="9" cy="18" r="1.5" />
+            <circle cx="15" cy="18" r="1.5" />
+          </svg>
+        </IconButton>
       </div>
     </main>
 
