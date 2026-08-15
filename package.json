@@ -1,6 +1,6 @@
 {
   "name": "irontrack",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Offline-first PWA workout tracker.",
   "private": true,
   "license": "MIT",
