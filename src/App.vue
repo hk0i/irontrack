@@ -6,6 +6,7 @@ import RoutineBuilderScreen from './features/routines/RoutineBuilderScreen.vue';
 import ShareRoutinesScreen from './features/routines/ShareRoutinesScreen.vue';
 import ActiveWorkoutScreen from './features/workout/ActiveWorkoutScreen.vue';
 import WorkoutHistoryScreen from './features/history/WorkoutHistoryScreen.vue';
+import WorkoutSessionDetailScreen from './features/history/WorkoutSessionDetailScreen.vue';
 import BodyMetricsScreen from './features/body-metrics/BodyMetricsScreen.vue';
 import ProgressChartScreen from './features/progress/ProgressChartScreen.vue';
 import RestTimerBanner from './shared/components/RestTimerBanner.vue';
@@ -19,6 +20,7 @@ const screens: Record<ScreenName, Component> = {
   'share-routines': ShareRoutinesScreen,
   'active-workout': ActiveWorkoutScreen,
   'workout-history': WorkoutHistoryScreen,
+  'workout-session-detail': WorkoutSessionDetailScreen,
   'body-metrics': BodyMetricsScreen,
   'progress-chart': ProgressChartScreen,
 };

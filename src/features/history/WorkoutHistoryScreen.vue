@@ -56,6 +56,8 @@ interface DayGroup {
   date: string;
   label: string;
   routineName: string | null;
+  routineId: string | null;
+  sessionId: string | null;
   durations: string[];
   mood?: string;
   note?: string;
@@ -149,6 +151,8 @@ onMounted(async () => {
       date: session.date,
       label: formatDate(session.date),
       routineName: (session.routineId && routineById.get(session.routineId)?.name) || null,
+      routineId: session.routineId,
+      sessionId: session.sessionId,
       durations,
       mood,
       note,
@@ -160,6 +164,16 @@ onMounted(async () => {
     };
   });
 });
+
+function openDetail(day: DayGroup) {
+  emit(
+    'navigate',
+    'workout-session-detail',
+    day.sessionId
+      ? { sessionId: day.sessionId }
+      : { sessionDate: day.date, routineId: day.routineId ?? undefined },
+  );
+}
 
 function formattedSet(set: SetEntry) {
   const weight = formatWeight(set.weightInLbs, settings.preferredUnit);
@@ -254,7 +268,9 @@ async function deleteEntry(day: DayGroup, exercise: ExerciseGroup, set: Editable
       >
         <div class="mb-3">
           <div class="flex items-start justify-between gap-2">
-            <h2 class="font-semibold text-base">{{ day.routineName || 'Workout' }}</h2>
+            <button type="button" @click="openDetail(day)" class="text-left">
+              <h2 class="font-semibold text-base underline decoration-dotted">{{ day.routineName || 'Workout' }}</h2>
+            </button>
             <div v-if="day.durations.length || day.mood" class="flex flex-wrap justify-end gap-1">
               <span
                 v-if="day.mood"

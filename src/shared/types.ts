@@ -6,6 +6,7 @@ export type ScreenName =
   | 'routine-builder'
   | 'active-workout'
   | 'workout-history'
+  | 'workout-session-detail'
   | 'body-metrics'
   | 'progress-chart'
   | 'share-routines';
@@ -21,6 +22,11 @@ export interface NavParams {
   initialExerciseId?: string;
   /** Dashboard: the routine card to play the one-time swipe-hint jiggle on. */
   highlightRoutineId?: string;
+  /** WorkoutSessionDetailScreen: the WorkoutSession.id to load. */
+  sessionId?: string;
+  /** WorkoutSessionDetailScreen legacy fallback, paired with routineId
+   *  (reused), for sets logged before SetEntry.sessionId existed. */
+  sessionDate?: string;
 }
 
 /**
