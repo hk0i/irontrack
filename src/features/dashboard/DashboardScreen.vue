@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { getAllRoutines, deleteRoutine, duplicateRoutine, reorderRoutines, getAllSets, type Routine } from '../../shared/db';
+import { getAllRoutines, deleteRoutine, duplicateRoutine, reorderRoutines, getAllSets, exportRoutines, type Routine } from '../../shared/db';
 import { activeSession, clearActiveSession } from '../../shared/active-session';
 import { appUpdate, installAppUpdate } from '../../shared/app-update';
 import { confirmThenDelete } from '../../shared/confirm';
@@ -87,8 +87,8 @@ onMounted(() => {
   }
 });
 
-// Swipe-left reveals a 3-segment Edit/Duplicate/Delete panel behind each card.
-const SWIPE_OPEN_PX = 216;
+// Swipe-left reveals a 4-segment Edit/Duplicate/Share/Delete panel behind each card.
+const SWIPE_OPEN_PX = 288;
 const swipe = useSwipeReveal(SWIPE_OPEN_PX, {
   onSwipeStart: () => {
     if (hintRoutineId.value) {
@@ -115,6 +115,34 @@ async function copyRoutine(routine: Routine) {
   swipe.close(routine.id);
   const copy = await duplicateRoutine(routine.id);
   emit('navigate', 'routine-builder', { routineId: copy.id });
+}
+
+/**
+ * Single-routine quick share — same export/share-or-download logic as
+ * ShareRoutinesScreen's bulk flow, just pre-scoped to this one routine.
+ */
+async function shareRoutine(routine: Routine) {
+  swipe.close(routine.id);
+  const payload = await exportRoutines([routine.id]);
+  const json = JSON.stringify(payload, null, 2);
+  const filename = `irontrack-routine-${routine.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.json`;
+  const file = new File([json], filename, { type: 'application/json' });
+
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: routine.name });
+      return;
+    } catch (err) {
+      // user cancelled or share failed — fall through to download fallback
+    }
+  }
+
+  const url = URL.createObjectURL(file);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
 }
 
 async function removeRoutine(routine: Routine) {
@@ -209,7 +237,7 @@ function onHandlePointerDown(event: PointerEvent, index: number) {
         ]"
         :style="draggingIndex === index ? { transform: 'translateY(' + dragOffset + 'px)' } : {}"
       >
-        <div class="absolute inset-y-0 right-0 flex" style="width: 216px">
+        <div class="absolute inset-y-0 right-0 flex" style="width: 288px">
           <button
             @click="editRoutine(routine)"
             :aria-label="'Edit ' + routine.name"
@@ -227,6 +255,18 @@ function onHandlePointerDown(event: PointerEvent, index: number) {
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="9" y="9" width="11" height="11" rx="2" stroke-linecap="round" stroke-linejoin="round" />
               <path stroke-linecap="round" stroke-linejoin="round" d="M5 15H4a1 1 0 01-1-1V4a1 1 0 011-1h10a1 1 0 011 1v1" />
+            </svg>
+          </button>
+          <button
+            @click="shareRoutine(routine)"
+            :aria-label="'Share ' + routine.name"
+            class="w-[72px] h-full flex-shrink-0 flex items-center justify-center bg-surface-2 text-foreground-muted active:bg-surface-3"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="18" cy="5" r="3" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="6" cy="12" r="3" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="18" cy="19" r="3" stroke-linecap="round" stroke-linejoin="round" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.6 10.5l6.8-3.9M8.6 13.5l6.8 3.9" />
             </svg>
           </button>
           <button
