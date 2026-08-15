@@ -483,6 +483,22 @@ export function deleteSet(id: string): Promise<void> {
   return db.sets.delete(id);
 }
 
+/**
+ * Heaviest set from the most recent date this exercise was logged strictly
+ * before beforeDate — distinct from getLastWorkoutBestSetForExercise, which
+ * excludes one session id rather than respecting chronological position
+ * (wrong when viewing an arbitrary historical session, not just the
+ * in-progress one). That function's behavior/callers are untouched here.
+ */
+export async function getPreviousBestSetForExercise(exerciseId: string, beforeDate: string): Promise<SetEntry | null> {
+  const sets = await db.sets.where('exerciseId').equals(exerciseId).toArray();
+  const candidates = sets.filter((s) => s.date < beforeDate);
+  if (candidates.length === 0) return null;
+  const mostRecentDate = candidates.reduce((max, s) => (s.date.localeCompare(max) > 0 ? s.date : max), candidates[0].date);
+  const onThatDate = candidates.filter((s) => s.date === mostRecentDate);
+  return onThatDate.reduce((heaviest, s) => (s.weightInLbs > heaviest.weightInLbs ? s : heaviest));
+}
+
 // ---------- Workout sessions (duration tracking) ----------
 
 /**

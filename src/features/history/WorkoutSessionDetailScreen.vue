@@ -6,6 +6,7 @@ import {
   getSetsForLegacySession,
   getAllExercises,
   getAllRoutines,
+  getPreviousBestSetForExercise,
   updateSet,
   deleteSet,
   formatWeight,
@@ -42,6 +43,7 @@ type EditableSet = SetEntry & {
 };
 
 interface ExerciseGroup {
+  exerciseId: string;
   name: string;
   /**
    * Determines which fields the inline edit form shows — mirrors
@@ -51,6 +53,9 @@ interface ExerciseGroup {
    */
   resistanceType: ResistanceType;
   sets: EditableSet[];
+  /** Heaviest set from the previous time this exercise was performed
+   *  (strictly before this session's date), or null if never done before. */
+  previousBest: SetEntry | null;
 }
 
 const loading = ref(true);
@@ -74,10 +79,33 @@ function groupByExercise(sets: EditableSet[], exerciseById: Map<string, Exercise
     byExercise.get(set.exerciseId)!.push(set);
   }
   return [...byExercise.entries()].map(([exerciseId, exerciseSets]) => ({
+    exerciseId,
     name: exerciseById.get(exerciseId)?.name || 'Unknown exercise',
     resistanceType: exerciseById.get(exerciseId)?.resistanceType || 'weight',
     sets: exerciseSets,
+    previousBest: null,
   }));
+}
+
+function bestSet(sets: SetEntry[]): SetEntry {
+  return sets.reduce((best, s) => (s.weightInLbs > best.weightInLbs || (s.weightInLbs === best.weightInLbs && s.reps > best.reps) ? s : best));
+}
+
+/** "+10 lbs vs last time (185 → 195)" / reps-only for non-weight exercises / "No previous data". */
+function progressionText(exercise: ExerciseGroup): string {
+  if (!exercise.previousBest) return 'No previous data';
+  const current = bestSet(exercise.sets);
+  const previous = exercise.previousBest;
+  if (exercise.resistanceType !== 'weight') {
+    const repsDelta = current.reps - previous.reps;
+    const sign = repsDelta > 0 ? '+' : '';
+    return `${sign}${repsDelta} reps vs last time (${previous.reps} → ${current.reps})`;
+  }
+  const currentWeight = formatWeight(current.weightInLbs, settings.preferredUnit);
+  const previousWeight = formatWeight(previous.weightInLbs, settings.preferredUnit);
+  const weightDelta = Math.round((currentWeight - previousWeight) * 10) / 10;
+  const sign = weightDelta > 0 ? '+' : '';
+  return `${sign}${weightDelta} ${settings.preferredUnit} vs last time (${previousWeight} → ${currentWeight} ${settings.preferredUnit})`;
 }
 
 /**
@@ -160,6 +188,8 @@ onMounted(async () => {
   const sessionId = props.navParams?.sessionId;
   const sessionDate = props.navParams?.sessionDate;
 
+  let rawDate: string | null = null;
+
   if (sessionId) {
     const [session, sets] = await Promise.all([getWorkoutSessionById(sessionId), getSetsForSession(sessionId)]);
     if (session) {
@@ -168,6 +198,7 @@ onMounted(async () => {
       durationLabel.value = formatDuration(session.durationMs);
       mood.value = session.mood;
       note.value = session.note;
+      rawDate = session.date;
     }
     exercises.value = groupByExercise(sets, exerciseById);
   } else if (sessionDate) {
@@ -176,6 +207,16 @@ onMounted(async () => {
     routineName.value = (routineId && routineById.get(routineId)?.name) || null;
     dateLabel.value = formatDate(sessionDate);
     exercises.value = groupByExercise(sets, exerciseById);
+    rawDate = sessionDate;
+  }
+
+  if (rawDate) {
+    const date = rawDate;
+    await Promise.all(
+      exercises.value.map(async (exercise) => {
+        exercise.previousBest = await getPreviousBestSetForExercise(exercise.exerciseId, date);
+      }),
+    );
   }
 
   loading.value = false;
@@ -208,6 +249,7 @@ onMounted(async () => {
         <div v-else class="space-y-4">
           <div v-for="exercise in exercises" :key="exercise.name">
             <div class="text-lg font-semibold text-foreground mb-1">{{ exercise.name }}</div>
+            <div class="text-sm text-foreground-muted mb-2">{{ progressionText(exercise) }}</div>
             <div class="flex flex-wrap gap-2">
               <div v-for="set in exercise.sets" :key="set.id">
                 <div
