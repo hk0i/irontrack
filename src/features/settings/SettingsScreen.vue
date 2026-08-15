@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { exportAllData, importAllData } from '../../shared/db';
-import { settings, setPreferredUnit, setTheme, type Theme } from '../../shared/store';
+import {
+  settings,
+  setPreferredUnit,
+  setTheme,
+  setWarmupRestSeconds,
+  setRegularRestSeconds,
+  type Theme,
+} from '../../shared/store';
 import type { WeightUnit } from '../../shared/db';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import SegmentedToggle from '../../shared/components/SegmentedToggle.vue';
@@ -85,6 +92,32 @@ async function handleFileSelected(event: Event) {
         <label class="text-sm text-foreground-muted mb-2 block">Preferred weight unit</label>
         <SegmentedToggle :options="UNITS" :model-value="settings.preferredUnit" @update:model-value="setPreferredUnit" />
         <p class="text-xs text-foreground-faint mt-2">Only affects how numbers are displayed — your logged history is never rewritten.</p>
+      </div>
+
+      <div>
+        <label class="text-sm text-foreground-muted mb-1 block">Warmup rest (seconds)</label>
+        <input
+          type="number"
+          min="0"
+          step="5"
+          :value="settings.warmupRestSeconds"
+          @change="setWarmupRestSeconds(Number(($event.target as HTMLInputElement).value) || settings.warmupRestSeconds)"
+          class="w-full rounded-xl bg-surface border border-border px-4 py-3 text-base"
+        />
+        <p class="text-xs text-foreground-faint mt-2">Rest timer duration after logging a warmup exercise's set.</p>
+      </div>
+
+      <div>
+        <label class="text-sm text-foreground-muted mb-1 block">Workout rest (seconds)</label>
+        <input
+          type="number"
+          min="0"
+          step="5"
+          :value="settings.regularRestSeconds"
+          @change="setRegularRestSeconds(Number(($event.target as HTMLInputElement).value) || settings.regularRestSeconds)"
+          class="w-full rounded-xl bg-surface border border-border px-4 py-3 text-base"
+        />
+        <p class="text-xs text-foreground-faint mt-2">Rest timer duration after logging a regular exercise's set.</p>
       </div>
 
       <div class="space-y-2">
