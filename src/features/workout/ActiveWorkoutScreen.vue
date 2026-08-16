@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import {
   getRoutineById,
   getExerciseById,
@@ -26,7 +27,7 @@ import { settings } from '../../shared/store';
 import { activeSession, setActiveSession, clearActiveSession } from '../../shared/active-session';
 import { startRestTimer } from '../../shared/rest-timer';
 import { requestRestTimerPermission } from '../../shared/rest-alert';
-import type { NavParams, ScreenName, SetRowState } from '../../shared/types';
+import type { SetRowState } from '../../shared/types';
 import SetRow from './SetRow.vue';
 import FinishWorkoutModal from './FinishWorkoutModal.vue';
 
@@ -71,18 +72,14 @@ function makeEmptyRow(): SetRowState {
   });
 }
 
-const props = defineProps<{
-  navParams?: NavParams;
-}>();
-const emit = defineEmits<{
-  navigate: [screen: ScreenName, params?: NavParams];
-}>();
+const route = useRoute();
+const router = useRouter();
 
 /**
- * Read once — navParams doesn't change over this screen's lifetime.
+ * Read once — route params don't change over this screen's lifetime.
  * Threaded through to logSet so history can be grouped by routine.
  */
-const routineId = props.navParams?.routineId || null;
+const routineId = (route.params.routineId as string) || null;
 
 /**
  * Resolves which session this screen should use: reuse one already left
@@ -107,7 +104,7 @@ function resolveWorkoutSession(forRoutineId: string): { sessionId: string; start
 
 const session = routineId ? resolveWorkoutSession(routineId) : null;
 if (routineId && !session) {
-  emit('navigate', 'dashboard');
+  router.push({ name: 'dashboard' });
 }
 
 /**
@@ -392,7 +389,7 @@ function unlockRow(row: SetRowState) {
 }
 
 function viewHistory(exerciseId: string) {
-  emit('navigate', 'progress-chart', { initialExerciseId: exerciseId });
+  router.push({ name: 'progress-chart', query: { exerciseId } });
 }
 
 /**
@@ -414,7 +411,7 @@ async function finishWorkout(payload: { mood?: string; note?: string } = {}) {
     await logWorkoutSession({ id: sessionId!, routineId, date: todayString(), startedAt, endedAt: Date.now(), ...payload });
   }
   clearActiveSession();
-  emit('navigate', 'dashboard');
+  router.push({ name: 'dashboard' });
 }
 
 /**
@@ -493,7 +490,7 @@ async function createAndAddAdhocExercise() {
 
 <template>
   <div class="min-h-screen bg-background text-foreground pb-32">
-    <ScreenHeader title="Workout" @back="emit('navigate', 'dashboard')" />
+    <ScreenHeader title="Workout" />
 
     <main class="px-4 py-4 space-y-6">
       <div v-for="block in blocks" :key="block.exercises[0].id">

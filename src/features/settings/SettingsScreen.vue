@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import {
   exportAllData,
   importAllData,
@@ -21,14 +22,8 @@ import type { WeightUnit } from '../../shared/db';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import SegmentedToggle from '../../shared/components/SegmentedToggle.vue';
 import ImportConflictsModal from '../../shared/components/ImportConflictsModal.vue';
-import type { NavParams, ScreenName } from '../../shared/types';
 
-defineProps<{
-  navParams?: NavParams;
-}>();
-const emit = defineEmits<{
-  navigate: [screen: ScreenName, params?: NavParams];
-}>();
+const router = useRouter();
 
 const THEMES: { value: Theme; label: string }[] = [
   { value: 'irontrack', label: 'IronTrack' },
@@ -139,7 +134,7 @@ function cancelRoutinesImport() {
 
 <template>
   <div class="min-h-screen bg-background text-foreground pb-10">
-    <ScreenHeader title="Settings" @back="emit('navigate', 'dashboard')" />
+    <ScreenHeader title="Settings" />
 
     <main class="px-4 py-4 space-y-6">
       <div>
@@ -182,7 +177,7 @@ function cancelRoutinesImport() {
       <div class="space-y-2">
         <label class="text-sm text-foreground-muted block">Share Routines</label>
         <p class="text-xs text-foreground-faint">Export just your routines and exercises — no logged sets, workouts, or body-metric data.</p>
-        <button @click="emit('navigate', 'share-routines')" class="w-full py-3 rounded-xl bg-surface border border-border font-semibold">
+        <button @click="router.push({ name: 'share-routines' })" class="w-full py-3 rounded-xl bg-surface border border-border font-semibold">
           Share Routines
         </button>
         <button @click="triggerRoutinesImport" class="w-full py-3 rounded-xl bg-surface border border-border font-semibold">

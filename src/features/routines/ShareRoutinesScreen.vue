@@ -2,14 +2,6 @@
 import { onMounted, ref } from 'vue';
 import { exportRoutines, getAllRoutines, type Routine } from '../../shared/db';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
-import type { NavParams, ScreenName } from '../../shared/types';
-
-defineProps<{
-  navParams?: NavParams;
-}>();
-const emit = defineEmits<{
-  navigate: [screen: ScreenName, params?: NavParams];
-}>();
 
 const routines = ref<Routine[]>([]);
 const selectedIds = ref<Set<string>>(new Set());
@@ -60,7 +52,7 @@ async function shareSelected() {
 
 <template>
   <div class="min-h-screen bg-background text-foreground pb-10">
-    <ScreenHeader title="Share Routines" @back="emit('navigate', 'settings')" />
+    <ScreenHeader title="Share Routines" :fallback="{ name: 'settings' }" />
 
     <main class="px-4 py-4 space-y-4">
       <p class="text-sm text-foreground-muted">

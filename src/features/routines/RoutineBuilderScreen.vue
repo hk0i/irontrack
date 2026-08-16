@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import {
   searchExercises,
   createExercise,
@@ -20,7 +21,7 @@ import { COMMON_EXERCISES } from '../../shared/common-exercises';
 import { useDragReorder } from '../../shared/useDragReorder';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import SegmentedToggle from '../../shared/components/SegmentedToggle.vue';
-import type { NavParams, ScreenName } from '../../shared/types';
+import { setHighlightRoutineId } from '../../shared/flash-state';
 
 /**
  * mergedResults mixes real Exercise rows with not-yet-created suggestions
@@ -28,14 +29,10 @@ import type { NavParams, ScreenName } from '../../shared/types';
  */
 type ExerciseOption = Exercise | { id: null; name: string };
 
-const props = defineProps<{
-  navParams?: NavParams;
-}>();
-const emit = defineEmits<{
-  navigate: [screen: ScreenName, params?: NavParams];
-}>();
+const route = useRoute();
+const router = useRouter();
 
-const editingRoutineId = ref(props.navParams?.routineId || null);
+const editingRoutineId = ref((route.params.routineId as string) || null);
 const routineName = ref('');
 const searchQuery = ref('');
 const searchResults = ref<Exercise[]>([]);
@@ -172,17 +169,18 @@ async function save() {
   };
   if (editingRoutineId.value) {
     await updateRoutine(editingRoutineId.value, payload);
-    emit('navigate', 'dashboard');
+    router.push({ name: 'dashboard' });
   } else {
     const routine = await createRoutine(payload);
-    emit('navigate', 'dashboard', { highlightRoutineId: routine.id });
+    setHighlightRoutineId(routine.id);
+    router.push({ name: 'dashboard' });
   }
 }
 </script>
 
 <template>
   <div class="min-h-screen bg-background text-foreground pb-10">
-    <ScreenHeader :title="editingRoutineId ? 'Edit Routine' : 'New Routine'" @back="emit('navigate', 'dashboard')" />
+    <ScreenHeader :title="editingRoutineId ? 'Edit Routine' : 'New Routine'" />
 
     <main class="px-4 py-4 space-y-6">
       <div>

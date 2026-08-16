@@ -15,18 +15,10 @@ import {
 import { settings } from '../../shared/store';
 import { useTrendChart, type TrendChartPoint } from '../../shared/composables/useTrendChart';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
-import type { NavParams, ScreenName } from '../../shared/types';
 
 const CHART_WIDTH = 320;
 const CHART_HEIGHT = 160;
 const PADDING = 20;
-
-defineProps<{
-  navParams?: NavParams;
-}>();
-const emit = defineEmits<{
-  navigate: [screen: ScreenName, params?: NavParams];
-}>();
 
 const blueprints = ref<MetricBlueprint[]>([]);
 const selectedBlueprintId = ref('');
@@ -148,7 +140,7 @@ function formattedLogEntry(log: MetricLog) {
 
 <template>
   <div class="min-h-screen bg-background text-foreground pb-10">
-    <ScreenHeader title="Body Metrics" @back="emit('navigate', 'dashboard')" />
+    <ScreenHeader title="Body Metrics" />
 
     <main class="px-4 py-4 space-y-6">
       <div class="bg-surface border border-border rounded-2xl p-4 space-y-3">

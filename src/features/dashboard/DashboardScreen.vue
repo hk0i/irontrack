@@ -1,21 +1,17 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { getAllRoutines, deleteRoutine, duplicateRoutine, reorderRoutines, getAllSets, exportRoutines, type Routine } from '../../shared/db';
 import { activeSession, clearActiveSession } from '../../shared/active-session';
 import { appUpdate, installAppUpdate } from '../../shared/app-update';
 import { confirmThenDelete } from '../../shared/confirm';
 import { useSwipeReveal } from '../../shared/useSwipeReveal';
 import { useDragReorder } from '../../shared/useDragReorder';
+import { consumeHighlightRoutineId } from '../../shared/flash-state';
 import IconButton from '../../shared/components/IconButton.vue';
 import EmptyState from '../../shared/components/EmptyState.vue';
-import type { NavParams, ScreenName } from '../../shared/types';
 
-const props = defineProps<{
-  navParams?: NavParams;
-}>();
-const emit = defineEmits<{
-  navigate: [screen: ScreenName, params?: NavParams];
-}>();
+const router = useRouter();
 
 /**
  * __APP_VERSION__/__COMMIT_HASH__ are Vite `define` constants (see
@@ -81,7 +77,7 @@ onMounted(loadRoutines);
 const HINT_SHOWN_KEY = 'irontrack:swipe-hint-shown';
 const hintRoutineId = ref<string | null>(null);
 onMounted(() => {
-  const targetId = props.navParams?.highlightRoutineId;
+  const targetId = consumeHighlightRoutineId();
   if (targetId && !localStorage.getItem(HINT_SHOWN_KEY)) {
     hintRoutineId.value = targetId;
   }
@@ -104,17 +100,17 @@ function openRoutine(routine: Routine) {
     swipe.close(routine.id);
     return;
   }
-  emit('navigate', 'active-workout', { routineId: routine.id });
+  router.push({ name: 'active-workout', params: { routineId: routine.id } });
 }
 
 function editRoutine(routine: Routine) {
-  emit('navigate', 'routine-builder', { routineId: routine.id });
+  router.push({ name: 'routine-builder-edit', params: { routineId: routine.id } });
 }
 
 async function copyRoutine(routine: Routine) {
   swipe.close(routine.id);
   const copy = await duplicateRoutine(routine.id);
-  emit('navigate', 'routine-builder', { routineId: copy.id });
+  router.push({ name: 'routine-builder-edit', params: { routineId: copy.id } });
 }
 
 /**
@@ -172,25 +168,25 @@ function onHandlePointerDown(event: PointerEvent, index: number) {
     <header class="flex items-center justify-between px-4 py-5 sticky top-0 bg-background/95 backdrop-blur border-b border-border">
       <h1 class="text-xl font-bold tracking-tight">IronTrack</h1>
       <div class="flex items-center gap-3">
-        <IconButton @click="emit('navigate', 'body-metrics')" aria-label="Body metrics">
+        <IconButton @click="router.push({ name: 'body-metrics' })" aria-label="Body metrics">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="4" y="4" width="16" height="16" rx="3" stroke-linecap="round" stroke-linejoin="round" />
             <circle cx="12" cy="13" r="1" fill="currentColor" stroke="none" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 13l2.5-2M9 7h6" />
           </svg>
         </IconButton>
-        <IconButton @click="emit('navigate', 'progress-chart')" aria-label="Progress charts">
+        <IconButton @click="router.push({ name: 'progress-chart' })" aria-label="Progress charts">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 15l4-4 3 3 5-6" />
           </svg>
         </IconButton>
-        <IconButton @click="emit('navigate', 'workout-history')" aria-label="Workout history">
+        <IconButton @click="router.push({ name: 'workout-history' })" aria-label="Workout history">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="9" stroke-linecap="round" stroke-linejoin="round" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3.5 2" />
           </svg>
         </IconButton>
-        <IconButton @click="emit('navigate', 'settings')" aria-label="Settings">
+        <IconButton @click="router.push({ name: 'settings' })" aria-label="Settings">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -308,7 +304,7 @@ function onHandlePointerDown(event: PointerEvent, index: number) {
     </main>
 
     <button
-      @click="emit('navigate', 'routine-builder')"
+      @click="router.push({ name: 'routine-builder-new' })"
       aria-label="New routine"
       class="fixed bottom-6 right-6 w-16 h-16 rounded-full bg-primary text-on-primary text-3xl font-bold flex items-center justify-center shadow-lg active:bg-primary-bright"
     >

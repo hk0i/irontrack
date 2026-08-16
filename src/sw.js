@@ -64,6 +64,19 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       })
-      .catch(() => caches.match(event.request))
+      .catch(() =>
+        caches.match(event.request).then((cached) => {
+          if (cached) return cached;
+          // A deep-linked client-side route (e.g. /history/abc123) is never
+          // itself a precached entry — only hashed asset URLs are. Offline +
+          // direct navigation to one would otherwise hard-fail here instead
+          // of booting the app shell, which is all vue-router needs to take
+          // over and resolve the route once it's running.
+          if (event.request.mode === 'navigate') {
+            return caches.match(`${self.registration.scope}index.html`);
+          }
+          return undefined;
+        })
+      )
   );
 });

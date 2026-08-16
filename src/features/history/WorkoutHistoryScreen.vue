@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import {
   getAllSets,
   getAllExercises,
@@ -11,14 +12,8 @@ import {
 import { formatDate, formatDuration } from '../../shared/dateFormat';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import EmptyState from '../../shared/components/EmptyState.vue';
-import type { NavParams, ScreenName } from '../../shared/types';
 
-defineProps<{
-  navParams?: NavParams;
-}>();
-const emit = defineEmits<{
-  navigate: [screen: ScreenName, params?: NavParams];
-}>();
+const router = useRouter();
 
 interface DayGroup {
   key: string;
@@ -124,20 +119,21 @@ onMounted(async () => {
 });
 
 function openDetail(day: DayGroup) {
-  emit(
-    'navigate',
-    'workout-session-detail',
-    day.sessionId
-      ? { sessionId: day.sessionId }
-      : { sessionDate: day.date, routineId: day.routineId ?? undefined },
-  );
+  if (day.sessionId) {
+    router.push({ name: 'workout-session-detail', params: { sessionId: day.sessionId } });
+  } else {
+    router.push({
+      name: 'workout-session-detail-legacy',
+      params: { sessionDate: day.date, routineId: day.routineId || 'none' },
+    });
+  }
 }
 
 </script>
 
 <template>
   <div class="min-h-screen bg-background text-foreground pb-10">
-    <ScreenHeader title="Workout History" @back="emit('navigate', 'dashboard')" />
+    <ScreenHeader title="Workout History" />
 
     <main class="px-4 py-4 space-y-4">
       <EmptyState v-if="days.length === 0">No workouts logged yet.</EmptyState>

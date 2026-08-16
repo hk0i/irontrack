@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { getAllExercises, getSetsForExercise, getBodyWeightLogs, formatWeight, type Exercise, type MetricLog, type SetEntry } from '../../shared/db';
 import { settings } from '../../shared/store';
 import { useMultiTrendChart } from '../../shared/composables/useMultiTrendChart';
 import { aggregateSetsByDay, type DailyProgressPoint } from '../../shared/setAggregation';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import EmptyState from '../../shared/components/EmptyState.vue';
-import type { NavParams, ScreenName } from '../../shared/types';
 
 type SeriesKey = 'weight' | 'volume';
 type ChartView = SeriesKey | 'all';
@@ -15,17 +15,11 @@ const CHART_WIDTH = 320;
 const CHART_HEIGHT = 200;
 const PADDING = 24;
 
-const props = defineProps<{
-  navParams?: NavParams;
-}>();
-const emit = defineEmits<{
-  navigate: [screen: ScreenName, params?: NavParams];
-}>();
-
+const route = useRoute();
 const exercises = ref<Exercise[]>([]);
 const exercisesById = computed(() => new Map(exercises.value.map((e) => [e.id, e])));
 const bodyWeightLogs = ref<MetricLog[]>([]);
-const selectedExerciseId = ref(props.navParams?.initialExerciseId || '');
+const selectedExerciseId = ref((route.query.exerciseId as string) || '');
 const sets = ref<SetEntry[]>([]);
 const chartSvg = ref<SVGSVGElement | null>(null);
 const selectedSeriesKey = ref<SeriesKey>('weight');
@@ -141,7 +135,7 @@ function selectView(view: ChartView) {
 
 <template>
   <div class="min-h-screen bg-background text-foreground pb-10">
-    <ScreenHeader title="Progress" @back="emit('navigate', 'dashboard')" />
+    <ScreenHeader title="Progress" />
 
     <main class="px-4 py-4 space-y-4">
       <select

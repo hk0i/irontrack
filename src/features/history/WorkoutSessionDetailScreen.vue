@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import {
   getWorkoutSessionById,
   getSetsForSession,
@@ -28,14 +29,8 @@ import IconButton from '../../shared/components/IconButton.vue';
 import EmptyState from '../../shared/components/EmptyState.vue';
 import BandColorPicker from '../../shared/components/BandColorPicker.vue';
 import StatBadge from '../../shared/components/StatBadge.vue';
-import type { NavParams, ScreenName } from '../../shared/types';
 
-const props = defineProps<{
-  navParams?: NavParams;
-}>();
-const emit = defineEmits<{
-  navigate: [screen: ScreenName, params?: NavParams];
-}>();
+const route = useRoute();
 
 /**
  * Transient inline-edit fields bolted onto a real SetEntry, never persisted
@@ -228,8 +223,8 @@ onMounted(async () => {
   const exerciseById = new Map(exerciseList.map((e) => [e.id, e]));
   const routineById = new Map(routines.map((r) => [r.id, r]));
 
-  const sessionId = props.navParams?.sessionId;
-  const sessionDate = props.navParams?.sessionDate;
+  const sessionId = route.params.sessionId as string | undefined;
+  const sessionDate = route.params.sessionDate as string | undefined;
 
   let rawDate: string | null = null;
   let rawRoutineId: string | null = null;
@@ -247,7 +242,8 @@ onMounted(async () => {
     }
     exercises.value = groupByExercise(sets, exerciseById);
   } else if (sessionDate) {
-    const routineId = props.navParams?.routineId ?? null;
+    const routineIdParam = route.params.routineId as string | undefined;
+    const routineId = routineIdParam && routineIdParam !== 'none' ? routineIdParam : null;
     const sets = await getSetsForLegacySession(sessionDate, routineId);
     routineName.value = (routineId && routineById.get(routineId)?.name) || null;
     dateLabel.value = formatDate(sessionDate);
@@ -280,7 +276,7 @@ onMounted(async () => {
 
 <template>
   <div class="min-h-screen bg-background text-foreground pb-10">
-    <ScreenHeader :title="routineName || 'Workout'" @back="emit('navigate', 'workout-history')" />
+    <ScreenHeader :title="routineName || 'Workout'" :fallback="{ name: 'workout-history' }" />
 
     <main class="px-4 py-4 space-y-4">
       <div v-if="!loading">

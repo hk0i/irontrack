@@ -37,6 +37,16 @@ jobs:
         run: npm run build
         env:
           DEPLOY_BASE: /irontrack/
+      - name: Add SPA fallback 404.html
+        # GitHub Pages is static hosting with no server-side rewrites — a
+        # deep-linked route (e.g. /irontrack/history/abc123) 404s unless
+        # something serves the app shell for it. dist/index.html already has
+        # absolute, base-prefixed asset URLs baked in at build time, so a
+        # byte-for-byte copy works: GH Pages serves this body (as an HTTP
+        # 404 status — harmless, browsers render the body regardless of
+        # status on a top-level navigation) while leaving the address bar at
+        # the real deep path, so vue-router boots and matches it correctly.
+        run: cp dist/index.html dist/404.html
       - name: Upload dist/ as Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

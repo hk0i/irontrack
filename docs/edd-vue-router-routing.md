@@ -131,7 +131,8 @@ names and typed `route.params`/`route.query` reads replace them.
 | share-routines | `/share-routines` | — |
 | active-workout | `/workout/:routineId` | path |
 | workout-history | `/history` | — |
-| workout-session-detail | `/history/:sessionId?` | path when present; else legacy `?sessionDate=&routineId=` query |
+| workout-session-detail | `/history/:sessionId` (route `workout-session-detail`) | required path |
+| workout-session-detail (legacy) | `/history/legacy/:sessionDate/:routineId?` (route `workout-session-detail-legacy`) | path (`routineId` param `'none'` when null — no path param can be `undefined`) |
 | body-metrics | `/body-metrics` | — |
 | progress-chart | `/progress` | optional `?exerciseId=` query |
 
@@ -190,7 +191,10 @@ export const router = createRouter({
     { path: '/share-routines', name: 'share-routines', component: ShareRoutinesScreen },
     { path: '/workout/:routineId', name: 'active-workout', component: ActiveWorkoutScreen },
     { path: '/history', name: 'workout-history', component: WorkoutHistoryScreen },
-    { path: '/history/:sessionId?', name: 'workout-session-detail', component: WorkoutSessionDetailScreen },
+    // Legacy path registered before the real-session path — see the third
+    // correction below for why an optional param here is unsafe.
+    { path: '/history/legacy/:sessionDate/:routineId?', name: 'workout-session-detail-legacy', component: WorkoutSessionDetailScreen },
+    { path: '/history/:sessionId', name: 'workout-session-detail', component: WorkoutSessionDetailScreen },
     { path: '/body-metrics', name: 'body-metrics', component: BodyMetricsScreen },
     { path: '/progress', name: 'progress-chart', component: ProgressChartScreen },
     { path: '/:pathMatch(.*)*', redirect: { name: 'dashboard' } },
@@ -279,9 +283,17 @@ to reactively watch `route.params`.
 
 ### 6. Per-screen conversions (all 9 screens under `src/features/**`)
 
-Each screen today has exactly one `defineEmits<{ navigate: [...] }>()` and
-nothing else emitted — deleted outright everywhere. Pattern (shown for
-`ActiveWorkoutScreen.vue`, representative of all 9):
+**Scoped down from the original version of this doc** (see the correction
+under Sequencing below): `defineEmits<{ navigate: [...] }>()` is *not*
+deleted in this per-screen step. Every screen with a `ScreenHeader` still
+has a live `@back="emit('navigate', X)"` binding driving `App.vue`'s old
+switcher — that's the only thing making the back button work until the
+cutover step, so it stays untouched here. This step converts only: (a) the
+unused `navParams` prop, if the screen doesn't read it — dropped; (b)
+`props.navParams?.x` reads the screen *does* use — replaced with
+`useRoute()` param/query reads; (c) **forward** `emit('navigate', ...)`
+call sites (i.e. everything except `@back`) — replaced with
+`useRouter().push(...)`. Pattern (shown for `ActiveWorkoutScreen.vue`):
 
 ```ts
 // before
@@ -289,7 +301,7 @@ const props = defineProps<{ navParams?: NavParams }>();
 const emit = defineEmits<{ navigate: [screen: ScreenName, params?: NavParams] }>();
 const routineId = props.navParams?.routineId || null;
 // ...
-emit('navigate', 'dashboard');
+emit('navigate', 'dashboard'); // finish/cancel
 emit('navigate', 'progress-chart', { initialExerciseId: exerciseId });
 
 // after
@@ -298,23 +310,53 @@ const route = useRoute();
 const router = useRouter();
 const routineId = (route.params.routineId as string) || null;
 // ...
-router.push({ name: 'dashboard' });
+router.push({ name: 'dashboard' }); // finish/cancel
 router.push({ name: 'progress-chart', query: { exerciseId } });
+// @back="emit('navigate', 'dashboard')" on <ScreenHeader> is UNCHANGED —
+// emit/defineEmits/ScreenName/NavParams imports all stay for this reason.
 ```
+
+These forward `router.push` calls have no visible effect yet (`App.vue`
+still renders the old switcher) — that's the accepted, bounded gap described
+in Sequencing. The back button, unlike forward nav, is unaffected during
+this whole stretch, precisely because `@back` is left alone.
+
+**Second correction (found during implementation, same root cause as the
+`ScreenHeader` one):** a *receiving* screen's param read cannot simply switch
+from `props.navParams?.x` to `route.query`/`route.params` on its own step if
+its **sender** converts on a *later* step — the sender is still emitting via
+the old `navParams`-prop mechanism until its own step lands, so the receiver
+would silently stop getting the value in between (e.g. "jump to this
+exercise's progress chart" quietly resets to the first exercise instead).
+Any receiver whose step number is earlier than its sender's needs a
+**dual read** for the duration of the gap: `props.navParams?.x ??
+(route.query/params.x as string)`, with a comment noting it's temporary and
+removed at the cutover step once every sender has converted. This applies to:
+`ProgressChartScreen` (sender: `ActiveWorkoutScreen`, converts later),
+`WorkoutSessionDetailScreen` (sender: `WorkoutHistoryScreen`, converts one
+step later), and `ActiveWorkoutScreen` + `RoutineBuilderScreen` (sender for
+both: `DashboardScreen`, converted last of all nine). Screens with no
+incoming param (`BodyMetricsScreen`, `ShareRoutinesScreen`,
+`SettingsScreen`, `WorkoutHistoryScreen`) aren't affected.
 
 Full per-screen mapping:
 
-| Screen | Param reads | Navigation calls |
-|---|---|---|
-| `BodyMetricsScreen.vue` | none used | drop unused `navParams` prop, drop `@back` |
-| `ProgressChartScreen.vue` | `route.query.exerciseId as string \|\| ''` | — |
-| `ShareRoutinesScreen.vue` | none used | `<ScreenHeader :fallback="{ name: 'settings' }" />` |
-| `SettingsScreen.vue` | none used | `router.push({ name: 'share-routines' })` |
-| `WorkoutSessionDetailScreen.vue` | `route.params.sessionId`; legacy `route.query.sessionDate`/`routineId` | `<ScreenHeader :fallback="{ name: 'workout-history' }" />` |
-| `WorkoutHistoryScreen.vue` | none used | `openDetail()` → `router.push({ name: 'workout-session-detail', params: { sessionId } })` or `{ query: { sessionDate, routineId } }` legacy |
-| `ActiveWorkoutScreen.vue` | `route.params.routineId` | finish/cancel → dashboard; exercise link → progress-chart with `exerciseId` query |
-| `RoutineBuilderScreen.vue` | `route.params.routineId` (edit) / none (create, `routine-builder-new`) | save calls `setHighlightRoutineId(id)` then `router.push({ name: 'dashboard' })` |
-| `DashboardScreen.vue` | `consumeHighlightRoutineId()` replaces `navParams.highlightRoutineId` | every `emit('navigate', ...)` call site (most of any screen) converts to `router.push({ name, params/query })` |
+| Screen | Param reads | Forward navigation calls converted | `@back` |
+|---|---|---|---|
+| `BodyMetricsScreen.vue` | none used | none — only has `@back` | unchanged |
+| `ProgressChartScreen.vue` | `route.query.exerciseId as string \|\| ''` | none — only has `@back` | unchanged |
+| `ShareRoutinesScreen.vue` | none used | none — only has `@back` | unchanged; `:fallback` prop added at cutover, not here |
+| `SettingsScreen.vue` | none used | `router.push({ name: 'share-routines' })` | unchanged |
+| `WorkoutSessionDetailScreen.vue` | `route.params.sessionId`; legacy `route.params.sessionDate`/`routineId` (route `workout-session-detail-legacy`) | none — only has `@back` | unchanged; `:fallback` prop added at cutover, not here |
+| `WorkoutHistoryScreen.vue` | none used | `openDetail()` → `router.push({ name: 'workout-session-detail', params: { sessionId } })` or `{ name: 'workout-session-detail-legacy', params: { sessionDate, routineId: routineId \|\| 'none' } }` legacy | unchanged |
+| `ActiveWorkoutScreen.vue` | `route.params.routineId` | finish/cancel → dashboard; exercise link → progress-chart with `exerciseId` query | unchanged |
+| `RoutineBuilderScreen.vue` | `route.params.routineId` (edit) / none (create, `routine-builder-new`) | save calls `setHighlightRoutineId(id)` then `router.push({ name: 'dashboard' })` | unchanged |
+| `DashboardScreen.vue` | `consumeHighlightRoutineId()` replaces `navParams.highlightRoutineId` | every non-back `emit('navigate', ...)` call site converts to `router.push({ name, params/query })` | n/a — no `ScreenHeader` on the home screen |
+
+`ScreenName`/`NavParams` imports and `defineEmits` are deleted for real, and
+every `@back` binding removed, only in step 13 (the combined cutover step),
+once `App.vue` renders `<router-view>` and `ScreenHeader` no longer needs
+the old emit to make back navigation visible.
 
 ### 7. `src/shared/types.ts`
 
@@ -409,41 +451,104 @@ at every stop, per this project's CLAUDE.md:
    (`app.use(router)`, `await router.isReady()` before `.mount()`).
    `App.vue`'s template is untouched — router exists but nothing renders
    `<router-view>` yet, so behavior is unchanged.
-3. Add `src/shared/flash-state.ts` — new, unused until steps 10/11.
-4. Rewrite `ScreenHeader.vue`'s back button to the `useRouter()` +
-   `history.state.back` + `fallback` prop design. No screen passes
-   `fallback` yet and old `@back` bindings are still present but now inert
-   (Vue allows unconsumed listeners) — net-zero visible behavior change.
-5. `BodyMetricsScreen.vue` conversion.
-6. `ProgressChartScreen.vue` conversion.
-7. `ShareRoutinesScreen.vue` conversion.
-8. `SettingsScreen.vue` conversion.
-9. `WorkoutSessionDetailScreen.vue` conversion.
-10. `WorkoutHistoryScreen.vue` conversion.
-11. `ActiveWorkoutScreen.vue` conversion.
-12. `RoutineBuilderScreen.vue` conversion.
-13. `DashboardScreen.vue` conversion (most call sites, do last of the nine).
+3. Add `src/shared/flash-state.ts` — new, unused until steps 9/10.
+4. `BodyMetricsScreen.vue` conversion.
+5. `ProgressChartScreen.vue` conversion.
+6. `ShareRoutinesScreen.vue` conversion. Do **not** add a `:fallback` prop to
+   `ScreenHeader` yet — it doesn't support one until step 13 (see correction
+   below). Keep the existing `@back="emit('navigate', 'settings')"` binding
+   for now.
+7. `SettingsScreen.vue` conversion.
+8. `WorkoutSessionDetailScreen.vue` conversion. Same note as step 6 — keep
+   `@back="emit('navigate', 'workout-history')"` for now.
+9. `WorkoutHistoryScreen.vue` conversion.
+10. `ActiveWorkoutScreen.vue` conversion.
+11. `RoutineBuilderScreen.vue` conversion.
+12. `DashboardScreen.vue` conversion (most call sites, do last of the nine).
 
-    Note: steps 5–13 are individually buildable/typecheck-clean, but full
+    Note: steps 4–12 are individually buildable/typecheck-clean, but full
     click-through correctness has a transient gap during this run (`App.vue`
     still drives the old switcher, so a converted screen's `router.push`
     updates the URL/router state without the switcher reacting) — bounded to
-    this contiguous stretch, closed at step 14.
+    this contiguous stretch, closed at step 13. The **back** button is
+    unaffected during this stretch — `ScreenHeader.vue` is untouched until
+    step 13, so every screen's existing `@back` binding keeps working
+    exactly as before.
 
-14. **`App.vue` cutover** — swap in `<router-view>`. Single highest-risk
-    step; full click-through correctness is restored here. Manually
+13. **`App.vue` cutover, combined with the `ScreenHeader.vue` back-button
+    rewrite.** These must land in the same step, not two — see the
+    correction below for why. Swap `App.vue` to `<router-view>`; rewrite
+    `ScreenHeader.vue`'s back button to the `useRouter()` +
+    `history.state.back` + `fallback` prop design; add
+    `:fallback="{ name: 'settings' }"` to `ShareRoutinesScreen.vue` and
+    `:fallback="{ name: 'workout-history' }"` to
+    `WorkoutSessionDetailScreen.vue`; remove the now-dead `@back="emit(...)"`
+    bindings everywhere. Single highest-risk step; full click-through
+    correctness (forward nav *and* back button) is restored here. Manually
     smoke-test every navigation path (all 9 screens, back button on each,
-    deep-link a session detail URL directly).
-15. Docker/nginx SPA fallback (`nginx.conf` + `Dockerfile`).
-16. GitHub Pages `404.html` step in `deploy-pages.yml`.
-17. Service worker navigation fallback (`sw.js` fetch-handler diff).
-18. Cleanup: delete `ScreenName`/`NavParams` from `src/shared/types.ts`; grep
+    deep-link a session detail URL directly, browser Back/Forward).
+14. Docker/nginx SPA fallback (`nginx.conf` + `Dockerfile`).
+15. GitHub Pages `404.html` step in `deploy-pages.yml`.
+16. Service worker navigation fallback (`sw.js` fetch-handler diff).
+17. Cleanup: delete `ScreenName`/`NavParams` from `src/shared/types.ts`; grep
     repo-wide for `navParams`/`ScreenName`/`emit('navigate'` to confirm
     nothing remains.
 
-Steps 15–17 have no dependency on 1–14 and could be reordered earlier or
+Steps 14–16 have no dependency on 1–13 and could be reordered earlier or
 done in parallel — placed last since they're only meaningful once real
 routes exist to protect.
+
+### Correction (found during implementation)
+
+The original version of this doc scheduled the `ScreenHeader.vue` rewrite as
+its own early step (old step 4), before any screen was converted, on the
+theory that it would be a visible no-op since nothing passed `fallback` yet
+and the stale `@back` bindings would just become "inert unconsumed
+listeners." **That reasoning was wrong and the mistake was caught by manual
+testing after that step landed:** the old back button worked by
+`ScreenHeader` *emitting* a `back` event that each parent screen's `@back`
+listener turned into `emit('navigate', target)`, which is what drove
+`App.vue`'s old switcher. The rewritten `ScreenHeader` doesn't emit anything
+— it calls `router.back()`/`router.replace()` directly. Since `App.vue`
+still rendered the old switcher (not `<router-view>`) at that point, those
+router calls had zero visible effect, and the parent's old `@back` handler
+never fired anymore — so the back button did nothing, for every screen, the
+moment that step landed. It was reverted, and the rewrite is now folded into
+the `App.vue` cutover step (13), the only point at which `router.back()`
+being visible and the old `@back` emit chain being safe to delete are both
+true simultaneously.
+
+### Second correction (found during manual testing after step 13)
+
+The original route table used `/history/:sessionId?` — an *optional* path
+param — reasoning that it would cleanly mirror the existing prop-read
+fallback logic (`sessionId ?? (sessionDate + routineId)`). This was wrong in
+a way `npm run type-check`/`build` couldn't catch: an optional param makes
+the route also match the *parent* path with the param simply absent, so
+`/history/:sessionId?` matches bare `/history` too — the exact same URL the
+static `workout-history` route owns. Resolving a route by name
+(`router.push({ name })`, used for all forward navigation here) sidesteps
+this, which is why it wasn't caught until manual back-button testing: POP
+navigation (`router.back()`/the browser's real Back button) resolves by
+**URL**, not by name, and vue-router matched the ambiguous `/history` against
+`workout-session-detail` instead of `workout-history`. The user-visible
+symptom: back from a session detail screen landed on `WorkoutSessionDetailScreen`
+with no `sessionId`, rendering its own empty state — which read as "Workout
+History has no history," not as "wrong screen entirely." Verified both the
+bug and the fix directly against the `vue-router` matcher via a standalone
+Node script calling `router.resolve('/history')`, rather than reasoning about
+matcher-priority rules abstractly.
+
+Fix: split the legacy fallback out of the optional-param slot into its own
+distinct, non-overlapping path — `/history/legacy/:sessionDate/:routineId?`
+(a literal `legacy` segment makes it unambiguous with `/history/:sessionId`
+at the routing level; path params can't be `undefined`, so `routineId` is
+encoded as the literal string `'none'` when null, mirroring
+`WorkoutHistoryScreen`'s own existing `` `${routineId || 'none'}` `` legacy
+grouping key). The legacy fields moved from query params to path params as
+part of this fix. The Route table, the `src/router/index.ts` snippet, and the
+per-screen mapping table above all reflect the corrected two-route design,
+not the original single-optional-param one.
 
 ## Verification
 

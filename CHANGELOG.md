@@ -2,6 +2,12 @@
 
 User-facing changes only — internal refactors, the TypeScript migration, and the Vue SFC rewrite aren't listed individually here, but are the main reason this release is versioned as a major bump rather than a minor one.
 
+## Unreleased
+
+- **Navigation**: the app now uses real browser routing — the Back/Forward buttons work correctly throughout (previously Back would just exit the app), and every screen has its own shareable/bookmarkable URL, including deep links to a specific workout session or routine. Deep links keep working offline and after a hard refresh.
+- **Workout History**: reworked into a lightweight list (bigger text, one row per session) that opens into a full detail screen — set editing/deleting now happens there instead of inline in the list. The detail screen adds a previous-session comparison ("+10 lbs vs last time"), all-time PR badges per set, session-level highlights (heaviest lift, most reps), and a volume trend sparkline.
+- **Share Routines**: export just your routines and exercises (no logged history) as a file to share or back up separately from a full data export — from Settings, or as a one-off quick action on a single routine's swipe panel. Importing a shared file walks you through resolving any name conflicts.
+
 ## 2.3.0
 
 - **Rest timer**: warmup and regular exercises can now have their own rest duration instead of sharing one flat timer — set your own defaults for each in Settings, then tag each exercise as Warmup or Regular in the routine builder. A superset pairing both uses the longer of the two.

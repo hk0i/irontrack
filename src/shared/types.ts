@@ -1,34 +1,5 @@
 import type { WeightUnit } from './db';
 
-export type ScreenName =
-  | 'dashboard'
-  | 'settings'
-  | 'routine-builder'
-  | 'active-workout'
-  | 'workout-history'
-  | 'workout-session-detail'
-  | 'body-metrics'
-  | 'progress-chart'
-  | 'share-routines';
-
-/**
- * Every screen's loose `navParams` prop, today a runtime `Object` with no
- * checked shape. Both fields are optional because most screens receive an
- * empty object — only RoutineBuilder/ActiveWorkout read routineId, only
- * ProgressChart reads initialExerciseId.
- */
-export interface NavParams {
-  routineId?: string;
-  initialExerciseId?: string;
-  /** Dashboard: the routine card to play the one-time swipe-hint jiggle on. */
-  highlightRoutineId?: string;
-  /** WorkoutSessionDetailScreen: the WorkoutSession.id to load. */
-  sessionId?: string;
-  /** WorkoutSessionDetailScreen legacy fallback, paired with routineId
-   *  (reused), for sets logged before SetEntry.sessionId existed. */
-  sessionDate?: string;
-}
-
 /**
  * The reactive per-set row object ActiveWorkoutScreen's makeEmptyRow()
  * creates and SetRow.vue renders — shared because both files need the exact

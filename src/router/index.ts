@@ -19,7 +19,12 @@ export const router = createRouter({
     { path: '/share-routines', name: 'share-routines', component: ShareRoutinesScreen },
     { path: '/workout/:routineId', name: 'active-workout', component: ActiveWorkoutScreen },
     { path: '/history', name: 'workout-history', component: WorkoutHistoryScreen },
-    { path: '/history/:sessionId?', name: 'workout-session-detail', component: WorkoutSessionDetailScreen },
+    // Legacy path registered before the real-session path so its more
+    // specific 'legacy' literal segment can't be shadowed — vue-router
+    // matches route records in registration order when path shapes could
+    // otherwise overlap (see docs/edd-vue-router-routing.md correction).
+    { path: '/history/legacy/:sessionDate/:routineId?', name: 'workout-session-detail-legacy', component: WorkoutSessionDetailScreen },
+    { path: '/history/:sessionId', name: 'workout-session-detail', component: WorkoutSessionDetailScreen },
     { path: '/body-metrics', name: 'body-metrics', component: BodyMetricsScreen },
     { path: '/progress', name: 'progress-chart', component: ProgressChartScreen },
     { path: '/:pathMatch(.*)*', redirect: { name: 'dashboard' } },
