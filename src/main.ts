@@ -1,6 +1,7 @@
 import './style.css';
 import { createApp } from 'vue';
 import App from './App.vue';
+import { router } from './router';
 import { ensureMetricBlueprintsSeeded } from './shared/db.js';
 import { initAppUpdateWatcher } from './shared/app-update.js';
 
@@ -8,7 +9,10 @@ import { initAppUpdateWatcher } from './shared/app-update.js';
 // blueprints exist before any screen (including Body Metrics) can render.
 await ensureMetricBlueprintsSeeded();
 
-createApp(App).mount('#app');
+const app = createApp(App);
+app.use(router);
+await router.isReady();
+app.mount('#app');
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 const UPDATE_CHECK_INTERVAL_MS = ONE_HOUR_MS;
