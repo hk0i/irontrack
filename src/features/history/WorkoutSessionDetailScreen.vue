@@ -265,16 +265,25 @@ onMounted(async () => {
 
     <main class="px-4 py-4 space-y-4">
       <div v-if="!loading">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 rounded-2xl bg-primary/15 flex items-center justify-center flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-primary-bright" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6.5 6.5l11 11M4 8l3-3M20 16l-3 3M2 10l3 3M19 5l3 3M6 20l3-3M14.5 4.5a3 3 0 114 4l-10 10a3 3 0 11-4-4l10-10z" />
+            </svg>
+          </div>
+          <h1 class="text-2xl font-bold text-foreground leading-tight">{{ routineName || 'Workout' }}</h1>
+        </div>
+
         <div class="mb-1 flex items-start justify-between gap-2">
           <div class="text-base text-foreground-muted">{{ dateLabel }}</div>
-          <div class="flex flex-wrap justify-end gap-1">
+          <div class="flex flex-wrap justify-end gap-1.5">
             <span
               v-if="mood"
-              class="text-xs font-semibold bg-surface-2 px-2 py-1 rounded-full whitespace-nowrap"
+              class="text-base font-semibold bg-surface-2 px-3 py-1.5 rounded-full whitespace-nowrap"
             >{{ mood }}</span>
             <span
               v-if="durationLabel"
-              class="text-xs font-semibold text-primary-bright bg-primary/10 px-2 py-1 rounded-full whitespace-nowrap"
+              class="text-sm font-semibold text-primary-bright bg-primary/10 px-3 py-1.5 rounded-full whitespace-nowrap"
             >{{ durationLabel }}</span>
           </div>
         </div>
@@ -288,30 +297,34 @@ onMounted(async () => {
         <EmptyState v-if="exercises.length === 0">No sets logged for this workout.</EmptyState>
 
         <div v-else class="space-y-4">
-          <div v-for="exercise in exercises" :key="exercise.name">
-            <div class="text-lg font-semibold text-foreground mb-1">{{ exercise.name }}</div>
-            <div class="text-sm text-foreground-muted mb-2">{{ progressionText(exercise) }}</div>
-            <div class="flex flex-wrap gap-2">
-              <div v-for="set in exercise.sets" :key="set.id" class="flex items-center gap-1">
+          <div v-for="exercise in exercises" :key="exercise.name" class="bg-surface border border-border rounded-2xl p-4">
+            <div class="text-xl font-bold text-foreground mb-1">{{ exercise.name }}</div>
+            <div class="text-sm text-foreground-muted mb-3">{{ progressionText(exercise) }}</div>
+            <div class="flex flex-col gap-2">
+              <div v-for="set in exercise.sets" :key="set.id">
                 <div
                   v-if="editingId !== set.id"
-                  class="flex items-center gap-1 text-sm pl-3 pr-1 py-1.5 rounded-lg bg-surface-2 text-foreground-subtle"
+                  class="w-full flex items-center justify-between gap-2 text-lg pl-4 pr-1.5 py-3 rounded-xl bg-surface-2 text-foreground"
                 >
-                  <span>{{ formattedSet(set) }}</span>
-                  <IconButton @click="startEdit(set)" aria-label="Edit set" size="sm">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 112.914 2.914L7.5 19.675l-4 1 1-4L16.862 4.487z" />
-                    </svg>
-                  </IconButton>
-                  <IconButton @click="deleteEntry(exercise, set)" aria-label="Delete set" size="sm" tone="danger">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0l1 13a2 2 0 002 2h4a2 2 0 002-2l1-13" />
-                    </svg>
-                  </IconButton>
-                  <StatBadge v-for="badge in prBadges(set, exercise)" :key="badge" :label="badge" tone="pr" />
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span>{{ formattedSet(set) }}</span>
+                    <StatBadge v-for="badge in prBadges(set, exercise)" :key="badge" :label="badge" tone="pr" />
+                  </div>
+                  <div class="flex items-center gap-1 flex-shrink-0">
+                    <IconButton @click="startEdit(set)" aria-label="Edit set">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487a2.06 2.06 0 112.914 2.914L7.5 19.675l-4 1 1-4L16.862 4.487z" />
+                      </svg>
+                    </IconButton>
+                    <IconButton @click="deleteEntry(exercise, set)" aria-label="Delete set" tone="danger">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-8 0l1 13a2 2 0 002 2h4a2 2 0 002-2l1-13" />
+                      </svg>
+                    </IconButton>
+                  </div>
                 </div>
 
-                <div v-else class="flex items-center gap-1.5 bg-surface-2 rounded-lg p-1.5 flex-wrap">
+                <div v-else class="flex items-center gap-1.5 bg-surface-2 rounded-xl p-2 flex-wrap">
                   <template v-if="exercise.resistanceType === 'weight'">
                     <input
                       v-model="set._editWeight"
