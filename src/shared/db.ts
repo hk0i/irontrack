@@ -499,6 +499,32 @@ export async function getPreviousBestSetForExercise(exerciseId: string, beforeDa
   return onThatDate.reduce((heaviest, s) => (s.weightInLbs > heaviest.weightInLbs ? s : heaviest));
 }
 
+export interface SessionVolumePoint {
+  date: string;
+  volume: number;
+}
+
+/**
+ * Total volume (sum of weightInLbs * reps across all sets) for the last
+ * `limit` sessions of one routine, up to and including uptoDate — feeds the
+ * small trend sparkline on WorkoutSessionDetailScreen. Single getAllSets()
+ * scan, grouped by sessionId (or legacy date, matching the same fallback
+ * WorkoutHistoryScreen's grouping already uses for pre-sessionId sets).
+ * Bodyweight/mobility sets contribute 0 (weightInLbs is 0), a deliberate
+ * simplification rather than a true estimated-volume formula.
+ */
+export async function getRecentSessionVolumesForRoutine(routineId: string, uptoDate: string, limit = 8): Promise<SessionVolumePoint[]> {
+  const sets = await getAllSets();
+  const bySession = new Map<string, SessionVolumePoint>();
+  for (const set of sets) {
+    if ((set.routineId || null) !== routineId || set.date > uptoDate) continue;
+    const key = set.sessionId || `legacy::${set.date}`;
+    if (!bySession.has(key)) bySession.set(key, { date: set.date, volume: 0 });
+    bySession.get(key)!.volume += set.weightInLbs * set.reps;
+  }
+  return [...bySession.values()].sort((a, b) => a.date.localeCompare(b.date)).slice(-limit);
+}
+
 export interface ExercisePersonalBests {
   maxWeightInLbs: number;
   maxReps: number;

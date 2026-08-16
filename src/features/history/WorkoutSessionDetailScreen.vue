@@ -8,6 +8,7 @@ import {
   getAllRoutines,
   getPreviousBestSetForExercise,
   getPersonalBestsForExercise,
+  getRecentSessionVolumesForRoutine,
   updateSet,
   deleteSet,
   formatWeight,
@@ -15,11 +16,13 @@ import {
   type ExercisePersonalBests,
   type ResistanceType,
   type SetEntry,
+  type SessionVolumePoint,
   type WeightUnit,
 } from '../../shared/db';
 import { settings } from '../../shared/store';
 import { confirmThenDelete } from '../../shared/confirm';
 import { formatDate, formatDuration } from '../../shared/dateFormat';
+import { useTrendChart } from '../../shared/composables/useTrendChart';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
 import IconButton from '../../shared/components/IconButton.vue';
 import EmptyState from '../../shared/components/EmptyState.vue';
@@ -72,6 +75,15 @@ const mood = ref<string | undefined>();
 const note = ref<string | undefined>();
 const exercises = ref<ExerciseGroup[]>([]);
 const editingId = ref<string | null>(null);
+const volumeHistory = ref<SessionVolumePoint[]>([]);
+
+const VOLUME_CHART_WIDTH = 280;
+const VOLUME_CHART_HEIGHT = 48;
+const { points: volumePoints, polylinePoints: volumePolyline } = useTrendChart(
+  volumeHistory,
+  (p) => p.volume,
+  { width: VOLUME_CHART_WIDTH, height: VOLUME_CHART_HEIGHT, padding: 6 },
+);
 
 function formattedSet(set: SetEntry) {
   const weight = formatWeight(set.weightInLbs, settings.preferredUnit);
@@ -220,6 +232,7 @@ onMounted(async () => {
   const sessionDate = props.navParams?.sessionDate;
 
   let rawDate: string | null = null;
+  let rawRoutineId: string | null = null;
 
   if (sessionId) {
     const [session, sets] = await Promise.all([getWorkoutSessionById(sessionId), getSetsForSession(sessionId)]);
@@ -230,6 +243,7 @@ onMounted(async () => {
       mood.value = session.mood;
       note.value = session.note;
       rawDate = session.date;
+      rawRoutineId = session.routineId;
     }
     exercises.value = groupByExercise(sets, exerciseById);
   } else if (sessionDate) {
@@ -239,6 +253,7 @@ onMounted(async () => {
     dateLabel.value = formatDate(sessionDate);
     exercises.value = groupByExercise(sets, exerciseById);
     rawDate = sessionDate;
+    rawRoutineId = routineId;
   }
 
   if (rawDate) {
@@ -253,6 +268,10 @@ onMounted(async () => {
         exercise.personalBests = personalBests;
       }),
     );
+  }
+
+  if (rawDate && rawRoutineId) {
+    volumeHistory.value = await getRecentSessionVolumesForRoutine(rawRoutineId, rawDate);
   }
 
   loading.value = false;
@@ -272,6 +291,21 @@ onMounted(async () => {
             </svg>
           </div>
           <h1 class="text-2xl font-bold text-foreground leading-tight">{{ routineName || 'Workout' }}</h1>
+        </div>
+
+        <div v-if="volumePoints.length > 1" class="mb-4 bg-surface border border-border rounded-2xl p-3">
+          <div class="text-xs font-semibold text-foreground-muted uppercase tracking-wide mb-1">Volume trend</div>
+          <svg :viewBox="`0 0 ${VOLUME_CHART_WIDTH} ${VOLUME_CHART_HEIGHT}`" class="w-full h-12">
+            <polyline :points="volumePolyline" fill="none" stroke="var(--color-primary)" stroke-width="2" />
+            <circle
+              v-for="(p, i) in volumePoints"
+              :key="i"
+              :cx="p.x"
+              :cy="p.y"
+              :r="i === volumePoints.length - 1 ? 4 : 2.5"
+              :fill="i === volumePoints.length - 1 ? 'var(--color-primary-bright)' : 'var(--color-primary)'"
+            />
+          </svg>
         </div>
 
         <div class="mb-1 flex items-start justify-between gap-2">
