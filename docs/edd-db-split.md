@@ -1,0 +1,42 @@
+# EDD: Split db.ts into db/
+
+## Goal
+
+`src/shared/db.ts` (871 lines) mixes Dexie schema, unit conversion, and every
+CRUD helper across 7 domains in one file. Split into `src/shared/db/`, one
+file per domain, along the boundaries the file's own section comments
+already mark.
+
+## Approach
+
+`db/index.ts` stays a pure barrel (`export * from './x'` for each submodule,
+plus `export { db as default } from './schema'`). Vite/TS resolve
+`'.../shared/db'` to `db/index.ts` automatically (`moduleResolution:
+"bundler"`), so none of the 12 `.vue` consumers change their imports.
+
+## New files
+
+- `schema.ts` — Dexie class, `db` singleton, all interfaces/types, `RESISTANCE_TYPES`, `EXERCISE_TYPES`
+- `units.ts` — kg/lbs, cm/in conversions, `formatWeight`, `formatMetricValue`, `todayString`
+- `exercises.ts` — `createExercise`..`setSupersetLink`/`clearSupersetLink`
+- `sets.ts` — `logSet`..`getPersonalBestsForExercise` (history/volume/PBs)
+- `routines.ts` — `createRoutine`..`getExercisesForRoutine` (depends on `exercises.ts`)
+- `sessions.ts` — `logWorkoutSession`..`getSetsForLegacySession` (depends on `sets.ts`)
+- `bodyMetrics.ts` — `ensureMetricBlueprintsSeeded`..`getBodyWeightLogs`
+- `backup.ts` — `exportAllData`/`importAllData`
+- `sharing.ts` — `RoutineSharePayload`, `exportRoutines`, `importRoutines` (depends on `routines.ts`, `exercises.ts`)
+
+## Out of scope
+
+No call-site changes (barrel stays permanent, not a stepping stone to direct
+submodule imports). No behavior changes — every function body is moved
+verbatim.
+
+## Sequencing
+
+1. This doc.
+2. `schema.ts` + rename `db.ts` -> `db/index.ts`.
+3. `units.ts` + `backup.ts`.
+4. `exercises.ts` + `sets.ts`.
+5. `routines.ts` + `sessions.ts`.
+6. `bodyMetrics.ts` + `sharing.ts`, shrink `index.ts` to pure barrel.

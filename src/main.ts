@@ -2,7 +2,7 @@ import './style.css';
 import { createApp } from 'vue';
 import App from './App.vue';
 import { router } from './router';
-import { ensureMetricBlueprintsSeeded } from './shared/db.js';
+import { ensureMetricBlueprintsSeeded } from './shared/db';
 import { initAppUpdateWatcher } from './shared/app-update.js';
 
 // Top-level await in a module script: guarantees the default metric
