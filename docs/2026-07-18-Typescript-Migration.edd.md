@@ -1,7 +1,9 @@
 # EDD: TypeScript Migration
 
-> **Date:** 2026-07-18
-> **Author:** Gregory McQuillan
+| | |
+|---|---|
+| **Date** | 2026-07-18 |
+| **Author** | Gregory McQuillan |
 
 ## Goal
 

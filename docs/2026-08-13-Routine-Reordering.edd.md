@@ -1,7 +1,9 @@
 # EDD: Manual Routine Reordering
 
-> **Date:** 2026-08-13
-> **Author:** Gregory McQuillan
+| | |
+|---|---|
+| **Date** | 2026-08-13 |
+| **Author** | Gregory McQuillan |
 
 ## Goal
 

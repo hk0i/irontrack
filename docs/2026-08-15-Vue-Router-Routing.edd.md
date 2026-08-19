@@ -1,7 +1,9 @@
 # EDD: Real Client-Side Routing (vue-router)
 
-> **Date:** 2026-08-15
-> **Author:** Gregory McQuillan
+| | |
+|---|---|
+| **Date** | 2026-08-15 |
+| **Author** | Gregory McQuillan |
 
 ## Goal
 

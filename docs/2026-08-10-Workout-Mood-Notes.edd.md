@@ -1,7 +1,9 @@
 # EDD: Mood + Notes on Finish Workout
 
-> **Date:** 2026-08-10
-> **Author:** Gregory McQuillan
+| | |
+|---|---|
+| **Date** | 2026-08-10 |
+| **Author** | Gregory McQuillan |
 
 ## Goal
 

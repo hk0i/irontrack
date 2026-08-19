@@ -1,7 +1,9 @@
 # EDD: Exercise-Type-Based Rest Timers (Warmup vs Regular)
 
-> **Date:** 2026-08-14
-> **Author:** Gregory McQuillan
+| | |
+|---|---|
+| **Date** | 2026-08-14 |
+| **Author** | Gregory McQuillan |
 
 ## Goal
 

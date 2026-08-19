@@ -1,7 +1,9 @@
 # EDD: Swipeable Routine Card Actions (Edit / Duplicate / Delete)
 
-> **Date:** 2026-08-12
-> **Author:** Gregory McQuillan
+| | |
+|---|---|
+| **Date** | 2026-08-12 |
+| **Author** | Gregory McQuillan |
 
 ## Goal
 

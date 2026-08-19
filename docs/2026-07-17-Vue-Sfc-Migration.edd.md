@@ -1,7 +1,9 @@
 # EDD: Migrate to Vue SFCs + Vite Build
 
-> **Date:** 2026-07-17
-> **Author:** Gregory McQuillan
+| | |
+|---|---|
+| **Date** | 2026-07-17 |
+| **Author** | Gregory McQuillan |
 
 ## Goal
 

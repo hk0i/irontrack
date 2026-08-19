@@ -1,7 +1,9 @@
 # EDD: Workout Duration Tracking
 
-> **Date:** 2026-07-15
-> **Author:** Gregory McQuillan
+| | |
+|---|---|
+| **Date** | 2026-07-15 |
+| **Author** | Gregory McQuillan |
 
 ## Goal
 
