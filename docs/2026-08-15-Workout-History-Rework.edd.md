@@ -1,5 +1,8 @@
 # EDD: Workout History Master/Detail Rework
 
+> **Date:** 2026-08-15
+> **Author:** Gregory McQuillan
+
 ## Goal
 
 `WorkoutHistoryScreen.vue` (`src/features/history/WorkoutHistoryScreen.vue`, 350 lines) today is a single flat list — one card per session, small text (`text-xs`/`text-sm` pills), every set editable inline in place. `UP_NEXT.md` lists this screen's readability as planned backlog: bigger text, a master/detail split (list side shows names + summary only, detail side shows full set data), plus — confirmed in this round of planning — session highlights (heaviest lift / most reps) and a strength-progression comparison against the previous time each exercise was performed.

@@ -1,5 +1,8 @@
 # EDD: Workout Duration Tracking
 
+> **Date:** 2026-07-15
+> **Author:** Gregory McQuillan
+
 ## Goal
 
 Track how long each workout takes — start to finish — so it's possible to see whether a session is efficient or padded with downtime.

@@ -1,5 +1,8 @@
 # EDD: Mood + Notes on Finish Workout
 
+> **Date:** 2026-08-10
+> **Author:** Gregory McQuillan
+
 ## Goal
 
 Capture how a workout felt — a quick emoji rating plus an optional free-text note — at the moment the user taps **Finish Workout**. Lift numbers alone don't explain why a session was weaker or stronger than usual (fatigue, injury, illness, better mind-muscle connection that day, etc.); this gives the user a lightweight way to leave themselves that context for later, without requiring it.
@@ -36,7 +39,7 @@ erDiagram
     }
 ```
 
-No new tables, no new relationships — `mood`/`note` are additive columns on the existing `WORKOUT_SESSION` row, same shape as the `durationMs` addition in [edd-workout-duration.md](edd-workout-duration.md).
+No new tables, no new relationships — `mood`/`note` are additive columns on the existing `WORKOUT_SESSION` row, same shape as the `durationMs` addition in [2026-07-15-Workout-Duration.edd.md](2026-07-15-Workout-Duration.edd.md).
 
 ## Data model
 
@@ -95,13 +98,13 @@ Custom-emoji entry is a bare text input — it relies on the user's OS/keyboard 
 
 - No in-app emoji picker/grid (see limitation above).
 - No editing mood/note after the fact from the history screen (existing edit affordance there only covers reps/weight/bands).
-- No aggregate/trend view of mood over time — a per-card display is enough to answer "why was this session off"; a trend chart is a reasonable v2 if it proves useful (same stance `edd-workout-duration.md` took on a duration trend chart).
+- No aggregate/trend view of mood over time — a per-card display is enough to answer "why was this session off"; a trend chart is a reasonable v2 if it proves useful (same stance `2026-07-15-Workout-Duration.edd.md` took on a duration trend chart).
 
 ## Sequencing
 
 Four atomic, independently committable changes, stopping after each:
 
-1. Write this doc (`docs/edd-workout-mood-notes.md`) — no code changes.
+1. Write this doc (`docs/2026-08-10-Workout-Mood-Notes.edd.md`) — no code changes.
 2. `src/shared/db.ts` + new `src/shared/moods.ts` — schema + `logWorkoutSession` params.
 3. `FinishWorkoutModal.vue` (new) + `ActiveWorkoutScreen.vue` wiring — full finish-with-mood flow.
 4. `WorkoutHistoryScreen.vue` — display mood/note on history cards.

@@ -1,5 +1,8 @@
 # EDD: Exercise-Type-Based Rest Timers (Warmup vs Regular)
 
+> **Date:** 2026-08-14
+> **Author:** Gregory McQuillan
+
 ## Goal
 
 Rest timer today: one hardcoded constant, `REST_SECONDS = 90` (`ActiveWorkoutScreen.vue:40`), applied uniformly to every checked set regardless of exercise. Discovered as a real problem in the user's own workouts — warmups (cat/cow, arm circles, scapular wall raises) were taking 7–10 minutes because trivial mobility drills got the same 90s rest as heavy compound lifts, working against efficient gym time. `UP_NEXT.md` already lists this exact gap as planned backlog.
@@ -99,7 +102,7 @@ Per-exercise rest override (beyond the type default). More than two exercise typ
 
 Atomic, independently-committable, `vue-tsc --noEmit` passing at every stop (repo has no test suite beyond type-checking):
 
-1. This doc (`docs/edd-exercise-type-rest.md`) — no code changes.
+1. This doc (`docs/2026-08-14-Exercise-Type-Rest.edd.md`) — no code changes.
 2. `src/shared/db.ts` — `ExerciseType`, `EXERCISE_TYPES`, `Exercise.exerciseType?`, `createExercise` param. No callers pass it yet.
 3. `src/shared/store.ts` — the two new settings fields + setters. Unused by any screen yet.
 4. `src/features/settings/SettingsScreen.vue` — the two number inputs. Durations are now user-configurable end-to-end, though nothing consumes them for timing yet.

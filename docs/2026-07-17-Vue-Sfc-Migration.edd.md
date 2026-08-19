@@ -1,5 +1,8 @@
 # EDD: Migrate to Vue SFCs + Vite Build
 
+> **Date:** 2026-07-17
+> **Author:** Gregory McQuillan
+
 ## Goal
 
 Replace the current giant-template-literal component format with real Vue Single File Components (`.vue`), introducing the minimum build tooling required to compile them, and reorganize the codebase by feature/scenario instead of a flat `components/` folder. This is a deliberate departure from the project's original zero-build constraint — the tradeoff being made here is build-tool complexity in exchange for readable, maintainable component files.

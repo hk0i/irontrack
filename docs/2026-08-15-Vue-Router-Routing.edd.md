@@ -1,5 +1,8 @@
 # EDD: Real Client-Side Routing (vue-router)
 
+> **Date:** 2026-08-15
+> **Author:** Gregory McQuillan
+
 ## Goal
 
 irontrack has no router today. `src/App.vue` fakes screen switching with a
@@ -10,7 +13,7 @@ There is no `history.pushState`, no `popstate` listener, no URL involvement
 anywhere in `src/` (confirmed: zero hits for `URLSearchParams`,
 `location.hash`, `history.push/replaceState`, `popstate` in `src/`).
 Consequences, tracked as a known bug in `UP_NEXT.md` and called out as
-explicitly out-of-scope in `docs/edd-workout-history-rework.md` decision 5:
+explicitly out-of-scope in `docs/2026-08-15-Workout-History-Rework.edd.md` decision 5:
 
 - The browser's real Back/Forward buttons do nothing useful — they leave or
   reload the SPA instead of stepping through in-app navigation.

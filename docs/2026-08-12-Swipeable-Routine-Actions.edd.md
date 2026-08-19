@@ -1,5 +1,8 @@
 # EDD: Swipeable Routine Card Actions (Edit / Duplicate / Delete)
 
+> **Date:** 2026-08-12
+> **Author:** Gregory McQuillan
+
 ## Goal
 
 Right now, making a slightly different version of a routine (e.g. incline dumbbell press instead of flat press) means building an entire new routine by hand, or manually swapping exercises on an existing one each time you want to switch back. This adds a **Duplicate** action that clones a routine's exercise list into a new routine and drops the user straight into the editor on the copy, so they only have to rename it and change the one or two exercises that differ.
@@ -78,7 +81,7 @@ Once the Edit/Delete icons are removed, there's no non-swipe fallback for these 
 
 Four atomic, independently-committable changes, stopping after each:
 
-1. Write this doc (`docs/edd-swipeable-routine-actions.md`) — no code changes.
+1. Write this doc (`docs/2026-08-12-Swipeable-Routine-Actions.edd.md`) — no code changes.
 2. `src/shared/db.ts` — `duplicateRoutine()`.
 3. `DashboardScreen.vue` — swipe gesture + three-button reveal panel, wired to the existing `editRoutine`/`removeRoutine` and the new `copyRoutine`.
 4. Jiggle hint — `RoutineBuilderScreen.vue` navParams change + `DashboardScreen.vue` first-run animation + `localStorage` flag.

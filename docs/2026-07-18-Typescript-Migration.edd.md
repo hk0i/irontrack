@@ -1,8 +1,11 @@
 # EDD: TypeScript Migration
 
+> **Date:** 2026-07-18
+> **Author:** Gregory McQuillan
+
 ## Goal
 
-Convert the remaining `.js`/`.vue` files to typed TypeScript, one file (or tightly-coupled pair) at a time, verified and committed independently — same incremental pattern as the [Vue SFC migration](edd-vue-sfc-migration.md). `db.js` → `db.ts` is done and is the template this doc generalizes from: it surfaced one real bug (Dexie's typed `transaction()` overloads cap at 5 explicit table args) that a plain JS callsite would never have caught.
+Convert the remaining `.js`/`.vue` files to typed TypeScript, one file (or tightly-coupled pair) at a time, verified and committed independently — same incremental pattern as the [Vue SFC migration](2026-07-17-Vue-Sfc-Migration.edd.md). `db.js` → `db.ts` is done and is the template this doc generalizes from: it surfaced one real bug (Dexie's typed `transaction()` overloads cap at 5 explicit table args) that a plain JS callsite would never have caught.
 
 ## Already done
 
