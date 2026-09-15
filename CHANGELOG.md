@@ -2,6 +2,10 @@
 
 User-facing changes only — internal refactors, the TypeScript migration, and the Vue SFC rewrite aren't listed individually here, but are the main reason this release is versioned as a major bump rather than a minor one.
 
+## v2.4.1
+
+- **Mobile**: pinch-to-zoom and double-tap-to-zoom are now disabled app-wide — accidental zooming during a workout (e.g. double-tapping a set) no longer happens.
+
 ## v2.4.0
 
 - **Navigation**: the app now uses real browser routing — the Back/Forward buttons work correctly throughout (previously Back would just exit the app), and every screen has its own shareable/bookmarkable URL, including deep links to a specific workout session or routine. Deep links keep working offline and after a hard refresh.
