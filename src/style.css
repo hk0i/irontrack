@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Kill double-tap-to-zoom on top of the viewport meta's pinch-zoom block —
+   iOS Safari ignores user-scalable=no for double-tap, only touch-action does. */
+html, body {
+  touch-action: manipulation;
+}
+
 /* Semantic color tokens — named by role, not by raw palette shade, so the
    app can be re-themed later without touching component templates. Values
    here are the "irontrack" (default/current) theme. A second [data-theme]
