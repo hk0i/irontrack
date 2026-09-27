@@ -66,3 +66,44 @@ export async function clearSupersetLink(exerciseId: string): Promise<void> {
     await db.exercises.update(partnerId, { supersetWith: null });
   }
 }
+
+/**
+ * Groups the given exercises together. Reuses an existing group if exactly
+ * one is found among the selection (so "add C to my existing A+B superset"
+ * works naturally); otherwise mints a fresh groupId. No-ops below 2 ids.
+ */
+export async function setExerciseGroup(exerciseIds: string[]): Promise<string | null> {
+  if (exerciseIds.length < 2) return null;
+  return db.transaction('rw', db.exercises, async () => {
+    const existing = await Promise.all(exerciseIds.map((id) => db.exercises.get(id)));
+    const priorGroupIds = new Set(existing.filter((e) => e?.groupId).map((e) => e!.groupId as string));
+    const groupId = priorGroupIds.size === 1 ? [...priorGroupIds][0] : crypto.randomUUID();
+    await Promise.all(exerciseIds.map((id) => db.exercises.update(id, { groupId })));
+    await pruneOrphanGroups([...priorGroupIds].filter((g) => g !== groupId));
+    return groupId;
+  });
+}
+
+/**
+ * Removes one exercise from its group. If that leaves the group with only
+ * one member, that member is ungrouped too — a groupId is never held by
+ * fewer than 2 exercises.
+ */
+export async function removeFromGroup(exerciseId: string): Promise<void> {
+  await db.transaction('rw', db.exercises, async () => {
+    const exercise = await db.exercises.get(exerciseId);
+    if (!exercise?.groupId) return;
+    const groupId = exercise.groupId;
+    await db.exercises.update(exerciseId, { groupId: null });
+    await pruneOrphanGroups([groupId]);
+  });
+}
+
+async function pruneOrphanGroups(groupIds: string[]): Promise<void> {
+  for (const groupId of groupIds) {
+    const members = await db.exercises.where('groupId').equals(groupId).toArray();
+    if (members.length === 1) {
+      await db.exercises.update(members[0].id, { groupId: null });
+    }
+  }
+}
