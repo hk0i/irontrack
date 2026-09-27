@@ -106,6 +106,31 @@ Two import paths write `Exercise[]` rows *after* the DB is already open, so Dexi
 
 So `migrateSupersetPairsToGroups` is one pure function, reused in three places (the Dexie upgrade, and both import paths) — not three separate migrations. In-app runtime code (`RoutineBuilderScreen`, `ActiveWorkoutScreen`) never needs to read both fields: the upgrade transforms in-place data once, atomically, at DB-open time, before any screen runs.
 
+Worked example — a clean pair, a standalone exercise, and a messy legacy chain (possible today since `clearSupersetLink` only enforced mutuality on the clear path, and guaranteed possible in foreign imported data):
+
+```mermaid
+graph TD
+    subgraph Before["Before: supersetWith pointers"]
+        A["A<br/>supersetWith: B"] --> B["B<br/>supersetWith: A"]
+        E["E<br/>supersetWith: null"]
+        F["F<br/>supersetWith: G"] --> G["G<br/>supersetWith: null"]
+        H["H<br/>supersetWith: G"] --> G
+    end
+
+    subgraph After["After: groupId tokens"]
+        A2["A<br/>groupId: g1"]
+        B2["B<br/>groupId: g1"]
+        E2["E<br/>groupId: null"]
+        F2["F<br/>groupId: g2"]
+        G2["G<br/>groupId: g2"]
+        H2["H<br/>groupId: g2"]
+    end
+
+    Before -.migrateSupersetPairsToGroups.-> After
+```
+
+`A`/`B` are a clean mutual pair → one component → shared `g1`. `E` has no link → stays `null`. `F`/`G`/`H` form a chain (`F→G`, `H→G`, but `G` never points back) — a shape the old mutual-pointer model never intended and the old UI couldn't produce cleanly, but `clearSupersetLink`'s partial-clear path or a hand-edited import could. The connected-components walk still resolves all three into one component and assigns one shared `g2`, rather than silently dropping `H`'s link or crashing on the asymmetry.
+
 ## Changes
 
 ### 1. `src/shared/db/schema.ts`
