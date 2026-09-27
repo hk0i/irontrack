@@ -37,6 +37,19 @@ export const EXERCISE_TYPES: { value: ExerciseType; label: string }[] = [
   { value: 'warmup', label: 'Warmup' },
 ];
 
+/**
+ * UX-only cap on exercises per group (screen real estate — each member
+ * renders its own name/history line + SetRow) — never enforced in the DB
+ * layer or import paths, since a foreign/imported payload with an
+ * oversized group must still import without throwing.
+ */
+export const MAX_GROUP_SIZE = 5;
+
+/** Display label for a group of this size — never stored, always derived. */
+export function groupLabel(count: number): string {
+  return count >= 3 ? 'Circuit' : 'Superset';
+}
+
 export interface Routine {
   id: string;
   name: string;
@@ -52,6 +65,13 @@ export interface Exercise {
   name: string;
   supersetWith: string | null;
   /**
+   * Superset/circuit membership — any exercises sharing a value are one
+   * group; null/absent means ungrouped. Optional: exercises that predate
+   * this field, or any row not yet run through migrateSupersetPairsToGroups,
+   * have no key at all, not just a falsy value.
+   */
+  groupId?: string | null;
+  /**
    * Optional — exercises created before this field existed have no key at
    * all, not just a falsy value. Every read site must fall back to
    * 'weight' (the prior implicit behavior) rather than assume presence.
@@ -64,6 +84,49 @@ export interface Exercise {
    * 'warmup'.
    */
   exerciseType?: ExerciseType;
+}
+
+/**
+ * Treats every non-null supersetWith as an undirected edge and computes
+ * connected components, so dangling (A→B, B→null) or chained (A→B→C)
+ * legacy data — possible today since clearSupersetLink only enforced
+ * mutuality on the clear path, and guaranteed possible in foreign
+ * imported data — collapses into one group instead of being dropped.
+ * Components of size 1 get groupId: null. Detects "already migrated" by
+ * field presence (an exercise with groupId already set is left as-is),
+ * not by any payload version number.
+ */
+export function migrateSupersetPairsToGroups(exercises: Exercise[]): Exercise[] {
+  const byId = new Map(exercises.map((e) => [e.id, e]));
+  const visited = new Set<string>();
+  const result: Exercise[] = [];
+
+  for (const exercise of exercises) {
+    if (visited.has(exercise.id)) continue;
+    if (exercise.groupId !== undefined) {
+      result.push(exercise);
+      visited.add(exercise.id);
+      continue;
+    }
+    // BFS the undirected supersetWith graph starting from this exercise.
+    const component: Exercise[] = [];
+    const queue = [exercise.id];
+    while (queue.length) {
+      const id = queue.shift()!;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      const node = byId.get(id);
+      if (!node) continue;
+      component.push(node);
+      if (node.supersetWith && !visited.has(node.supersetWith)) queue.push(node.supersetWith);
+      for (const other of exercises) {
+        if (other.supersetWith === id && !visited.has(other.id)) queue.push(other.id);
+      }
+    }
+    const groupId = component.length >= 2 ? crypto.randomUUID() : null;
+    for (const node of component) result.push({ ...node, groupId });
+  }
+  return result;
 }
 
 export interface SetEntry {
