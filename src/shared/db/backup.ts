@@ -1,4 +1,4 @@
-import { db, type BackupPayload } from './schema';
+import { db, migrateSupersetPairsToGroups, type BackupPayload } from './schema';
 
 export async function exportAllData(): Promise<BackupPayload> {
   const [routines, exercises, sets, metricBlueprints, metricLogs, workouts] = await Promise.all([
@@ -41,7 +41,7 @@ export async function importAllData(payload: unknown): Promise<void> {
     [db.routines, db.exercises, db.sets, db.metric_blueprints, db.metric_logs, db.workouts],
     async () => {
       await db.routines.bulkPut(data.routines!);
-      await db.exercises.bulkPut(data.exercises!);
+      await db.exercises.bulkPut(migrateSupersetPairsToGroups(data.exercises!));
       await db.sets.bulkPut(data.sets!);
       await db.metric_blueprints.bulkPut(metricBlueprints);
       await db.metric_logs.bulkPut(metricLogs);

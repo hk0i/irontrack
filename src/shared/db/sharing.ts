@@ -1,7 +1,7 @@
 // Separate from backup.ts: this payload never touches sets, workouts, or
 // body-metric data, so sharing a routine can't leak personal training history.
 
-import { db, type Routine, type Exercise } from './schema';
+import { db, migrateSupersetPairsToGroups, type Routine, type Exercise } from './schema';
 import { getRoutineById } from './routines';
 import { getExerciseById } from './exercises';
 
@@ -90,8 +90,15 @@ export async function importRoutines(
 ): Promise<void> {
   const idRemap = new Map<string, string>();
 
+  // Normalizes any pre-groupId shared-routine file (supersetWith pairs, or
+  // worse, a hand-edited/foreign payload) before conflict resolution runs,
+  // so grouping survives an import from an old export. groupId is an opaque
+  // shared token, not a foreign key to another exercise's id, so the
+  // copy-resolution id remap below needs no changes to keep it intact.
+  const incomingExercises = migrateSupersetPairsToGroups(payload.exercises);
+
   const exercisesToPut: Exercise[] = [];
-  for (const incoming of payload.exercises) {
+  for (const incoming of incomingExercises) {
     const existing = await getExerciseById(incoming.id);
     const conflicted = !!existing && existing.name !== incoming.name;
     const resolution = conflicted ? resolutions.get(incoming.id) ?? 'copy' : 'overwrite';
