@@ -63,7 +63,12 @@ export interface Routine {
 export interface Exercise {
   id: string;
   name: string;
-  supersetWith: string | null;
+  /**
+   * @deprecated Superseded by groupId. Kept only so
+   * migrateSupersetPairsToGroups can read pre-v4 rows and so imported
+   * legacy backups still validate — never read for display.
+   */
+  supersetWith?: string | null;
   /**
    * Superset/circuit membership — any exercises sharing a value are one
    * group; null/absent means ungrouped. Optional: exercises that predate
@@ -223,6 +228,17 @@ class IronTrackDB extends Dexie {
 
     this.version(3).stores({
       workouts: 'id, routineId, date',
+    });
+
+    // supersetWith (mutual pointer, one partner slot) is replaced by groupId
+    // (opaque shared token, any number of members) — see
+    // migrateSupersetPairsToGroups above. Runs once at DB-open time for
+    // existing installs; a fresh install jumps straight to this schema and
+    // never runs .upgrade() at all, so it must stay self-consistent without
+    // it (both fields are optional).
+    this.version(4).stores({ exercises: 'id, name, groupId' }).upgrade(async (tx) => {
+      const all = await tx.table('exercises').toArray();
+      await tx.table('exercises').bulkPut(migrateSupersetPairsToGroups(all));
     });
   }
 }
