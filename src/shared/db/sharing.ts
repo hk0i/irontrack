@@ -90,11 +90,9 @@ export async function importRoutines(
 ): Promise<void> {
   const idRemap = new Map<string, string>();
 
-  // Normalizes any pre-groupId shared-routine file (supersetWith pairs, or
-  // worse, a hand-edited/foreign payload) before conflict resolution runs,
-  // so grouping survives an import from an old export. groupId is an opaque
-  // shared token, not a foreign key to another exercise's id, so the
-  // copy-resolution id remap below needs no changes to keep it intact.
+  // Normalizes pre-groupId exercises (old supersetWith pairs, foreign
+  // payloads) so grouping survives import. groupId is opaque, not an id
+  // reference, so copy-resolution's id remap below needs no changes.
   const incomingExercises = migrateSupersetPairsToGroups(payload.exercises);
 
   const exercisesToPut: Exercise[] = [];
