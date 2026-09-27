@@ -67,11 +67,7 @@ export async function clearSupersetLink(exerciseId: string): Promise<void> {
   }
 }
 
-/**
- * Groups the given exercises together. Reuses an existing group if exactly
- * one is found among the selection (so "add C to my existing A+B superset"
- * works naturally); otherwise mints a fresh groupId. No-ops below 2 ids.
- */
+/** Reuses an existing group if exactly one is found among the selection (so "add C to A+B" works naturally); otherwise mints a fresh groupId. No-ops below 2 ids. */
 export async function setExerciseGroup(exerciseIds: string[]): Promise<string | null> {
   if (exerciseIds.length < 2) return null;
   return db.transaction('rw', db.exercises, async () => {
@@ -84,11 +80,7 @@ export async function setExerciseGroup(exerciseIds: string[]): Promise<string | 
   });
 }
 
-/**
- * Removes one exercise from its group. If that leaves the group with only
- * one member, that member is ungrouped too — a groupId is never held by
- * fewer than 2 exercises.
- */
+/** Dissolves the group if this leaves only 1 member — a groupId is never held by fewer than 2. */
 export async function removeFromGroup(exerciseId: string): Promise<void> {
   await db.transaction('rw', db.exercises, async () => {
     const exercise = await db.exercises.get(exerciseId);

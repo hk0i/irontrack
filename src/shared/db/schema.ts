@@ -37,15 +37,10 @@ export const EXERCISE_TYPES: { value: ExerciseType; label: string }[] = [
   { value: 'warmup', label: 'Warmup' },
 ];
 
-/**
- * UX-only cap on exercises per group (screen real estate — each member
- * renders its own name/history line + SetRow) — never enforced in the DB
- * layer or import paths, since a foreign/imported payload with an
- * oversized group must still import without throwing.
- */
+/** UX-only cap (screen space) — not enforced in the DB layer or import paths. */
 export const MAX_GROUP_SIZE = 5;
 
-/** Display label for a group of this size — never stored, always derived. */
+/** Never stored — derived from group size on every render. */
 export function groupLabel(count: number): string {
   return count >= 3 ? 'Circuit' : 'Superset';
 }
@@ -63,18 +58,9 @@ export interface Routine {
 export interface Exercise {
   id: string;
   name: string;
-  /**
-   * @deprecated Superseded by groupId. Kept only so
-   * migrateSupersetPairsToGroups can read pre-v4 rows and so imported
-   * legacy backups still validate — never read for display.
-   */
+  /** @deprecated use groupId — kept for migrateSupersetPairsToGroups + legacy imports. */
   supersetWith?: string | null;
-  /**
-   * Superset/circuit membership — any exercises sharing a value are one
-   * group; null/absent means ungrouped. Optional: exercises that predate
-   * this field, or any row not yet run through migrateSupersetPairsToGroups,
-   * have no key at all, not just a falsy value.
-   */
+  /** Shared value = one group; null/absent = ungrouped. */
   groupId?: string | null;
   /**
    * Optional — exercises created before this field existed have no key at
@@ -92,14 +78,9 @@ export interface Exercise {
 }
 
 /**
- * Treats every non-null supersetWith as an undirected edge and computes
- * connected components, so dangling (A→B, B→null) or chained (A→B→C)
- * legacy data — possible today since clearSupersetLink only enforced
- * mutuality on the clear path, and guaranteed possible in foreign
- * imported data — collapses into one group instead of being dropped.
- * Components of size 1 get groupId: null. Detects "already migrated" by
- * field presence (an exercise with groupId already set is left as-is),
- * not by any payload version number.
+ * Collapses supersetWith into groupId via connected components (not
+ * pair-matching), so chained/dangling legacy links still resolve to one
+ * group. Skips rows that already have groupId — no version-number gating.
  */
 export function migrateSupersetPairsToGroups(exercises: Exercise[]): Exercise[] {
   const byId = new Map(exercises.map((e) => [e.id, e]));
@@ -113,7 +94,6 @@ export function migrateSupersetPairsToGroups(exercises: Exercise[]): Exercise[] 
       visited.add(exercise.id);
       continue;
     }
-    // BFS the undirected supersetWith graph starting from this exercise.
     const component: Exercise[] = [];
     const queue = [exercise.id];
     while (queue.length) {
@@ -230,12 +210,8 @@ class IronTrackDB extends Dexie {
       workouts: 'id, routineId, date',
     });
 
-    // supersetWith (mutual pointer, one partner slot) is replaced by groupId
-    // (opaque shared token, any number of members) — see
-    // migrateSupersetPairsToGroups above. Runs once at DB-open time for
-    // existing installs; a fresh install jumps straight to this schema and
-    // never runs .upgrade() at all, so it must stay self-consistent without
-    // it (both fields are optional).
+    // Fresh installs skip .upgrade() entirely (jump straight to this schema),
+    // so it must stay correct without it — both fields are optional.
     this.version(4).stores({ exercises: 'id, name, groupId' }).upgrade(async (tx) => {
       const all = await tx.table('exercises').toArray();
       await tx.table('exercises').bulkPut(migrateSupersetPairsToGroups(all));

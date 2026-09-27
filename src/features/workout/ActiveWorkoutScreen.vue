@@ -39,14 +39,7 @@ import FinishWorkoutModal from './FinishWorkoutModal.vue';
  */
 type ExerciseOption = Exercise | { id: null; name: string };
 
-/**
- * One standalone exercise, or every member of a group (size 2+, up to
- * MAX_GROUP_SIZE) in routine order. Deliberately not a length-checked
- * tuple — the block-building loop in loadWorkout() constructs these
- * dynamically and enforcing a tuple type there would add generic-narrowing
- * ceremony for no real safety gain; the standalone-vs-group distinction
- * stays enforced by the template's v-if on .length, same as today.
- */
+/** 1 exercise (standalone) or a group's members in routine order. Not a length-checked tuple — the template's v-if on .length enforces the distinction. */
 interface WorkoutBlock {
   exercises: Exercise[];
 }
@@ -186,12 +179,8 @@ async function loadWorkout() {
   // resuming one already left in progress.
   const sessionSets = await getSetsForSession(sessionId);
 
-  // Sets logged this session against an exercise the routine doesn't list
-  // are from an ad-hoc exercise added mid-workout before the user left.
-  // Add those exercises in too so resuming reconstructs them as standalone
-  // blocks — this is what makes ad-hoc exercises survive a resume. Their
-  // groupId (if any) is deliberately ignored below: ad-hoc additions are
-  // always standalone, never joined into a group.
+  // Reconstructs ad-hoc exercises (logged this session but not in the
+  // routine) as standalone blocks on resume; groupId is ignored for them.
   const routineExerciseIds = new Set(exercises.map((e) => e.id));
   const adhocExerciseIds = [...new Set(sessionSets.map((s) => s.exerciseId))].filter((id) => !routineExerciseIds.has(id));
   for (const id of adhocExerciseIds) {
@@ -199,16 +188,9 @@ async function loadWorkout() {
     if (exercise) exercises.push(exercise);
   }
 
-  // Populate every exercise's row array and ghost text *before* exposing
-  // blocks to the template. groupRows() reads straight from
-  // setRowsByExercise for every member of a group without a null-check,
-  // so blocks must never become visible while a member's rows haven't
-  // been seeded yet — otherwise a render could land in that gap (this
-  // loop awaits getLastWorkoutBestSetForExercise per exercise) and throw.
-  // Group members are always logged/added/removed in lockstep (see
-  // addGroupRow/removeGroupRow), so rebuilding each exercise's rows
-  // independently from its own sets, in logged order, still keeps every
-  // member index-aligned for groupRows().
+  // Seed every exercise's rows before blocks reach the template — groupRows()
+  // reads setRowsByExercise per member with no null-check, so a
+  // partially-seeded group must never render.
   for (const exercise of exercises) {
     await seedExerciseState(exercise, sessionSets);
   }
@@ -218,12 +200,8 @@ async function loadWorkout() {
   for (const exercise of exercises) {
     if (seen.has(exercise.id)) continue;
     seen.add(exercise.id);
-    // Only groups routine-defined exercises — an ad-hoc exercise is always
-    // standalone, even if its groupId happens to match something else, so
-    // a resumed session's layout matches what "+ Add exercise" produces
-    // live. Members are emitted in routine order, at the first member's
-    // position; a group whose other members aren't in this routine
-    // resolves to a length-1 block, same as a standalone exercise.
+    // Ad-hoc exercises stay standalone even with a matching groupId. A group
+    // missing its other members here (not in this routine) is a length-1 block.
     const groupMembers =
       routineExerciseIds.has(exercise.id) && exercise.groupId
         ? exercises.filter((e) => e.groupId === exercise.groupId && routineExerciseIds.has(e.id))
@@ -240,11 +218,7 @@ function addRow(exerciseId: string) {
   setRowsByExercise[exerciseId].push(makeEmptyRow());
 }
 
-/**
- * A group always adds a set to every member together, keeping their row
- * arrays index-synced so "Set N" always lines up the same set across
- * every member.
- */
+/** Adds a set to every member together, keeping row arrays index-synced. */
 function addGroupRow(exerciseIds: string[]) {
   exerciseIds.forEach((id) => setRowsByExercise[id].push(makeEmptyRow()));
 }
@@ -269,22 +243,13 @@ function removeRow(exerciseId: string, index: number) {
   setRowsByExercise[exerciseId].splice(index, 1);
 }
 
-/**
- * Mirrors addGroupRow — a group's row arrays are added to and removed
- * from together, keeping them index-synced.
- */
+/** Mirrors addGroupRow — removed from every member together. */
 function removeGroupRow(exerciseIds: string[], index: number) {
   if (!exerciseIds.every((id) => isLastRow(id, index))) return;
   exerciseIds.forEach((id) => setRowsByExercise[id].splice(index, 1));
 }
 
-/**
- * Zips a group's row arrays into { index, rows } tuples so the template
- * can render Set 1 of every member together, then Set 2 of every member,
- * etc. Each entry in `rows` is a reference to the same reactive row object
- * the member's own array holds, so v-model bindings on them still mutate
- * the real state.
- */
+/** Zips a group's row arrays by index for interleaved rendering — rows are references, so v-model still mutates real state. */
 function groupRows(block: WorkoutBlock): { index: number; rows: SetRowState[] }[] {
   const first = setRowsByExercise[block.exercises[0].id];
   if (!first) return [];
@@ -307,13 +272,7 @@ function restSecondsForExercise(exercise: Exercise): number {
   return exercise.exerciseType === 'warmup' ? settings.warmupRestSeconds : settings.regularRestSeconds;
 }
 
-/**
- * A block's rest duration is the longer of its exercise(s)' type
- * defaults. For a standalone exercise this is just its own default; for
- * a group mixing a warmup with a regular exercise (rare, since groupId
- * links aren't type-restricted) it's the max of every member, so no
- * member is ever shortchanged on rest.
- */
+/** Longest of the block's members' rest defaults, so no member is shortchanged. */
 function restSecondsForBlock(block: WorkoutBlock): number {
   return Math.max(...block.exercises.map(restSecondsForExercise));
 }
@@ -322,15 +281,7 @@ function findBlockForExercise(exerciseId: string): WorkoutBlock | undefined {
   return blocks.value.find((block) => block.exercises.some((e) => e.id === exerciseId));
 }
 
-/**
- * siblingRows is only passed for group rows (the other members' matching
- * rows, excluding this one). The rest banner should fire once per group,
- * after whichever member is checked off last — not after each individual
- * component set — so it only starts here when there are no siblings
- * (standalone exercise) or every sibling's matching row is already
- * checked. Only fires on a first-time log, not when re-saving an edit
- * made after unlockRow.
- */
+/** Rest fires once per group, after the last member's matching row is checked (siblingRows is empty for a standalone exercise) — not on a re-save after unlockRow. */
 async function checkRow(exerciseId: string, row: SetRowState, siblingRows: SetRowState[] = []) {
   if (row.checked) return;
   // Weight is optional — bodyweight/banded exercises (scapular wall
