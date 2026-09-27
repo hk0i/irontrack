@@ -15,6 +15,7 @@ import {
   logWorkoutSession,
   todayString,
   RESISTANCE_TYPES,
+  groupLabel,
   type Exercise,
   type ResistanceType,
   type SetEntry,
@@ -39,11 +40,12 @@ import FinishWorkoutModal from './FinishWorkoutModal.vue';
 type ExerciseOption = Exercise | { id: null; name: string };
 
 /**
- * Deliberately not a strict 1-or-2-length tuple — the block-building loop in
- * loadWorkout() constructs these dynamically and enforcing a tuple type
- * there would add generic-narrowing ceremony for no real safety gain; the
- * 1-or-2 invariant stays enforced by the template's v-if on .length, same
- * as today.
+ * One standalone exercise, or every member of a group (size 2+, up to
+ * MAX_GROUP_SIZE) in routine order. Deliberately not a length-checked
+ * tuple — the block-building loop in loadWorkout() constructs these
+ * dynamically and enforcing a tuple type there would add generic-narrowing
+ * ceremony for no real safety gain; the standalone-vs-group distinction
+ * stays enforced by the template's v-if on .length, same as today.
  */
 interface WorkoutBlock {
   exercises: Exercise[];
@@ -188,8 +190,8 @@ async function loadWorkout() {
   // are from an ad-hoc exercise added mid-workout before the user left.
   // Add those exercises in too so resuming reconstructs them as standalone
   // blocks — this is what makes ad-hoc exercises survive a resume. Their
-  // supersetWith (if any) is deliberately ignored below: ad-hoc additions
-  // are always standalone, never paired into a superset.
+  // groupId (if any) is deliberately ignored below: ad-hoc additions are
+  // always standalone, never joined into a group.
   const routineExerciseIds = new Set(exercises.map((e) => e.id));
   const adhocExerciseIds = [...new Set(sessionSets.map((s) => s.exerciseId))].filter((id) => !routineExerciseIds.has(id));
   for (const id of adhocExerciseIds) {
@@ -198,15 +200,15 @@ async function loadWorkout() {
   }
 
   // Populate every exercise's row array and ghost text *before* exposing
-  // blocks to the template. pairedRows() reads straight from
-  // setRowsByExercise for both sides of a superset without a null-check,
-  // so blocks must never become visible while a partner's rows haven't
+  // blocks to the template. groupRows() reads straight from
+  // setRowsByExercise for every member of a group without a null-check,
+  // so blocks must never become visible while a member's rows haven't
   // been seeded yet — otherwise a render could land in that gap (this
   // loop awaits getLastWorkoutBestSetForExercise per exercise) and throw.
-  // Superset pairs are always logged/added/removed in lockstep (see
-  // addSupersetRow/removeSupersetRow), so rebuilding each exercise's rows
-  // independently from its own sets, in logged order, still keeps both
-  // sides index-aligned for pairedRows().
+  // Group members are always logged/added/removed in lockstep (see
+  // addGroupRow/removeGroupRow), so rebuilding each exercise's rows
+  // independently from its own sets, in logged order, still keeps every
+  // member index-aligned for groupRows().
   for (const exercise of exercises) {
     await seedExerciseState(exercise, sessionSets);
   }
@@ -216,20 +218,18 @@ async function loadWorkout() {
   for (const exercise of exercises) {
     if (seen.has(exercise.id)) continue;
     seen.add(exercise.id);
-    // Only pairs two routine-defined exercises — an ad-hoc exercise is
-    // always standalone, even if its supersetWith happens to point at
-    // (or be pointed at by) something else, so a resumed session's
-    // layout matches what "+ Add exercise" produces live.
-    const partner =
-      routineExerciseIds.has(exercise.id) && exercise.supersetWith
-        ? exercises.find((e) => e.id === exercise.supersetWith && routineExerciseIds.has(e.id))
-        : undefined;
-    if (partner) {
-      seen.add(partner.id);
-      builtBlocks.push({ exercises: [exercise, partner] });
-    } else {
-      builtBlocks.push({ exercises: [exercise] });
-    }
+    // Only groups routine-defined exercises — an ad-hoc exercise is always
+    // standalone, even if its groupId happens to match something else, so
+    // a resumed session's layout matches what "+ Add exercise" produces
+    // live. Members are emitted in routine order, at the first member's
+    // position; a group whose other members aren't in this routine
+    // resolves to a length-1 block, same as a standalone exercise.
+    const groupMembers =
+      routineExerciseIds.has(exercise.id) && exercise.groupId
+        ? exercises.filter((e) => e.groupId === exercise.groupId && routineExerciseIds.has(e.id))
+        : [exercise];
+    for (const member of groupMembers) seen.add(member.id);
+    builtBlocks.push({ exercises: groupMembers });
   }
   blocks.value = builtBlocks;
 }
@@ -241,12 +241,12 @@ function addRow(exerciseId: string) {
 }
 
 /**
- * Supersets always add a set to both exercises together, keeping their
- * row arrays index-synced so "Set N" always pairs the right two rows.
+ * A group always adds a set to every member together, keeping their row
+ * arrays index-synced so "Set N" always lines up the same set across
+ * every member.
  */
-function addSupersetRow(exerciseIdA: string, exerciseIdB: string) {
-  setRowsByExercise[exerciseIdA].push(makeEmptyRow());
-  setRowsByExercise[exerciseIdB].push(makeEmptyRow());
+function addGroupRow(exerciseIds: string[]) {
+  exerciseIds.forEach((id) => setRowsByExercise[id].push(makeEmptyRow()));
 }
 
 function getRow(exerciseId: string, index: number): SetRowState | undefined {
@@ -270,29 +270,27 @@ function removeRow(exerciseId: string, index: number) {
 }
 
 /**
- * Mirrors addSupersetRow — a superset's two row arrays are added to and
- * removed from together, keeping them index-synced.
+ * Mirrors addGroupRow — a group's row arrays are added to and removed
+ * from together, keeping them index-synced.
  */
-function removeSupersetRow(exerciseIdA: string, exerciseIdB: string, index: number) {
-  if (!isLastRow(exerciseIdA, index) || !isLastRow(exerciseIdB, index)) return;
-  setRowsByExercise[exerciseIdA].splice(index, 1);
-  setRowsByExercise[exerciseIdB].splice(index, 1);
+function removeGroupRow(exerciseIds: string[], index: number) {
+  if (!exerciseIds.every((id) => isLastRow(id, index))) return;
+  exerciseIds.forEach((id) => setRowsByExercise[id].splice(index, 1));
 }
 
 /**
- * Zips a superset pair's two row arrays into { index, rowA, rowB } tuples
- * so the template can render Set 1 of A immediately above Set 1 of B,
- * then Set 2 of A above Set 2 of B, etc. rowA/rowB are references to the
- * same reactive row objects the arrays hold, so v-model bindings on them
- * still mutate the real state.
+ * Zips a group's row arrays into { index, rows } tuples so the template
+ * can render Set 1 of every member together, then Set 2 of every member,
+ * etc. Each entry in `rows` is a reference to the same reactive row object
+ * the member's own array holds, so v-model bindings on them still mutate
+ * the real state.
  */
-function pairedRows(block: WorkoutBlock): { index: number; rowA: SetRowState; rowB: SetRowState }[] {
-  const [exerciseA, exerciseB] = block.exercises;
-  const rowsA = setRowsByExercise[exerciseA.id];
-  if (!rowsA) return [];
-  return rowsA
-    .map((rowA, index) => ({ index, rowA, rowB: getRow(exerciseB.id, index) }))
-    .filter((pair): pair is { index: number; rowA: SetRowState; rowB: SetRowState } => Boolean(pair.rowB));
+function groupRows(block: WorkoutBlock): { index: number; rows: SetRowState[] }[] {
+  const first = setRowsByExercise[block.exercises[0].id];
+  if (!first) return [];
+  return first
+    .map((_, index) => ({ index, rows: block.exercises.map((e) => getRow(e.id, index)) }))
+    .filter((entry): entry is { index: number; rows: SetRowState[] } => entry.rows.every((r) => r !== undefined));
 }
 
 function toggleUnit(row: SetRowState) {
@@ -312,9 +310,9 @@ function restSecondsForExercise(exercise: Exercise): number {
 /**
  * A block's rest duration is the longer of its exercise(s)' type
  * defaults. For a standalone exercise this is just its own default; for
- * a superset pairing a warmup with a regular exercise (rare, since
- * supersetWith links aren't type-restricted) it's the max of both, so
- * the regular side is never shortchanged on rest.
+ * a group mixing a warmup with a regular exercise (rare, since groupId
+ * links aren't type-restricted) it's the max of every member, so no
+ * member is ever shortchanged on rest.
  */
 function restSecondsForBlock(block: WorkoutBlock): number {
   return Math.max(...block.exercises.map(restSecondsForExercise));
@@ -325,14 +323,15 @@ function findBlockForExercise(exerciseId: string): WorkoutBlock | undefined {
 }
 
 /**
- * partnerRow is only passed for superset rows. The rest banner should
- * fire once per superset pair, after whichever exercise is checked off
- * last — not after each individual component set — so it only starts
- * here when there's no partner (standalone exercise) or the partner's
- * matching row is already checked. Only fires on a first-time log, not
- * when re-saving an edit made after unlockRow.
+ * siblingRows is only passed for group rows (the other members' matching
+ * rows, excluding this one). The rest banner should fire once per group,
+ * after whichever member is checked off last — not after each individual
+ * component set — so it only starts here when there are no siblings
+ * (standalone exercise) or every sibling's matching row is already
+ * checked. Only fires on a first-time log, not when re-saving an edit
+ * made after unlockRow.
  */
-async function checkRow(exerciseId: string, row: SetRowState, partnerRow: SetRowState | null = null) {
+async function checkRow(exerciseId: string, row: SetRowState, siblingRows: SetRowState[] = []) {
   if (row.checked) return;
   // Weight is optional — bodyweight/banded exercises (scapular wall
   // slides, banded rows, etc.) have nothing to enter there. Reps is the
@@ -373,7 +372,7 @@ async function checkRow(exerciseId: string, row: SetRowState, partnerRow: SetRow
   // the prior workout's best set (set once in loadWorkout), never what's
   // being logged in this session, so set 2 never shows set 1's own data.
 
-  if (!isEdit && (!partnerRow || partnerRow.checked)) {
+  if (!isEdit && siblingRows.every((r) => r.checked)) {
     const block = findBlockForExercise(exerciseId);
     startRestTimer(block ? restSecondsForBlock(block) : settings.regularRestSeconds);
   }
@@ -523,11 +522,11 @@ async function createAndAddAdhocExercise() {
           <button @click="addRow(block.exercises[0].id)" class="mt-3 w-full py-2.5 rounded-lg bg-surface-2 text-sm font-semibold text-secondary active:bg-surface-3">+ Add set</button>
         </div>
 
-        <!-- Superset pair: one high-contrast bounding box, sets interleaved A1/B1/A2/B2/... -->
+        <!-- Group (superset/circuit): one high-contrast bounding box, sets interleaved 1/1/1, 2/2/2, ... across every member -->
         <div v-else class="bg-surface border-2 border-primary-strong rounded-2xl p-4">
           <div class="flex items-center justify-between mb-3">
-            <h2 class="font-semibold text-base">{{ block.exercises[0].name }} + {{ block.exercises[1].name }}</h2>
-            <span class="text-xs uppercase tracking-wide text-primary-bright font-semibold flex-shrink-0">Superset</span>
+            <h2 class="font-semibold text-base">{{ block.exercises.map((e) => e.name).join(' + ') }}</h2>
+            <span class="text-xs uppercase tracking-wide text-primary-bright font-semibold flex-shrink-0">{{ groupLabel(block.exercises.length) }}</span>
           </div>
 
           <div class="space-y-3 text-xs text-foreground-muted mb-4">
@@ -542,40 +541,26 @@ async function createAndAddAdhocExercise() {
           </div>
 
           <div class="space-y-3">
-            <div v-for="pair in pairedRows(block)" :key="pair.index" class="rounded-xl bg-surface-2/60 p-2 space-y-2">
-              <div class="text-xs text-foreground-faint px-1">Set {{ pair.index + 1 }}</div>
+            <div v-for="group in groupRows(block)" :key="group.index" class="rounded-xl bg-surface-2/60 p-2 space-y-2">
+              <div class="text-xs text-foreground-faint px-1">Set {{ group.index + 1 }}</div>
 
-              <div>
-                <div class="text-xs text-foreground-muted mb-1">{{ block.exercises[0].name }}</div>
+              <div v-for="(exercise, i) in block.exercises" :key="exercise.id">
+                <div class="text-xs text-foreground-muted mb-1">{{ exercise.name }}</div>
                 <SetRow
-                  :row="pair.rowA"
+                  :row="group.rows[i]"
                   compact
-                  :resistance-type="block.exercises[0].resistanceType || 'weight'"
-                  :removable="isLastRow(block.exercises[0].id, pair.index)"
-                  @toggle-unit="toggleUnit(pair.rowA)"
-                  @check="checkRow(block.exercises[0].id, pair.rowA, pair.rowB)"
-                  @unlock="unlockRow(pair.rowA)"
-                  @remove="removeSupersetRow(block.exercises[0].id, block.exercises[1].id, pair.index)"
-                />
-              </div>
-
-              <div>
-                <div class="text-xs text-foreground-muted mb-1">{{ block.exercises[1].name }}</div>
-                <SetRow
-                  :row="pair.rowB"
-                  compact
-                  :resistance-type="block.exercises[1].resistanceType || 'weight'"
-                  :removable="isLastRow(block.exercises[1].id, pair.index)"
-                  @toggle-unit="toggleUnit(pair.rowB)"
-                  @check="checkRow(block.exercises[1].id, pair.rowB, pair.rowA)"
-                  @unlock="unlockRow(pair.rowB)"
-                  @remove="removeSupersetRow(block.exercises[0].id, block.exercises[1].id, pair.index)"
+                  :resistance-type="exercise.resistanceType || 'weight'"
+                  :removable="isLastRow(exercise.id, group.index)"
+                  @toggle-unit="toggleUnit(group.rows[i])"
+                  @check="checkRow(exercise.id, group.rows[i], group.rows.filter((_, j) => j !== i))"
+                  @unlock="unlockRow(group.rows[i])"
+                  @remove="removeGroupRow(block.exercises.map((e) => e.id), group.index)"
                 />
               </div>
             </div>
           </div>
 
-          <button @click="addSupersetRow(block.exercises[0].id, block.exercises[1].id)" class="mt-3 w-full py-2.5 rounded-lg bg-surface-2 text-sm font-semibold text-secondary active:bg-surface-3">+ Add set</button>
+          <button @click="addGroupRow(block.exercises.map((e) => e.id))" class="mt-3 w-full py-2.5 rounded-lg bg-surface-2 text-sm font-semibold text-secondary active:bg-surface-3">+ Add set</button>
         </div>
       </div>
     </main>
