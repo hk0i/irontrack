@@ -11,7 +11,7 @@ Today a routine can link exactly 2 exercises into a "superset." That's not just 
 
 This EDD covers supporting an arbitrary number (2+) of grouped exercises, with a cleaner selection UX, while preserving the lockstep behavior the app already has for pairs: one "Add set" advances every member together, and rest fires once the last member's current row is checked.
 
-## Decisions locked in with the user, not re-litigated here
+## Decisions locked in, not re-litigated here
 
 1. **Selection UX**: select-mode button + tap-to-check-multiple, then a "Group Selected (N)" action button — the iOS-native pattern (Photos/Mail/Files "Select" + checkmarks + bottom action bar). Not a swipe/drag-select gesture — rows already carry a drag-to-reorder gesture (`useDragReorder`) and, elsewhere in the app, a swipe-to-reveal-actions gesture (`useSwipeReveal`); a third overlapping gesture is exactly the kind of conflict we're removing, not adding. `ShareRoutinesScreen.vue` already implements this exact checklist pattern (`selectedIds: Set<string>`, `toggle`, bottom action button) and is the pattern to copy.
 2. **Lockstep preserved**: adding/removing a set still advances every exercise in the group together; rest timer still fires once every member's matching row is checked. This generalizes the existing pair logic to N-wide rather than redesigning the interaction.
@@ -96,8 +96,8 @@ classDiagram
       +ResistanceType resistanceType?
       +ExerciseType exerciseType?
     }
-    note for Exercise_Before "supersetWith is a mutual pointer:\none partner slot only, caps groups at 2"
-    note for Exercise_After "groupId is an opaque shared token:\nany count of exercises sharing a value is one group"
+    note for Exercise_Before "supersetWith is a mutual pointer:<br/>one partner slot only, caps groups at 2"
+    note for Exercise_After "groupId is an opaque shared token:<br/>any count of exercises sharing a value is one group"
 ```
 
 Two import paths write `Exercise[]` rows *after* the DB is already open, so Dexie's `.upgrade()` never sees them — an old exported backup/shared-routine file would silently lose pairings on import, forever, if not handled explicitly:
@@ -314,7 +314,7 @@ Delete `setSupersetLink`, `clearSupersetLink`, and `createExercise`'s `supersetW
 
 ## Out of scope
 
-- Per-exercise ordering *within* a group beyond routine order (no separate "position in circuit" field — routine order is the only ordering signal, same as today's pairs).
+- A separate "position in circuit" field. Ordering within a group is exactly the order set in Routine Builder's drag-reorder list — unchanged, existing behavior — and step 8's contiguous-splice keeps a group's members adjacent in that list so builder order and workout-render order stay identical. No new ordering concept is introduced on top of it.
 - Independent per-exercise set counts within a group (lockstep is preserved by explicit decision, see above).
 - Any change to rest-duration calculation beyond what already generalizes for free (`restSecondsForBlock`).
 - A `version(5)` migration to physically drop `supersetWith` — deferred indefinitely per the cleanup note above.
