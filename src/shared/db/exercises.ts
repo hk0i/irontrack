@@ -2,16 +2,14 @@ import { db, type Exercise, type ResistanceType, type ExerciseType } from './sch
 
 export async function createExercise({
   name,
-  supersetWith = null,
   resistanceType = 'weight',
   exerciseType = 'regular',
 }: {
   name: string;
-  supersetWith?: string | null;
   resistanceType?: ResistanceType;
   exerciseType?: ExerciseType;
 }): Promise<Exercise> {
-  const exercise: Exercise = { id: crypto.randomUUID(), name, supersetWith, resistanceType, exerciseType };
+  const exercise: Exercise = { id: crypto.randomUUID(), name, resistanceType, exerciseType };
   await db.exercises.add(exercise);
   return exercise;
 }
@@ -38,33 +36,6 @@ export async function searchExercises(query: string): Promise<Exercise[]> {
   const needle = query.trim().toLowerCase();
   if (!needle) return all;
   return all.filter((e) => e.name.toLowerCase().includes(needle));
-}
-
-/**
- * Links two exercises as a superset pair.
- * supersetWith only has room for one partner per exercise, so this is scoped
- * to pairs, not multi-exercise circuits. Defensively clears any pre-existing
- * link on either side first so the invariant "supersetWith is always mutual
- * or null" can't be violated.
- */
-export async function setSupersetLink(exerciseIdA: string, exerciseIdB: string): Promise<void> {
-  await db.transaction('rw', db.exercises, async () => {
-    await clearSupersetLink(exerciseIdA);
-    await clearSupersetLink(exerciseIdB);
-    await db.exercises.update(exerciseIdA, { supersetWith: exerciseIdB });
-    await db.exercises.update(exerciseIdB, { supersetWith: exerciseIdA });
-  });
-}
-
-export async function clearSupersetLink(exerciseId: string): Promise<void> {
-  const exercise = await db.exercises.get(exerciseId);
-  if (!exercise || !exercise.supersetWith) return;
-  const partnerId = exercise.supersetWith;
-  await db.exercises.update(exerciseId, { supersetWith: null });
-  const partner = await db.exercises.get(partnerId);
-  if (partner && partner.supersetWith === exerciseId) {
-    await db.exercises.update(partnerId, { supersetWith: null });
-  }
 }
 
 /** Reuses an existing group if exactly one is found among the selection (so "add C to A+B" works naturally); otherwise mints a fresh groupId. No-ops below 2 ids. */
