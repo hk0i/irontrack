@@ -9,10 +9,12 @@ import {
   updateExercise,
   getRoutineById,
   getExercisesForRoutine,
-  setSupersetLink,
-  clearSupersetLink,
+  setExerciseGroup,
+  removeFromGroup,
   RESISTANCE_TYPES,
   EXERCISE_TYPES,
+  groupLabel,
+  UX_MAX_GROUP_SIZE,
   type Exercise,
   type ResistanceType,
   type ExerciseType,
@@ -37,7 +39,8 @@ const routineName = ref('');
 const searchQuery = ref('');
 const searchResults = ref<Exercise[]>([]);
 const selectedExercises = ref<Exercise[]>([]);
-const linkModeExerciseId = ref<string | null>(null);
+const selectMode = ref(false);
+const selectedIds = ref<Set<string>>(new Set());
 
 /**
  * Applied to whatever exercise gets created next via search/create-new —
@@ -129,34 +132,61 @@ function removeExercise(exercise: Exercise) {
   selectedExercises.value = selectedExercises.value.filter((e) => e.id !== exercise.id);
 }
 
+function toggleSelectMode() {
+  selectMode.value = !selectMode.value;
+  selectedIds.value = new Set();
+}
+
+function toggleSelected(id: string) {
+  const next = new Set(selectedIds.value);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  selectedIds.value = next;
+}
+
+const canGroupSelected = computed(() => selectedIds.value.size >= 2 && selectedIds.value.size <= UX_MAX_GROUP_SIZE);
+
+function groupSizeFor(exercise: Exercise): number {
+  return selectedExercises.value.filter((e) => e.groupId === exercise.groupId).length;
+}
+
 /**
- * Tap a link icon to enter "link mode"; tap a second row's link icon to
- * complete the pair. Tapping an already-linked row's icon unlinks it.
+ * ActiveWorkoutScreen emits a group's block at its first member's routine
+ * position, so members must sit contiguously here too or builder order and
+ * workout-render order diverge. Keeps every exercise's relative order,
+ * just slots the new group in at the earliest member's old position.
  */
-async function toggleLink(exercise: Exercise) {
-  if (exercise.supersetWith) {
-    await clearSupersetLink(exercise.id);
-    const partner = selectedExercises.value.find((e) => e.id === exercise.supersetWith);
-    exercise.supersetWith = null;
-    if (partner) partner.supersetWith = null;
-    return;
-  }
+function makeGroupContiguous(groupId: string) {
+  const original = selectedExercises.value;
+  const members = original.filter((e) => e.groupId === groupId);
+  if (members.length < 2) return;
+  const nonMembers = original.filter((e) => e.groupId !== groupId);
+  const firstMemberIndex = original.findIndex((e) => e.groupId === groupId);
+  const insertAt = original.slice(0, firstMemberIndex).filter((e) => e.groupId !== groupId).length;
+  selectedExercises.value = [...nonMembers.slice(0, insertAt), ...members, ...nonMembers.slice(insertAt)];
+}
 
-  if (linkModeExerciseId.value === null) {
-    linkModeExerciseId.value = exercise.id;
-    return;
+async function groupSelected() {
+  if (!canGroupSelected.value) return;
+  const ids = [...selectedIds.value];
+  const groupId = await setExerciseGroup(ids);
+  if (groupId) {
+    for (const exercise of selectedExercises.value) {
+      if (ids.includes(exercise.id)) exercise.groupId = groupId;
+    }
+    makeGroupContiguous(groupId);
   }
+  toggleSelectMode();
+}
 
-  if (linkModeExerciseId.value === exercise.id) {
-    linkModeExerciseId.value = null;
-    return;
-  }
-
-  const partner = selectedExercises.value.find((e) => e.id === linkModeExerciseId.value);
-  await setSupersetLink(exercise.id, linkModeExerciseId.value);
-  exercise.supersetWith = linkModeExerciseId.value;
-  if (partner) partner.supersetWith = exercise.id;
-  linkModeExerciseId.value = null;
+// Mirrors removeFromGroup's server-side dissolve: a group left with 1
+// member is ungrouped too, so the local copy can't show a stale badge.
+async function ungroup(exercise: Exercise) {
+  const groupId = exercise.groupId;
+  await removeFromGroup(exercise.id);
+  exercise.groupId = null;
+  const remaining = selectedExercises.value.filter((e) => e.groupId === groupId);
+  if (remaining.length === 1) remaining[0].groupId = null;
 }
 
 const canSave = computed(() => routineName.value.trim().length > 0 && selectedExercises.value.length > 0);
@@ -233,17 +263,41 @@ async function save() {
       </div>
 
       <div v-if="selectedExercises.length">
-        <label class="text-sm text-foreground-muted mb-2 block">
-          Routine order
-          <span v-if="linkModeExerciseId" class="text-primary-bright">— tap another exercise's link icon to pair as a superset</span>
+        <label class="text-sm text-foreground-muted mb-2 flex items-center justify-between">
+          <span>Routine order</span>
+          <button @click="toggleSelectMode" class="text-xs font-semibold text-secondary">{{ selectMode ? 'Cancel' : 'Select' }}</button>
         </label>
-        <div class="space-y-2">
+
+        <div v-if="selectMode" class="space-y-2">
+          <label
+            v-for="exercise in selectedExercises"
+            :key="exercise.id"
+            class="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface border border-border"
+          >
+            <input
+              type="checkbox"
+              class="w-5 h-5 accent-primary-bright flex-shrink-0"
+              :checked="selectedIds.has(exercise.id)"
+              @change="toggleSelected(exercise.id)"
+            />
+            <span class="flex-1">{{ exercise.name }}</span>
+          </label>
+          <button
+            @click="groupSelected"
+            :disabled="!canGroupSelected"
+            class="w-full py-2.5 rounded-lg bg-primary text-on-primary text-sm font-semibold disabled:opacity-40"
+          >
+            Group Selected ({{ selectedIds.size }})
+          </button>
+        </div>
+
+        <div v-else class="space-y-2">
           <div
             v-for="(exercise, index) in selectedExercises"
             :key="exercise.id"
             :ref="(el) => setRowEl(index, el as HTMLElement | null)"
             class="flex flex-col gap-2 px-4 py-3 rounded-xl bg-surface border select-none"
-            :class="[exercise.supersetWith ? 'border-primary/40' : 'border-border', draggingIndex === index ? 'relative z-10 shadow-xl' : '']"
+            :class="[exercise.groupId ? 'border-primary/40' : 'border-border', draggingIndex === index ? 'relative z-10 shadow-xl' : '']"
             :style="draggingIndex === index ? { transform: 'translateY(' + dragOffset + 'px)' } : {}"
           >
             <div class="flex items-center gap-2">
@@ -285,14 +339,12 @@ async function save() {
                 <option v-for="opt in EXERCISE_TYPES" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
               </select>
               <button
-                @click="toggleLink(exercise)"
-                :aria-label="exercise.supersetWith ? 'Unlink superset' : 'Link as superset'"
-                class="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full"
-                :class="exercise.supersetWith || linkModeExerciseId === exercise.id ? 'bg-primary-strong text-on-primary-strong' : 'bg-surface-2 text-foreground-subtle'"
+                v-if="exercise.groupId"
+                @click="ungroup(exercise)"
+                :aria-label="'Remove from ' + groupLabel(groupSizeFor(exercise))"
+                class="px-2.5 h-8 flex-shrink-0 rounded-full bg-primary-strong text-on-primary-strong text-[10px] font-semibold uppercase tracking-wide"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 010 5.656l-3 3a4 4 0 01-5.656-5.656l1.5-1.5M10.172 13.828a4 4 0 010-5.656l3-3a4 4 0 015.656 5.656l-1.5 1.5" />
-                </svg>
+                {{ groupLabel(groupSizeFor(exercise)) }}
               </button>
             </div>
           </div>
