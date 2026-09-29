@@ -136,7 +136,7 @@ graph TD
 ### 1. `src/shared/db/schema.ts`
 
 ```ts
-export const MAX_GROUP_SIZE = 5;
+export const UX_MAX_GROUP_SIZE = 5;
 
 export function groupLabel(count: number): string {
   return count >= 3 ? 'Circuit' : 'Superset';
@@ -280,9 +280,9 @@ async function pruneOrphanGroups(groupIds: string[]): Promise<void> {
 ### 4. `src/features/workout/ActiveWorkoutScreen.vue` — script
 
 - `loadWorkout()`'s block-building groups routine exercises by `groupId` instead of a single-partner lookup (same "ad-hoc exercises never join a group" restriction as today, generalized from "partner" to "every member").
-- `pairedRows` → `groupRows`:
+- `pairedRows` → `groupedRows`:
   ```ts
-  function groupRows(block: WorkoutBlock): { index: number; rows: SetRowState[] }[] {
+  function groupedRows(block: WorkoutBlock): { index: number; rows: SetRowState[] }[] {
     const first = setRowsByExercise[block.exercises[0].id];
     if (!first) return [];
     return first
@@ -309,7 +309,7 @@ async function pruneOrphanGroups(groupIds: string[]): Promise<void> {
 ### 5. `src/features/workout/ActiveWorkoutScreen.vue` — template
 
 - Header: `{{ block.exercises.map(e => e.name).join(' + ') }}` and `{{ groupLabel(block.exercises.length) }}` replacing the hardcoded `[0]`/`[1]` names and the fixed "Superset" label.
-- Per-set card: `v-for="(exercise, i) in block.exercises"` indexed into `groupRows(block)`'s `rows[i]`, replacing the two fixed `<SetRow>` blocks.
+- Per-set card: `v-for="(exercise, i) in block.exercises"` indexed into `groupedRows(block)`'s `rows[i]`, replacing the two fixed `<SetRow>` blocks.
 - `@check="checkRow(exercise.id, group.rows[i], group.rows.filter((_, j) => j !== i))"`, `@remove="removeGroupRow(block.exercises.map(e => e.id), group.index)"`, `"+ Add set"` calls `addGroupRow(block.exercises.map(e => e.id))`.
 
 Ship steps 4 and 5 together — the template still references `[0]`/`[1]` until step 5 lands, so step 4 alone would compile but render wrong.
@@ -330,7 +330,7 @@ Ship steps 4 and 5 together — the template still references `[0]`/`[1]` until 
 - "Select" button toggles `selectMode`; bottom "Group Selected (N)" action calls `setExerciseGroup([...selectedIds.value])`, then patches `groupId` onto the matching objects in `selectedExercises` (same pattern the current code uses to patch `supersetWith` locally after a write).
 - While `selectMode` is on, disable the row's drag handle (`onRowPointerDown`) and make the row body itself the tap target for `toggleSelected` — rows currently have no tap handler when not in select mode, so this is additive, not a conflict.
 - Per-row badge shows `groupLabel(count)` for the exercise's current group size and is independently tappable to `removeFromGroup` — no ambiguous "is this Group or Ungroup" toggle like the old flow.
-- `MAX_GROUP_SIZE` enforced here only: disable "Group Selected" when the resulting group would exceed it.
+- `UX_MAX_GROUP_SIZE` enforced here only: disable "Group Selected" when the resulting group would exceed it.
 - After a successful group action, splice `selectedExercises` so all members sit contiguously starting at the earliest member's index — otherwise the builder's displayed order can diverge from how `ActiveWorkoutScreen` renders the block (which emits at the first member's routine position).
 
 ### 7. Cleanup (optional, lowest priority)
@@ -349,11 +349,11 @@ Delete `setSupersetLink`, `clearSupersetLink`, and `createExercise`'s `supersetW
 Atomic, independently-committable steps; `vue-tsc` type-check must pass clean at every stop — confirm the exact script name in `package.json` before starting:
 
 1. This doc — no code changes.
-2. `schema.ts`: `MAX_GROUP_SIZE`, `groupLabel`, `migrateSupersetPairsToGroups` — dead code, nothing calls it yet.
+2. `schema.ts`: `UX_MAX_GROUP_SIZE`, `groupLabel`, `migrateSupersetPairsToGroups` — dead code, nothing calls it yet.
 3. `schema.ts`: add `groupId`, deprecate `supersetWith`, bump to `version(4)` with `.upgrade()`. Manual check: open the app on a DB with an existing pair, confirm it still displays exactly as before (upgrade ran without disturbing the still-live `supersetWith` read path).
 4. `backup.ts` + `sharing.ts`: wire `migrateSupersetPairsToGroups` into both import paths. Manual test: import a pre-v4 backup JSON containing a real pair, confirm it renders as a group post-import.
 5. `exercises.ts`: add `setExerciseGroup`/`removeFromGroup`/`pruneOrphanGroups` — unused by any screen yet.
-6. `ActiveWorkoutScreen.vue` script: `groupRows`, `addGroupRow`/`removeGroupRow`, `checkRow` siblings generalization.
+6. `ActiveWorkoutScreen.vue` script: `groupedRows`, `addGroupRow`/`removeGroupRow`, `checkRow` siblings generalization.
 7. `ActiveWorkoutScreen.vue` template: N-wide render loop, joined name header, `groupLabel`. Manual verification required (this repo's `tsconfig` has no `strictTemplates`, so template arg-shape mistakes can slip past `vue-tsc`): exercise a standalone exercise, an existing 2-exercise superset, and a fresh 3-exercise circuit — check add-set lockstep and single-rest-timer-fire on each.
 8. `RoutineBuilderScreen.vue`: select-mode + Group/Ungroup UI, contiguous reordering.
 9. Cleanup: delete `setSupersetLink`/`clearSupersetLink`/`createExercise`'s `supersetWith` param.

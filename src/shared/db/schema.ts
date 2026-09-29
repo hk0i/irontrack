@@ -38,7 +38,7 @@ export const EXERCISE_TYPES: { value: ExerciseType; label: string }[] = [
 ];
 
 /** UX-only cap (screen space) — not enforced in the DB layer or import paths. */
-export const MAX_GROUP_SIZE = 5;
+export const UX_MAX_GROUP_SIZE = 5;
 
 /** Never stored — derived from group size on every render. */
 export function groupLabel(count: number): string {

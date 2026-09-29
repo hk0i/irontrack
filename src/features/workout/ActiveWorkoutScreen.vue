@@ -188,7 +188,7 @@ async function loadWorkout() {
     if (exercise) exercises.push(exercise);
   }
 
-  // Seed every exercise's rows before blocks reach the template — groupRows()
+  // Seed every exercise's rows before blocks reach the template — groupedRows()
   // reads setRowsByExercise per member with no null-check, so a
   // partially-seeded group must never render.
   for (const exercise of exercises) {
@@ -250,7 +250,7 @@ function removeGroupRow(exerciseIds: string[], index: number) {
 }
 
 /** Zips a group's row arrays by index for interleaved rendering — rows are references, so v-model still mutates real state. */
-function groupRows(block: WorkoutBlock): { index: number; rows: SetRowState[] }[] {
+function groupedRows(block: WorkoutBlock): { index: number; rows: SetRowState[] }[] {
   const first = setRowsByExercise[block.exercises[0].id];
   if (!first) return [];
   return first
@@ -492,7 +492,7 @@ async function createAndAddAdhocExercise() {
           </div>
 
           <div class="space-y-3">
-            <div v-for="group in groupRows(block)" :key="group.index" class="rounded-xl bg-surface-2/60 p-2 space-y-2">
+            <div v-for="group in groupedRows(block)" :key="group.index" class="rounded-xl bg-surface-2/60 p-2 space-y-2">
               <div class="text-xs text-foreground-faint px-1">Set {{ group.index + 1 }}</div>
 
               <div v-for="(exercise, i) in block.exercises" :key="exercise.id">
