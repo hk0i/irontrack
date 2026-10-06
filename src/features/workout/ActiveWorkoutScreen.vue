@@ -27,7 +27,7 @@ import SegmentedToggle from '../../shared/components/SegmentedToggle.vue';
 import { settings } from '../../shared/store';
 import { activeSession, setActiveSession, clearActiveSession } from '../../shared/active-session';
 import { startRestTimer } from '../../shared/rest-timer';
-import { requestRestTimerPermission } from '../../shared/rest-alert';
+import { requestRestTimerPermission, unlockRestAudio } from '../../shared/rest-alert';
 import type { SetRowState } from '../../shared/types';
 import SetRow from './SetRow.vue';
 import FinishWorkoutModal from './FinishWorkoutModal.vue';
@@ -283,6 +283,7 @@ function findBlockForExercise(exerciseId: string): WorkoutBlock | undefined {
 
 /** Rest fires once per group, after the last member's matching row is checked (siblingRows is empty for a standalone exercise) — not on a re-save after unlockRow. */
 async function checkRow(exerciseId: string, row: SetRowState, siblingRows: SetRowState[] = []) {
+  unlockRestAudio();
   if (row.checked) return;
   // Weight is optional — bodyweight/banded exercises (scapular wall
   // slides, banded rows, etc.) have nothing to enter there. Reps is the

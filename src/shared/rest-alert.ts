@@ -21,26 +21,55 @@ export function requestRestTimerPermission(): void {
   Notification.requestPermission();
 }
 
+interface AudioSessionNavigator extends Navigator {
+  audioSession?: { type: string };
+}
+
+const BEEP_COUNT = 3;
+const BEEP_SECONDS = 0.15;
+const BEEP_GAP_SECONDS = 0.15;
+
+let audioContext: AudioContext | null = null;
+
 /**
- * Short synthesized beep — no audio asset to source/license, and it works
+ * Must run inside a real tap, before any await — iOS leaves an AudioContext
+ * created or resumed outside a user gesture suspended, which silenced the
+ * beep when it fired from the timer's setInterval-driven watch. 'transient'
+ * ducks other audio (music) instead of being muted by the ringer switch.
+ */
+export function unlockRestAudio(): void {
+  try {
+    const audioSession = (navigator as AudioSessionNavigator).audioSession;
+    if (audioSession) audioSession.type = 'transient';
+    audioContext ??= new AudioContext();
+    if (audioContext.state === 'suspended') audioContext.resume();
+  } catch {
+    // Unsupported browser — bonus cue only.
+  }
+}
+
+/**
+ * Short synthesized beeps — no audio asset to source/license, and it works
  * regardless of whatever theme/build tooling touches static assets.
  */
 export function playRestSound(): void {
+  const context = audioContext;
+  if (!context || context.state !== 'running') return;
   try {
-    const context = new AudioContext();
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.frequency.value = 880;
-    gain.gain.setValueAtTime(0.2, context.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.15);
-    oscillator.start();
-    oscillator.stop(context.currentTime + 0.15);
-    oscillator.onended = () => context.close();
+    for (let i = 0; i < BEEP_COUNT; i++) {
+      const startAt = context.currentTime + i * (BEEP_SECONDS + BEEP_GAP_SECONDS);
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.frequency.value = 880;
+      gain.gain.setValueAtTime(0.2, startAt);
+      gain.gain.exponentialRampToValueAtTime(0.001, startAt + BEEP_SECONDS);
+      oscillator.start(startAt);
+      oscillator.stop(startAt + BEEP_SECONDS);
+    }
   } catch {
-    // Autoplay-policy or unsupported-browser failures are silent —
-    // the in-app banner already shows 0, this is a bonus cue only.
+    // The in-app banner already shows 0, this is a bonus cue only.
   }
 }
 
