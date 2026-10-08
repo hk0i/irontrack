@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
@@ -19,12 +20,16 @@ function commitHash() {
   }
 }
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   // GitHub Pages serves this project from /irontrack/, not the domain root —
   // set via DEPLOY_BASE in the Pages workflow only. Docker/nginx and local
   // dev both serve from `/`, so the default here must stay `/` for them.
   base: process.env.DEPLOY_BASE || '/',
   plugins: [
+    // Self-signed HTTPS for `vite dev` only: crypto.randomUUID, Wake Lock and
+    // audioSession all need a secure context, which plain http://<LAN-IP>
+    // (how a phone reaches the dev server) isn't.
+    command === 'serve' && basicSsl(),
     vue(),
     tailwindcss(),
     VitePWA({
@@ -54,4 +59,4 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(pkg.version),
     __COMMIT_HASH__: JSON.stringify(commitHash()),
   },
-});
+}));
