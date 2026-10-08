@@ -1,5 +1,6 @@
 import { watch } from 'vue';
 import { activeSession } from './active-session';
+import { settings } from './store';
 
 let sentinel: WakeLockSentinel | null = null;
 
@@ -28,15 +29,15 @@ async function releaseWakeLock(): Promise<void> {
  * reload) is covered without touching each caller.
  */
 export function initWorkoutWakeLock(): void {
-  const hasActiveSession = () => activeSession.current !== null;
+  const shouldHoldWakeLock = () => activeSession.current !== null && settings.isWakeLockEnabled;
 
-  watch(hasActiveSession, (isActive) => {
-    if (isActive) requestWakeLock();
+  watch(shouldHoldWakeLock, (shouldHold) => {
+    if (shouldHold) requestWakeLock();
     else releaseWakeLock();
   }, { immediate: true });
 
   // The browser drops the lock whenever the page is hidden, so it has to be re-acquired on return.
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && hasActiveSession()) requestWakeLock();
+    if (!document.hidden && shouldHoldWakeLock()) requestWakeLock();
   });
 }

@@ -16,6 +16,9 @@ import {
   setTheme,
   setWarmupRestSeconds,
   setRegularRestSeconds,
+  setIsRestSoundEnabled,
+  setIsRestVibrationEnabled,
+  setIsWakeLockEnabled,
   type Theme,
 } from '../../shared/store';
 import type { WeightUnit } from '../../shared/db';
@@ -33,6 +36,11 @@ const THEMES: { value: Theme; label: string }[] = [
 const UNITS: { value: WeightUnit; label: string }[] = [
   { value: 'lbs', label: 'LBs' },
   { value: 'kg', label: 'KGs' },
+];
+
+const ON_OFF_OPTIONS: { value: 'on' | 'off'; label: string }[] = [
+  { value: 'on', label: 'On' },
+  { value: 'off', label: 'Off' },
 ];
 
 const importStatus = ref('');
@@ -172,6 +180,23 @@ function cancelRoutinesImport() {
           class="w-full rounded-xl bg-surface border border-border px-4 py-3 text-base"
         />
         <p class="text-xs text-foreground-faint mt-2">Rest timer duration after logging a regular exercise's set.</p>
+      </div>
+
+      <div>
+        <label class="text-sm text-foreground-muted mb-2 block">Rest-over sound</label>
+        <SegmentedToggle :options="ON_OFF_OPTIONS" :model-value="settings.isRestSoundEnabled ? 'on' : 'off'" @update:model-value="setIsRestSoundEnabled($event === 'on')" />
+      </div>
+
+      <div>
+        <label class="text-sm text-foreground-muted mb-2 block">Rest-over vibration</label>
+        <SegmentedToggle :options="ON_OFF_OPTIONS" :model-value="settings.isRestVibrationEnabled ? 'on' : 'off'" @update:model-value="setIsRestVibrationEnabled($event === 'on')" />
+        <p class="text-xs text-foreground-faint mt-2">Android only — iPhone browsers can't vibrate.</p>
+      </div>
+
+      <div>
+        <label class="text-sm text-foreground-muted mb-2 block">Keep screen awake during workouts</label>
+        <SegmentedToggle :options="ON_OFF_OPTIONS" :model-value="settings.isWakeLockEnabled ? 'on' : 'off'" @update:model-value="setIsWakeLockEnabled($event === 'on')" />
+        <p class="text-xs text-foreground-faint mt-2">Keeps the rest alert on time, but uses more battery.</p>
       </div>
 
       <div class="space-y-2">

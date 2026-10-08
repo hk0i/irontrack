@@ -7,6 +7,7 @@
  */
 import { onMounted, watch } from 'vue';
 import { restTimer, secondsLeft, clearRestTimer } from '../rest-timer';
+import { settings } from '../store';
 import { playRestSound, vibrateRestOver, showRestOverNotification } from '../rest-alert';
 
 // A timer that was already expired before this component ever mounted —
@@ -30,8 +31,8 @@ onMounted(() => {
 watch(secondsLeft, (value, previous) => {
   if (value === 0 && previous > 0 && restTimer.endAt !== null) {
     clearRestTimer();
-    playRestSound();
-    vibrateRestOver();
+    if (settings.isRestSoundEnabled) playRestSound();
+    if (settings.isRestVibrationEnabled) vibrateRestOver();
     showRestOverNotification();
   }
 });

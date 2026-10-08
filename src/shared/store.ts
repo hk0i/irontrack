@@ -14,6 +14,9 @@ const LENGTH_STORAGE_KEY = 'preferredLengthUnit';
 const THEME_STORAGE_KEY = 'theme';
 const WARMUP_REST_STORAGE_KEY = 'warmupRestSeconds';
 const REGULAR_REST_STORAGE_KEY = 'regularRestSeconds';
+const IS_REST_SOUND_ENABLED_STORAGE_KEY = 'isRestSoundEnabled';
+const IS_REST_VIBRATION_ENABLED_STORAGE_KEY = 'isRestVibrationEnabled';
+const IS_WAKE_LOCK_ENABLED_STORAGE_KEY = 'isWakeLockEnabled';
 const DEFAULT_WARMUP_REST_SECONDS = 30;
 const DEFAULT_REGULAR_REST_SECONDS = 90;
 
@@ -30,6 +33,9 @@ interface Settings {
   theme: Theme;
   warmupRestSeconds: number;
   regularRestSeconds: number;
+  isRestSoundEnabled: boolean;
+  isRestVibrationEnabled: boolean;
+  isWakeLockEnabled: boolean;
 }
 
 function loadTheme(): Theme {
@@ -47,12 +53,23 @@ function loadRestSeconds(key: string, fallback: number): number {
   return Number.isFinite(stored) && stored > 0 ? stored : fallback;
 }
 
+/**
+ * Opt-out flags: absent key means enabled, so existing users keep the
+ * alerts they already had until they switch one off.
+ */
+function loadIsEnabled(key: string): boolean {
+  return localStorage.getItem(key) !== 'false';
+}
+
 export const settings: Settings = reactive({
   preferredUnit: (localStorage.getItem(STORAGE_KEY) as WeightUnit) || 'lbs',
   preferredLengthUnit: (localStorage.getItem(LENGTH_STORAGE_KEY) as LengthUnit) || 'in',
   theme: loadTheme(),
   warmupRestSeconds: loadRestSeconds(WARMUP_REST_STORAGE_KEY, DEFAULT_WARMUP_REST_SECONDS),
   regularRestSeconds: loadRestSeconds(REGULAR_REST_STORAGE_KEY, DEFAULT_REGULAR_REST_SECONDS),
+  isRestSoundEnabled: loadIsEnabled(IS_REST_SOUND_ENABLED_STORAGE_KEY),
+  isRestVibrationEnabled: loadIsEnabled(IS_REST_VIBRATION_ENABLED_STORAGE_KEY),
+  isWakeLockEnabled: loadIsEnabled(IS_WAKE_LOCK_ENABLED_STORAGE_KEY),
 });
 
 // Applied once at module load (not just on setTheme) so a reload lands on
@@ -84,4 +101,19 @@ export function setWarmupRestSeconds(seconds: number): void {
 export function setRegularRestSeconds(seconds: number): void {
   settings.regularRestSeconds = seconds;
   localStorage.setItem(REGULAR_REST_STORAGE_KEY, String(seconds));
+}
+
+export function setIsRestSoundEnabled(isEnabled: boolean): void {
+  settings.isRestSoundEnabled = isEnabled;
+  localStorage.setItem(IS_REST_SOUND_ENABLED_STORAGE_KEY, String(isEnabled));
+}
+
+export function setIsRestVibrationEnabled(isEnabled: boolean): void {
+  settings.isRestVibrationEnabled = isEnabled;
+  localStorage.setItem(IS_REST_VIBRATION_ENABLED_STORAGE_KEY, String(isEnabled));
+}
+
+export function setIsWakeLockEnabled(isEnabled: boolean): void {
+  settings.isWakeLockEnabled = isEnabled;
+  localStorage.setItem(IS_WAKE_LOCK_ENABLED_STORAGE_KEY, String(isEnabled));
 }
