@@ -73,6 +73,13 @@ export function playRestSound(): void {
   }
 }
 
+const REST_OVER_VIBRATION_MS = [200, 100, 200, 100, 400];
+
+export function vibrateRestOver(): void {
+  // Absent on iOS Safari; optional call keeps this a no-op there.
+  navigator.vibrate?.(REST_OVER_VIBRATION_MS);
+}
+
 /**
  * Skipped when the document is visible — the in-app banner hitting zero is
  * already the alert in that case, a Notification on top would be redundant.
