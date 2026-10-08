@@ -4,6 +4,7 @@ import App from './App.vue';
 import { router } from './router';
 import { ensureMetricBlueprintsSeeded } from './shared/db';
 import { initAppUpdateWatcher } from './shared/app-update.js';
+import { initWorkoutWakeLock } from './shared/wake-lock';
 
 // Top-level await in a module script: guarantees the default metric
 // blueprints exist before any screen (including Body Metrics) can render.
@@ -13,6 +14,7 @@ const app = createApp(App);
 app.use(router);
 await router.isReady();
 app.mount('#app');
+initWorkoutWakeLock();
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 const UPDATE_CHECK_INTERVAL_MS = ONE_HOUR_MS;
