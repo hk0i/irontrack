@@ -37,12 +37,12 @@ let audioContext: AudioContext | null = null;
  * beep when it fired from the timer's setInterval-driven watch. 'transient'
  * ducks other audio (music) instead of being muted by the ringer switch.
  */
-export function unlockRestAudio(): void {
+export async function unlockRestAudio(): Promise<void> {
   try {
     const audioSession = (navigator as AudioSessionNavigator).audioSession;
     if (audioSession) audioSession.type = 'transient';
     audioContext ??= new AudioContext();
-    if (audioContext.state === 'suspended') audioContext.resume();
+    if (audioContext.state === 'suspended') await audioContext.resume();
   } catch {
     // Unsupported browser — bonus cue only.
   }

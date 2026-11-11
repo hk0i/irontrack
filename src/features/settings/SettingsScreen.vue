@@ -23,6 +23,7 @@ import {
 } from '../../shared/store';
 import type { WeightUnit } from '../../shared/db';
 import ScreenHeader from '../../shared/components/ScreenHeader.vue';
+import { unlockRestAudio, playRestSound, vibrateRestOver } from '../../shared/rest-alert';
 import SegmentedToggle from '../../shared/components/SegmentedToggle.vue';
 import ImportConflictsModal from '../../shared/components/ImportConflictsModal.vue';
 
@@ -42,6 +43,12 @@ const ON_OFF_OPTIONS: { value: 'on' | 'off'; label: string }[] = [
   { value: 'on', label: 'On' },
   { value: 'off', label: 'Off' },
 ];
+
+async function testRestAlert() {
+  await unlockRestAudio();
+  if (settings.isRestSoundEnabled) playRestSound();
+  if (settings.isRestVibrationEnabled) vibrateRestOver();
+}
 
 const importStatus = ref('');
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -192,6 +199,10 @@ function cancelRoutinesImport() {
         <SegmentedToggle :options="ON_OFF_OPTIONS" :model-value="settings.isRestVibrationEnabled ? 'on' : 'off'" @update:model-value="setIsRestVibrationEnabled($event === 'on')" />
         <p class="text-xs text-foreground-faint mt-2">Android only — iPhone browsers can't vibrate.</p>
       </div>
+
+      <button @click="testRestAlert" class="w-full py-3 rounded-xl bg-surface border border-border font-semibold">
+        Test rest alert
+      </button>
 
       <div>
         <label class="text-sm text-foreground-muted mb-2 block">Keep screen awake during workouts</label>
