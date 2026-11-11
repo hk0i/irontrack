@@ -207,50 +207,48 @@
         -khtml-user-select: none; -moz-user-select: none;
         -ms-user-select: none; user-select: none;
         padding: 0 4px; width: 4em;
-        color: #aaaaaa;
       }
-    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    pre.numberSource { margin-left: 3em;  padding-left: 4px; }
     div.sourceCode
-      {   }
+      { color: #cccccc; background-color: #303030; }
     @media screen {
     pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
     }
-    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
-    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-    code span.at { color: #7d9029; } /* Attribute */
-    code span.bn { color: #40a070; } /* BaseN */
-    code span.bu { color: #008000; } /* BuiltIn */
-    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-    code span.ch { color: #4070a0; } /* Char */
-    code span.cn { color: #880000; } /* Constant */
-    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
-    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
-    code span.dt { color: #902000; } /* DataType */
-    code span.dv { color: #40a070; } /* DecVal */
-    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.al { color: #ffcfaf; } /* Alert */
+    code span.an { color: #7f9f7f; font-weight: bold; } /* Annotation */
+    code span.at { } /* Attribute */
+    code span.bn { color: #dca3a3; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #f0dfaf; } /* ControlFlow */
+    code span.ch { color: #dca3a3; } /* Char */
+    code span.cn { color: #dca3a3; font-weight: bold; } /* Constant */
+    code span.co { color: #7f9f7f; } /* Comment */
+    code span.cv { color: #7f9f7f; font-weight: bold; } /* CommentVar */
+    code span.do { color: #7f9f7f; } /* Documentation */
+    code span.dt { color: #dfdfbf; } /* DataType */
+    code span.dv { color: #dcdccc; } /* DecVal */
+    code span.er { color: #c3bf9f; } /* Error */
     code span.ex { } /* Extension */
-    code span.fl { color: #40a070; } /* Float */
-    code span.fu { color: #06287e; } /* Function */
-    code span.im { color: #008000; font-weight: bold; } /* Import */
-    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
-    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
-    code span.op { color: #666666; } /* Operator */
-    code span.ot { color: #007020; } /* Other */
-    code span.pp { color: #bc7a00; } /* Preprocessor */
-    code span.sc { color: #4070a0; } /* SpecialChar */
-    code span.ss { color: #bb6688; } /* SpecialString */
-    code span.st { color: #4070a0; } /* String */
-    code span.va { color: #19177c; } /* Variable */
-    code span.vs { color: #4070a0; } /* VerbatimString */
-    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    code span.fl { color: #c0bed1; } /* Float */
+    code span.fu { color: #efef8f; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #7f9f7f; font-weight: bold; } /* Information */
+    code span.kw { color: #f0dfaf; } /* Keyword */
+    code span.op { color: #f0efd0; } /* Operator */
+    code span.ot { color: #efef8f; } /* Other */
+    code span.pp { color: #ffcfaf; font-weight: bold; } /* Preprocessor */
+    code span.sc { color: #dca3a3; } /* SpecialChar */
+    code span.ss { color: #cc9393; } /* SpecialString */
+    code span.st { color: #cc9393; } /* String */
+    code span.va { } /* Variable */
+    code span.vs { color: #cc9393; } /* VerbatimString */
+    code span.wa { color: #7f9f7f; font-weight: bold; } /* Warning */
   </style>
-
 <style>
-:root { color-scheme: light; --ink:#182b3a; --muted:#617382; --accent:#007b75; --line:#dce5e9; }
+:root { color-scheme: dark; --ink:#d6e1e9; --muted:#a1b2c0; --accent:#76d7c8; --line:#334452; }
 * { box-sizing:border-box; }
-html { scroll-behavior:smooth; background:#edf2f4; }
-body { max-width:1120px; margin:40px auto; padding:60px 72px; background:#fff; color:var(--ink); font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; box-shadow:0 16px 64px #18324412; border-top:8px solid var(--accent); border-radius:8px; }
+html { scroll-behavior:smooth; background:#0c121a; }
+body { max-width:1120px; margin:40px auto; padding:60px 72px; background:#141e29; color:var(--ink); font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; box-shadow:0 16px 64px #18324412; border-top:8px solid var(--accent); border-radius:8px; }
 header { border-bottom:1px solid var(--line); padding-bottom:20px; margin-bottom:28px; }
 header h1 { color:var(--accent); font-size:14px; letter-spacing:.15em; text-transform:uppercase; }
 h1 { font-size:40px; line-height:1.15; letter-spacing:-.035em; margin:32px 0 20px; }
@@ -259,27 +257,33 @@ h3 { font-size:20px; line-height:1.4; margin-top:36px; }
 p,li { max-width:88ch; }
 a { color:var(--accent); text-decoration-thickness:1px; text-underline-offset:3px; overflow-wrap:anywhere; }
 strong { font-weight:650; }
-blockquote { margin:28px 0; padding:14px 24px; background:#eaf7f3; border-left:4px solid var(--accent); border-radius:0 8px 8px 0; }
+blockquote { margin:28px 0; padding:14px 24px; background:#19332f; border-left:4px solid var(--accent); border-radius:0 8px 8px 0; }
 blockquote p { margin:6px 0; }
-#TOC { background:#f4f7f9; border:1px solid var(--line); border-radius:10px; padding:20px 28px; margin-bottom:40px; }
+#TOC { background:#1a2734; border:1px solid var(--line); border-radius:10px; padding:20px 28px; margin-bottom:40px; }
 #TOC > ul { columns:2; padding-left:18px; margin:0; }
 #TOC ul ul { display:none; }
 #TOC li { break-inside:avoid; padding:4px 0; font-size:14px; }
 table { width:100%; border-collapse:collapse; font-size:14px; line-height:1.55; margin:24px 0; display:block; overflow-x:auto; }
-th { text-align:left; background:#193e48; color:white; font-weight:600; }
+th { text-align:left; background:#203b46; color:white; font-weight:600; }
 th,td { padding:12px 14px; border:1px solid var(--line); vertical-align:top; min-width:120px; }
-tr:nth-child(even) td { background:#f5f8fa; }
-code { font: .86em/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; background:#edf3f5; border-radius:4px; padding:2px 5px; }
-pre { border:1px solid #d5e3e7; border-radius:9px; background:#f1f6f8; padding:22px; overflow-x:auto; line-height:1.55; }
+tr:nth-child(even) td { background:#192532; }
+code { font: .86em/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; background:#223140; border-radius:4px; padding:2px 5px; }
+pre { border:1px solid #334452; border-radius:9px; background:#101923; padding:22px; overflow-x:auto; line-height:1.55; }
 pre code { background:transparent; padding:0; border:0; border-radius:0; white-space:pre; font-size:12px; }
 div.sourceCode { margin:24px 0; }
 li { padding:3px 0; }
-::selection { background:#bfe9df; }
+::selection { background:#305e62; }
 @media(max-width:800px) { body { margin:0; padding:28px 20px; border-radius:0; } h1 { font-size:32px; } #TOC > ul { columns:1; } th,td { padding:9px; } }
 @media print { html { background:white; } body { margin:0; max-width:none; padding:0; box-shadow:none; border:0; font-size:10pt; } #TOC { display:none; } h2,h3 { break-after:avoid; } pre,blockquote,tr { break-inside:avoid; } a { color:inherit; } }
-</style>
 
-<meta name="source-sha256" content="b905ed2818513e1073aeb885fa87b7336d363c6e5cd4414af800cdfd98faf52d">
+html { color:var(--ink); }
+pre, pre code { color:#d6e1e9; }
+div.sourceCode { background:transparent; }
+.mermaid-diagram { margin:26px 0; padding:18px; border:1px solid var(--line); background:#101923; border-radius:10px; overflow-x:auto; text-align:center; }
+.mermaid-diagram svg { height:auto; max-width:100%; }
+@media print { :root { --ink:#172630; --accent:#00665e; --line:#ccd4db; } html,body { color:#172630; background:white; } pre,pre code { color:#172630; } }
+</style>
+<meta name="source-sha256" content="844dab5884c5c844a132a9108678b408f973b5e41d4fd543d7d52e19cd3001dd">
 </head>
 <body>
 <header id="title-block-header">
@@ -330,6 +334,25 @@ href="#f7--p2--last-workout-calculations-confuse-multiple-same-day-sessions"
 id="toc-f7--p2--last-workout-calculations-confuse-multiple-same-day-sessions">F7
 · P2 · “Last workout” calculations confuse multiple same-day
 sessions</a></li>
+<li><a
+href="#f8--p2--rep-only-volume-is-displayed-and-converted-as-weight"
+id="toc-f8--p2--rep-only-volume-is-displayed-and-converted-as-weight">F8
+· P2 · Rep-only volume is displayed and converted as weight</a></li>
+<li><a href="#f9--p2--editing-history-leaves-derived-statistics-stale"
+id="toc-f9--p2--editing-history-leaves-derived-statistics-stale">F9 · P2
+· Editing history leaves derived statistics stale</a></li>
+<li><a
+href="#f10--p2--importing-a-copy-retains-the-original-groups-identity"
+id="toc-f10--p2--importing-a-copy-retains-the-original-groups-identity">F10
+· P2 · Importing a copy retains the original group's identity</a></li>
+<li><a
+href="#f11--p2--mixed-legacy-migration-can-overwrite-an-existing-group"
+id="toc-f11--p2--mixed-legacy-migration-can-overwrite-an-existing-group">F11
+· P2 · Mixed legacy migration can overwrite an existing group</a></li>
+<li><a
+href="#f12--p2--a-pending-wake-lock-request-can-outlive-disabling-it"
+id="toc-f12--p2--a-pending-wake-lock-request-can-outlive-disabling-it">F12
+· P2 · A pending wake-lock request can outlive disabling it</a></li>
 </ul></li>
 <li><a href="#4-architecture-changes-worth-making-in-either-framework"
 id="toc-4-architecture-changes-worth-making-in-either-framework">4.
@@ -350,13 +373,17 @@ id="toc-5-sveltekit-switch-or-maintain">5. SvelteKit: switch or
 maintain?</a></li>
 <li><a href="#6-suggested-order" id="toc-6-suggested-order">6. Suggested
 order</a></li>
+<li><a href="#7-follow-up-review-assessment--gpt-6-astra"
+id="toc-7-follow-up-review-assessment--gpt-6-astra">7. Follow-up review
+assessment · GPT-6 Astra</a></li>
 </ul></li>
 </ul>
 </nav>
 <h1 id="irontrack-architecture-and-bug-review">IronTrack: architecture
 and bug review</h1>
-<p><strong>10 November 2026 · Codex · Quick review · Commit
-<code>bd7a07e</code></strong></p>
+<p><strong>10 November 2026 · Initial review: Sol · Follow-up: GPT-6
+Astra · Source baseline <code>bd7a07e</code>; follow-up checkout
+<code>5c90a75</code></strong></p>
 <blockquote>
 <p><strong>Recommendation: maintain Vue and fix data integrity and
 offline delivery first.</strong> SvelteKit offers useful routing and
@@ -414,31 +441,31 @@ without running the separate type check</td>
 </tr>
 </tbody>
 </table>
-<p>The harness verified control flow with mocks, not real IndexedDB or
-service-worker lifecycle behavior. Other findings below are
-source-confirmed paths with reproduction recipes, not claims of
-end-to-end execution. The build also emitted a PWA toolchain deprecation
-warning about <code>inlineDynamicImports</code>; it did not fail.</p>
+<p>The build/type-check results above are from the initial review, not
+fresh runs during the documentation-only follow-up. Application source
+is unchanged between the two reviewed commits. The harness verified
+control flow with mocks, not real IndexedDB or service-worker lifecycle
+behavior. Other findings below are source-confirmed paths with
+reproduction recipes, not claims of end-to-end execution. The build also
+emitted a PWA toolchain deprecation warning about
+<code>inlineDynamicImports</code>; it did not fail.</p>
 <h2 id="2-architecture-today">2. Architecture today</h2>
-<pre class="text"><code>                         BROWSER / INSTALLED PWA
- ┌─────────────────────────────────────────────────────────────────┐
- │ Vue Router → App.vue → feature screens → reusable UI components │
- │                          │                      │               │
- │                          ▼                      ▼               │
- │                 shared/db helpers       Vue reactive singletons │
- │                 units + aggregation     preferences / session   │
- │                          │               rest deadline          │
- │                          ▼                      ▼               │
- │                 Dexie / IndexedDB           localStorage        │
- │                 6 tables, schema v4                             │
- └─────────────────────────────────────────────────────────────────┘
-            ▲
-            │ app shell + assets
-    Custom service worker / Cache Storage
-            ▲
-            │
-    Vite + PWA build → GitHub Pages (/irontrack/)
-                    ↘ Docker / nginx (/)</code></pre>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode mermaid"><code class="sourceCode mermaid"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">flowchart</span> <span class="cn">TB</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">subgraph</span> <span class="dt">Browser</span>[<span class="vs">Browser / installed PWA</span>]</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Router</span>[<span class="vs">Vue Router</span>] <span class="pp">--&gt;</span> <span class="dt">App</span>[<span class="vs">App.vue</span>]</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">App</span> <span class="pp">--&gt;</span> <span class="dt">Screens</span>[<span class="vs">Feature screens</span>]</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Screens</span> <span class="pp">--&gt;</span> <span class="dt">UI</span>[<span class="vs">Reusable components</span>]</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Screens</span> <span class="pp">--&gt;</span> <span class="dt">Helpers</span>[<span class="vs">Domain DB helpers / units / aggregation</span>]</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Screens</span> <span class="pp">--&gt;</span> <span class="dt">State</span>[<span class="vs">Vue singletons: preferences / active session / rest deadline</span>]</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Helpers</span> <span class="pp">--&gt;</span> <span class="dt">IDB</span>[(<span class="vs">Dexie / IndexedDB: 6 tables, schema v4</span>)]</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">State</span> <span class="pp">--&gt;</span> <span class="dt">Local</span>[(<span class="vs">localStorage</span>)]</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Build</span>[<span class="vs">Vite + PWA build</span>] <span class="pp">--&gt;</span> <span class="dt">Pages</span>[<span class="vs">GitHub Pages: /irontrack/</span>]</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Build</span> <span class="pp">--&gt;</span> <span class="dt">Nginx</span>[<span class="vs">Docker / nginx: /</span>]</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Pages</span> <span class="pp">--&gt;</span> <span class="dt">Worker</span>[<span class="vs">Custom service worker / Cache Storage</span>]</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Nginx</span> <span class="pp">--&gt;</span> <span class="dt">Worker</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Worker</span> <span class="pp">--&gt;</span> <span class="dt">App</span></span></code></pre></div>
 <p><strong>Good foundations.</strong> Feature folders are easy to
 navigate; the domain DB helpers centralize writes and weight conversion;
 backup writes are transactional; routine sharing excludes workout and
@@ -559,16 +586,19 @@ list. The same problem applies to exercise type/group changes. The
 comment says a same-name record is reused, but the implementation
 overwrites it.</li>
 </ul>
-<pre class="text"><code> BEFORE                                 PROPOSED AFTER
- JSON → arrays? → bulkPut               JSON → supported format/version?
-                                                  ↓
-                                        validate every row + references
-                                                  ↓
-                                        normalize canonical units
-                                                  ↓
-                                        compare meaningful fields
-                                                  ↓
-                                        preview conflicts → transaction</code></pre>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode mermaid"><code class="sourceCode mermaid"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">flowchart</span> <span class="cn">LR</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">subgraph</span> <span class="dt">Before</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">JSON1</span>[<span class="vs">JSON</span>] <span class="pp">--&gt;</span> <span class="dt">Arrays</span>[<span class="vs">Check arrays only</span>] <span class="pp">--&gt;</span> <span class="dt">Put</span>[<span class="vs">bulkPut</span>]</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">subgraph</span> <span class="dt">Proposed</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">JSON2</span>[<span class="vs">JSON</span>] <span class="pp">--&gt;</span> <span class="dt">Version</span>[<span class="vs">Validate format and version</span>]</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Version</span> <span class="pp">--&gt;</span> <span class="dt">Rows</span>[<span class="vs">Validate rows and references</span>]</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Rows</span> <span class="pp">--&gt;</span> <span class="dt">Units</span>[<span class="vs">Normalize canonical units</span>]</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Units</span> <span class="pp">--&gt;</span> <span class="dt">Compare</span>[<span class="vs">Compare meaningful fields</span>]</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Compare</span> <span class="pp">--&gt;</span> <span class="dt">Conflicts</span>[<span class="vs">Resolve conflicts</span>]</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Conflicts</span> <span class="pp">--&gt;</span> <span class="dt">TX</span>[<span class="vs">Commit transaction</span>]</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span></span></code></pre></div>
 <p>Keep legacy formats supported through explicit normalization. Compare
 semantic content while excluding export timestamps; apply user
 resolutions before committing. Treat invalid optional tables as errors
@@ -615,11 +645,14 @@ new <code>index.html</code> before the new hashed JS has been cached.
 Going offline at that point can leave an HTML/asset generation mismatch.
 This is a source-derived lifecycle risk; it was not reproduced in a
 browser.</p>
-<pre class="text"><code> BEFORE: one network-first policy for all GET requests
-
- AFTER:  navigation ── bounded network attempt ── app-shell fallback
-         hashed asset ── current-build precache first
-         activation ── clean only app-owned older caches</code></pre>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode mermaid"><code class="sourceCode mermaid"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">flowchart</span> <span class="cn">TB</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Before</span>[<span class="vs">Current: network first for all GET requests</span>]</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Before</span> <span class="pp">-.</span> <span class="vs">replace policy </span><span class="pp">.-&gt;</span> <span class="dt">Kind</span>{<span class="vs">Request kind</span>}</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Kind</span> <span class="pp">--&gt;</span><span class="vs">|Navigation|</span> <span class="dt">Network</span>[<span class="vs">Bounded network attempt</span>]</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Network</span> <span class="pp">--&gt;</span><span class="vs">|Unavailable or unsuitable response|</span> <span class="dt">Shell</span>[<span class="vs">Consistent cached app shell</span>]</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Kind</span> <span class="pp">--&gt;</span><span class="vs">|Hashed asset|</span> <span class="dt">Precache</span>[<span class="vs">Current-build precache first</span>]</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Activate</span>[<span class="vs">Activation</span>] <span class="pp">--&gt;</span> <span class="dt">Cleanup</span>[<span class="vs">Delete only app-owned older caches</span>]</span></code></pre></div>
 <p>Account for the existing GitHub Pages fallback: deep routes
 intentionally receive the app shell with a 404 status. Distinguish that
 navigation case from missing asset requests. Keep the app shell and its
@@ -713,22 +746,154 @@ ID, start time, and logical date; select the prior session first, then
 its best set. Use a deterministic date/created-time fallback for legacy
 sets. <strong>Acceptance:</strong> two or three same-day sessions remain
 correctly ordered and historical views exclude later sessions.</p>
+<h3 id="f8--p2--rep-only-volume-is-displayed-and-converted-as-weight">F8
+· P2 · Rep-only volume is displayed and converted as weight</h3>
+<p><strong>Evidence:</strong> <a
+href="../src/shared/setAggregation.ts#L44">setAggregation.ts:44</a>, <a
+href="../src/features/progress/ProgressChartScreen.vue#L158">ProgressChartScreen.vue:158</a>.</p>
+<p><code>computeSetVolume</code> returns raw reps for mobility,
+bodyweight without a recorded body weight, and bands without recorded
+colors. The view always passes that number through
+<code>formatWeight</code> and labels it lbs/kg. A 12-rep mobility set
+therefore displays <strong>12 lbs volume</strong>, or <strong>5.4 kg
+volume</strong> after changing units. This arithmetic was reproduced
+using the actual extracted volume function. Adding body-weight logs also
+makes a bodyweight series mix rep counts and mass-times-reps across
+dates.</p>
+<p><strong>Proposed change:</strong> retain measurement kind with the
+value; never convert reps to kg. Keep rep-only points separate from
+loaded-volume points, or use a consistently rep-based series when load
+is unavailable. Loaded volume should be labeled <code>lb·reps</code> or
+<code>kg·reps</code>.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode ts"><code class="sourceCode typescript"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Before: a bare number loses its meaning.</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>volume<span class="op">:</span> <span class="dt">number</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Proposed: aggregation and formatting preserve dimensions.</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> Volume <span class="op">=</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> { kind<span class="op">:</span> <span class="st">&#39;reps&#39;</span><span class="op">;</span> value<span class="op">:</span> <span class="dt">number</span> }</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="op">|</span> { kind<span class="op">:</span> <span class="st">&#39;load&#39;</span><span class="op">;</span> valueInLbReps<span class="op">:</span> <span class="dt">number</span> }<span class="op">;</span></span></code></pre></div>
+<p><strong>Acceptance:</strong> 12 mobility reps remain 12 after
+switching units; missing-load days are never plotted as though they were
+comparable loaded-volume values.</p>
+<h3 id="f9--p2--editing-history-leaves-derived-statistics-stale">F9 · P2
+· Editing history leaves derived statistics stale</h3>
+<p><strong>Evidence:</strong> <a
+href="../src/features/history/WorkoutSessionDetailScreen.vue#L182">WorkoutSessionDetailScreen.vue:182</a>,
+<a
+href="../src/features/history/WorkoutSessionDetailScreen.vue#L211">WorkoutSessionDetailScreen.vue:211</a>,
+<a
+href="../src/features/history/WorkoutSessionDetailScreen.vue#L254">WorkoutSessionDetailScreen.vue:254</a>.</p>
+<p>Save and delete update the visible set arrays, but
+<code>personalBests</code> and <code>volumeHistory</code> are fetched
+only on mount. For example, raise a 100 lb personal best to 110 lb: the
+new set is compared against the old 100 lb snapshot and loses its
+“Heaviest ever” badge. Delete the best set and the next-best set is not
+recognized. The volume sparkline remains unchanged until reopening the
+screen. This is source-confirmed; the UI reproduction has not been
+run.</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode mermaid"><code class="sourceCode mermaid"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">flowchart</span> <span class="cn">LR</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Before</span>[<span class="vs">Current: edit or delete</span>] <span class="pp">--&gt;</span> <span class="dt">Rows</span>[<span class="vs">Update visible rows only</span>]</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">After</span>[<span class="vs">Proposed: successful mutation</span>] <span class="pp">--&gt;</span> <span class="dt">Refresh</span>[<span class="vs">Refresh affected history and aggregates</span>]</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Refresh</span> <span class="pp">--&gt;</span> <span class="dt">View</span>[<span class="vs">Rows + PR badges + volume chart agree</span>]</span></code></pre></div>
+<p>Reuse existing query helpers in one refresh operation, or subscribe
+the view to relevant database changes. <strong>Acceptance:</strong>
+badges and chart update immediately after edits/deletes without
+navigation.</p>
+<h3
+id="f10--p2--importing-a-copy-retains-the-original-groups-identity">F10
+· P2 · Importing a copy retains the original group's identity</h3>
+<p><strong>Evidence:</strong> <a
+href="../src/shared/db/sharing.ts#L93">sharing.ts:93</a>, <a
+href="../src/shared/db/sharing.ts#L104">sharing.ts:104</a>, <a
+href="../src/shared/db/exercises.ts#L65">exercises.ts:65</a>.</p>
+<p>Copy resolution remaps exercise IDs but carries <code>groupId</code>
+over unchanged. Reproduce with local A/B in group G; import renamed
+versions of both exercises and choose Copy. Copied A′/B′ and original
+A/B now share G. Put all four in a routine and they render as one
+circuit instead of two supersets. Removing A from its original group
+also leaves B linked because global orphan pruning still counts the
+copied exercises. This is a separate copy-isolation defect beyond F2's
+name-only conflict check.</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode mermaid"><code class="sourceCode mermaid"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="kw">flowchart</span> <span class="cn">LR</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">G</span>[<span class="vs">Current shared group G</span>] <span class="pp">--&gt;</span> <span class="dt">A</span>[<span class="vs">Original A / B</span>]</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">G</span> <span class="pp">--&gt;</span> <span class="dt">Copies</span>[<span class="vs">Copied A′ / B′</span>]</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">G1</span>[<span class="vs">Proposed original group G</span>] <span class="pp">--&gt;</span> <span class="dt">Original</span>[<span class="vs">Original A / B</span>]</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">G2</span>[<span class="vs">Proposed fresh copied group G′</span>] <span class="pp">--&gt;</span> <span class="dt">Independent</span>[<span class="vs">Copied A′ / B′</span>]</span></code></pre></div>
+<p><strong>Proposed change:</strong> when copying an independent group,
+map its group ID once as well as its exercise IDs. Resolve
+partial-copy/shared-member cases explicitly instead of blindly remapping
+every imported group. Longer term, routine-entry ownership removes this
+global coupling. <strong>Acceptance:</strong> copied groups can be
+grouped/ungrouped independently of originals.</p>
+<h3
+id="f11--p2--mixed-legacy-migration-can-overwrite-an-existing-group">F11
+· P2 · Mixed legacy migration can overwrite an existing group</h3>
+<p><strong>Evidence:</strong> <a
+href="../src/shared/db/schema.ts#L90">schema.ts:90</a>.</p>
+<p>The outer migration loop skips exercises with an existing
+<code>groupId</code>, but its connected-component traversal does not.
+Given legacy A with <code>supersetWith: B</code> and modern B with an
+existing group, visiting A first pulls B into a newly generated group
+and overwrites B's group. Visiting B first preserves B and leaves A
+ungrouped. The extracted migration function reproduced both results.
+This requires a mixed-format import; it is not evidence that a clean
+all-legacy upgrade fails.</p>
+<p><strong>Proposed change:</strong> exclude already-migrated nodes
+throughout traversal, including reverse-edge discovery, and specify how
+legacy links to modern nodes are normalized.
+<strong>Acceptance:</strong> reversing input order preserves every
+existing group; all-legacy connected components still migrate
+correctly.</p>
+<h3
+id="f12--p2--a-pending-wake-lock-request-can-outlive-disabling-it">F12 ·
+P2 · A pending wake-lock request can outlive disabling it</h3>
+<p><strong>Evidence:</strong> <a
+href="../src/shared/wake-lock.ts#L7">wake-lock.ts:7</a>, <a
+href="../src/shared/wake-lock.ts#L33">wake-lock.ts:33</a>.</p>
+<p>Start acquiring a wake lock, then disable “Keep screen awake” or
+finish the workout before the request resolves. The release path sees
+<code>sentinel === null</code>. When acquisition later resolves, it
+installs the lock without checking whether it is still wanted. A
+mock-controlled run of the actual module confirmed zero releases after
+resolving a request that had been disabled. Overlapping requests and old
+release listeners also share a mutable sentinel.</p>
+<p><strong>Proposed change:</strong> serialize acquisition, recheck
+current intent after awaiting it, immediately release stale results, and
+clear the sentinel on release only if that event belongs to the held
+lock.</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode mermaid"><code class="sourceCode mermaid"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="kw">sequenceDiagram</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">participant</span><span class="vs"> UI</span><span class="kw"> as </span><span class="vs">Setting / workout</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">participant</span><span class="vs"> Manager</span><span class="kw"> as </span><span class="vs">Wake-lock manager</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">participant</span><span class="vs"> Browser</span><span class="kw"> as </span><span class="vs">Browser API</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">UI</span><span class="pp">-&gt;&gt;</span><span class="dt">Manager</span><span class="at">:</span><span class="vs"> Enable / start</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Manager</span><span class="pp">-&gt;&gt;</span><span class="dt">Browser</span><span class="at">:</span><span class="vs"> Request lock</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">UI</span><span class="pp">-&gt;&gt;</span><span class="dt">Manager</span><span class="at">:</span><span class="vs"> Disable / finish while pending</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Browser</span><span class="pp">--&gt;&gt;</span><span class="dt">Manager</span><span class="at">:</span><span class="vs"> Lock granted</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">Note</span> <span class="cn">over</span><span class="dt"> Manager:</span><span class="vs"> Recheck current intent</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Manager</span><span class="pp">-&gt;&gt;</span><span class="dt">Browser</span><span class="at">:</span><span class="vs"> Release stale lock immediately</span></span></code></pre></div>
+<p><strong>Acceptance:</strong> a delayed grant after disable/finish is
+released; rapid toggling cannot leave an untracked lock.</p>
 <h2 id="4-architecture-changes-worth-making-in-either-framework">4.
 Architecture changes worth making in either framework</h2>
 <h3 id="keep-the-db-layer-extract-a-session-controller">Keep the DB
 layer; extract a session controller</h3>
-<pre class="text"><code> BEFORE                                    PROPOSED AFTER
- Screen ── validation                      Screen ── rendering + user intent
-        ├─ session resolution                    │
-        ├─ row save/update                       ▼
-        ├─ completion writes               Session controller
-        └─ resume assembly                 validate / serialize / recover
-                                                  │
-                                                  ▼
-                                           Existing domain DB helpers
-                                                  │
-                                                  ▼
-                                           Dexie / IndexedDB</code></pre>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode mermaid"><code class="sourceCode mermaid"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">flowchart</span> <span class="cn">LR</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">subgraph</span> <span class="dt">Before</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Screen1</span>[<span class="vs">Screen</span>] <span class="pp">--&gt;</span> <span class="dt">Validation</span>[<span class="vs">Validation</span>]</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Screen1</span> <span class="pp">--&gt;</span> <span class="dt">Resolve</span>[<span class="vs">Session resolution</span>]</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Screen1</span> <span class="pp">--&gt;</span> <span class="dt">Save</span>[<span class="vs">Row save / update</span>]</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Screen1</span> <span class="pp">--&gt;</span> <span class="dt">Finish</span>[<span class="vs">Completion writes</span>]</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Screen1</span> <span class="pp">--&gt;</span> <span class="dt">Resume</span>[<span class="vs">Resume assembly</span>]</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">subgraph</span> <span class="dt">Proposed</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Screen2</span>[<span class="vs">Screen: rendering and intent</span>] <span class="pp">--&gt;</span> <span class="dt">Controller</span>[<span class="vs">Session controller: validate / serialize / recover</span>]</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Controller</span> <span class="pp">--&gt;</span> <span class="dt">Helpers</span>[<span class="vs">Existing domain DB helpers</span>]</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    <span class="dt">Helpers</span> <span class="pp">--&gt;</span> <span class="dt">DB</span>[(<span class="vs">Dexie / IndexedDB</span>)]</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span></span></code></pre></div>
 <p>Reuse the existing schema and conversion helpers. Start with F1/F6;
 avoid a large abstraction project. A durable active/completed session
 record in IndexedDB would eventually let completion and lifecycle
@@ -743,18 +908,19 @@ alter the original routine; leaving the editor does not undo those
 changes. Whether global resistance metadata is desirable is a product
 decision, but workout grouping and warmup designation usually belong to
 the routine placement.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode ts"><code class="sourceCode typescript"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Before: grouping and warmup are shared everywhere this exercise appears.</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>Routine  { exerciseIds<span class="op">:</span> <span class="dt">string</span>[] }</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>Exercise { id<span class="op">,</span> name<span class="op">,</span> groupId<span class="op">?,</span> exerciseType<span class="op">?,</span> resistanceType<span class="op">?</span> }</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Proposed shape: catalog identity remains shared; placement is local.</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>Routine {</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  entries<span class="op">:</span> <span class="bu">Array</span><span class="op">&lt;</span>{</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    id<span class="op">:</span> <span class="dt">string</span><span class="op">;</span> exerciseId<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    groupId<span class="op">:</span> <span class="dt">string</span> <span class="op">|</span> <span class="dt">null</span><span class="op">;</span> exerciseType<span class="op">:</span> <span class="st">&#39;warmup&#39;</span> <span class="op">|</span> <span class="st">&#39;regular&#39;</span><span class="op">;</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  }<span class="op">&gt;;</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>Exercise { id<span class="op">,</span> name<span class="op">,</span> resistanceType<span class="op">?</span> }</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode ts"><code class="sourceCode typescript"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Before: grouping and warmup are shared everywhere this exercise appears.</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>Routine  { exerciseIds<span class="op">:</span> <span class="dt">string</span>[] }</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>Exercise { id<span class="op">,</span> name<span class="op">,</span> groupId<span class="op">?,</span> exerciseType<span class="op">?,</span> resistanceType<span class="op">?</span> }</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Proposed shape: catalog identity remains shared; placement is local.</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>Routine {</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  entries<span class="op">:</span> <span class="bu">Array</span><span class="op">&lt;</span>{</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    id<span class="op">:</span> <span class="dt">string</span><span class="op">;</span> exerciseId<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    groupId<span class="op">:</span> <span class="dt">string</span> <span class="op">|</span> <span class="dt">null</span><span class="op">;</span> exerciseType<span class="op">:</span> <span class="st">&#39;warmup&#39;</span> <span class="op">|</span> <span class="st">&#39;regular&#39;</span><span class="op">;</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  }<span class="op">&gt;;</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>Exercise { id<span class="op">,</span> name<span class="op">,</span> resistanceType<span class="op">?</span> }</span></code></pre></div>
 <p>Stage editor changes and commit on Save. A migration must preserve
 entry order, existing groups, legacy imports, and exercise IDs used by
 historical sets. Decide whether historical resistance type should be
@@ -788,7 +954,7 @@ benefit</td>
 <td>No</td>
 </tr>
 <tr>
-<td>Run type check in CI; add focused regression tests for F1–F7</td>
+<td>Run type check in CI; add focused regression tests for F1–F12</td>
 <td>Prevent known failure classes from shipping</td>
 <td>No</td>
 </tr>
@@ -897,13 +1063,14 @@ beyond GitHub Pages; a server also cannot directly read a user's browser
 IndexedDB. SvelteKit's <a
 href="https://svelte.dev/docs/kit/single-page-apps">SPA guidance</a>
 describes fallback deployment and its tradeoffs.</p>
-<pre class="text"><code> SWITCHING ONLY THE UI FRAMEWORK
- Vue screens + composables  →  Svelte screens + reactive state  [rewrite]
- Vue Router                 →  SvelteKit filesystem routes     [replace]
- Dexie + domain rules        →  Dexie + domain rules             [reuse/fix]
- localStorage/browser APIs  →  client-only initialization       [adapt]
- custom PWA policy          →  explicit PWA policy              [revalidate]
- GitHub Pages + nginx       →  static adapter + base/fallback    [adapt]</code></pre>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode mermaid"><code class="sourceCode mermaid"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="kw">flowchart</span> <span class="cn">LR</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Vue</span>[<span class="vs">Vue screens and composables</span>] <span class="pp">--&gt;</span><span class="vs">|Rewrite|</span> <span class="dt">Svelte</span>[<span class="vs">Svelte screens and reactive state</span>]</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Router</span>[<span class="vs">Vue Router</span>] <span class="pp">--&gt;</span><span class="vs">|Replace|</span> <span class="dt">Routes</span>[<span class="vs">SvelteKit filesystem routes</span>]</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">DB</span>[<span class="vs">Dexie and domain rules</span>] <span class="pp">--&gt;</span><span class="vs">|Reuse and fix|</span> <span class="dt">DB2</span>[<span class="vs">Dexie and domain rules</span>]</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Browser</span>[<span class="vs">localStorage and browser APIs</span>] <span class="pp">--&gt;</span><span class="vs">|Adapt|</span> <span class="dt">Client</span>[<span class="vs">Client-only initialization</span>]</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">PWA</span>[<span class="vs">Custom PWA policy</span>] <span class="pp">--&gt;</span><span class="vs">|Revalidate|</span> <span class="dt">PWA2</span>[<span class="vs">Explicit PWA policy</span>]</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Hosting</span>[<span class="vs">GitHub Pages and nginx</span>] <span class="pp">--&gt;</span><span class="vs">|Adapt|</span> <span class="dt">Static</span>[<span class="vs">Static adapter with base and fallback</span>]</span></code></pre></div>
 <p><strong>What switching will not automatically deliver:</strong> sync,
 backups, reliable background alerts, transactional session recovery,
 better import validation, or corrected analytics. SSR cannot pre-render
@@ -919,8 +1086,9 @@ numeric validation; verify failed-write retry.</li>
 <li><strong>Protect offline use:</strong> isolate cache ownership and
 verify update/offline transitions on installed mobile PWAs and under
 <code>/irontrack/</code>.</li>
-<li><strong>Correct session analytics:</strong> order by session, then
-address routine-entry ownership and staged editing.</li>
+<li><strong>Correct session analytics:</strong> order by session,
+preserve measurement dimensions, and refresh derived statistics after
+edits; then address routine-entry ownership and staged editing.</li>
 <li><strong>Reduce maintenance cost:</strong> extract the small session
 controller, lazy-load routes, add the session index and focused CI
 checks.</li>
@@ -935,5 +1103,78 @@ rollout.</li>
 experiment demonstrates a material benefit or a concrete server roadmap
 justifies it. The clear wins today are conventions; the urgent work is
 correctness and remains necessary in both stacks.</p>
+<h2 id="7-follow-up-review-assessment--gpt-6-astra">7. Follow-up review
+assessment · GPT-6 Astra</h2>
+<p>The original F1–F7 findings remain supported by the unchanged
+application source. The additional findings above cover measurement
+semantics, reactive query invalidation, group-copy isolation, migration
+determinism, and asynchronous resource ownership. None requires a
+framework switch.</p>
+<table>
+<thead>
+<tr>
+<th>Follow-up evidence</th>
+<th>What was checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source comparison</td>
+<td>No <code>src/</code> changes between <code>bd7a07e</code> and
+<code>5c90a75</code></td>
+</tr>
+<tr>
+<td>Actual extracted volume helper</td>
+<td>12 mobility reps become 5.4 under the current kg formatting
+formula</td>
+</tr>
+<tr>
+<td>Actual extracted migration helper</td>
+<td>Reversing mixed legacy/modern input changes whether an existing
+group is overwritten</td>
+</tr>
+<tr>
+<td>Actual wake-lock module with mocked APIs</td>
+<td>Disabling during acquisition does not release the eventual
+grant</td>
+</tr>
+<tr>
+<td>History and copy paths</td>
+<td>Source tracing; browser/IndexedDB acceptance tests remain
+outstanding</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Refinement to the migration comparison:</strong> treat
+SvelteKit's conventions as an ergonomic benefit, not a unique ability to
+handle errors, organize screens, or load data. The existing Vue
+architecture can implement the proposed boundaries. A rewrite that
+preserves the current data contracts and async behavior preserves these
+bugs too.</p>
+<p><strong>Document presentation:</strong> both documents contain the
+same report. The HTML uses a dark palette and renders Mermaid diagrams;
+it loads the Mermaid renderer from a CDN, so diagram rendering requires
+internet access. Source diagrams remain readable if the renderer cannot
+load. Build and type-check results are retained from the original
+review; only documentation changed in this follow-up.</p>
+
+<script type="module">
+try {
+  const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs');
+  mermaid.initialize({ startOnLoad:false, securityLevel:'strict', theme:'dark',
+    themeVariables:{ background:'#101923', primaryColor:'#203b46', primaryTextColor:'#d6e1e9', primaryBorderColor:'#76d7c8', lineColor:'#a1b2c0', secondaryColor:'#233044', tertiaryColor:'#19332f', fontFamily:'system-ui, sans-serif' } });
+  let i=0;
+  for (const pre of document.querySelectorAll('pre.mermaid')) {
+    try {
+      const {svg} = await mermaid.render('review-diagram-' + i++, pre.textContent);
+      const figure = document.createElement('figure');
+      figure.className='mermaid-diagram';
+      figure.innerHTML=svg;
+      pre.replaceWith(figure);
+    } catch(error) { console.warn('Diagram source retained:', error); }
+  }
+} catch(error) { console.warn('Mermaid unavailable; diagram source retained:', error); }
+</script>
+
 </body>
 </html>

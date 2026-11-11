@@ -1,6 +1,6 @@
 # IronTrack: architecture and bug review
 
-**10 November 2026 · Codex · Quick review · Commit `bd7a07e`**
+**10 November 2026 · Initial review: Sol · Follow-up: GPT-6 Astra · Source baseline `bd7a07e`; follow-up checkout `5c90a75`**
 
 > **Recommendation: maintain Vue and fix data integrity and offline delivery first.** SvelteKit offers useful routing and deployment conventions, but no demonstrated benefit here large enough to justify a full UI rewrite. The highest-priority bugs survive a framework migration unless explicitly fixed.
 
@@ -18,30 +18,26 @@ Reviewed routing, workout logging/resume/finish, history, routine editing/sharin
 | Numeric parser examples | Negative values, trailing text, fractional reps, and infinite weight are accepted/truncated |
 | Automated regression coverage | No test script in `package.json`; Pages workflow builds without running the separate type check |
 
-The harness verified control flow with mocks, not real IndexedDB or service-worker lifecycle behavior. Other findings below are source-confirmed paths with reproduction recipes, not claims of end-to-end execution. The build also emitted a PWA toolchain deprecation warning about `inlineDynamicImports`; it did not fail.
+The build/type-check results above are from the initial review, not fresh runs during the documentation-only follow-up. Application source is unchanged between the two reviewed commits. The harness verified control flow with mocks, not real IndexedDB or service-worker lifecycle behavior. Other findings below are source-confirmed paths with reproduction recipes, not claims of end-to-end execution. The build also emitted a PWA toolchain deprecation warning about `inlineDynamicImports`; it did not fail.
 
 ## 2. Architecture today
 
-```text
-                         BROWSER / INSTALLED PWA
- ┌─────────────────────────────────────────────────────────────────┐
- │ Vue Router → App.vue → feature screens → reusable UI components │
- │                          │                      │               │
- │                          ▼                      ▼               │
- │                 shared/db helpers       Vue reactive singletons │
- │                 units + aggregation     preferences / session   │
- │                          │               rest deadline          │
- │                          ▼                      ▼               │
- │                 Dexie / IndexedDB           localStorage        │
- │                 6 tables, schema v4                             │
- └─────────────────────────────────────────────────────────────────┘
-            ▲
-            │ app shell + assets
-    Custom service worker / Cache Storage
-            ▲
-            │
-    Vite + PWA build → GitHub Pages (/irontrack/)
-                    ↘ Docker / nginx (/)
+```mermaid
+flowchart TB
+  subgraph Browser[Browser / installed PWA]
+    Router[Vue Router] --> App[App.vue]
+    App --> Screens[Feature screens]
+    Screens --> UI[Reusable components]
+    Screens --> Helpers[Domain DB helpers / units / aggregation]
+    Screens --> State[Vue singletons: preferences / active session / rest deadline]
+    Helpers --> IDB[(Dexie / IndexedDB: 6 tables, schema v4)]
+    State --> Local[(localStorage)]
+  end
+  Build[Vite + PWA build] --> Pages[GitHub Pages: /irontrack/]
+  Build --> Nginx[Docker / nginx: /]
+  Pages --> Worker[Custom service worker / Cache Storage]
+  Nginx --> Worker
+  Worker --> App
 ```
 
 **Good foundations.** Feature folders are easy to navigate; the domain DB helpers centralize writes and weight conversion; backup writes are transactional; routine sharing excludes workout and body-metric history. Timestamp-based rest timers tolerate delayed background ticks better than decrementing counters. `App.vue` keys screens by `route.fullPath`, so route changes remount their setup state; the workout screen's read-once route parameters are supported by that design.
@@ -103,17 +99,19 @@ There are two distinct defects:
 - **Shape checking stops at arrays.** A backup set with an ID but missing `date` can be stored, then crash `getAllSets()` at `date.localeCompare`. Imports also trust derived weight values, enum values, references, and version numbers. TypeScript assertions do not validate imported JSON.
 - **Conflict checking compares names only.** Import an older copy of a routine with the same ID/name but a different exercise list: no conflict appears, and `bulkPut` replaces the local list. The same problem applies to exercise type/group changes. The comment says a same-name record is reused, but the implementation overwrites it.
 
-```text
- BEFORE                                 PROPOSED AFTER
- JSON → arrays? → bulkPut               JSON → supported format/version?
-                                                  ↓
-                                        validate every row + references
-                                                  ↓
-                                        normalize canonical units
-                                                  ↓
-                                        compare meaningful fields
-                                                  ↓
-                                        preview conflicts → transaction
+```mermaid
+flowchart LR
+  subgraph Before
+    JSON1[JSON] --> Arrays[Check arrays only] --> Put[bulkPut]
+  end
+  subgraph Proposed
+    JSON2[JSON] --> Version[Validate format and version]
+    Version --> Rows[Validate rows and references]
+    Rows --> Units[Normalize canonical units]
+    Units --> Compare[Compare meaningful fields]
+    Compare --> Conflicts[Resolve conflicts]
+    Conflicts --> TX[Commit transaction]
+  end
 ```
 
 Keep legacy formats supported through explicit normalization. Compare semantic content while excluding export timestamps; apply user resolutions before committing. Treat invalid optional tables as errors rather than silently substituting empty arrays when present with the wrong type. **Acceptance:** invalid imports write nothing; changed same-name records require an explicit resolution; valid legacy backups still load.
@@ -146,12 +144,14 @@ If multiple IronTrack installations share an origin, namespace by deployment sco
 
 Separately, successful network responses overwrite entries inside the active build's cache. After a deployment, an old worker can cache the new `index.html` before the new hashed JS has been cached. Going offline at that point can leave an HTML/asset generation mismatch. This is a source-derived lifecycle risk; it was not reproduced in a browser.
 
-```text
- BEFORE: one network-first policy for all GET requests
-
- AFTER:  navigation ── bounded network attempt ── app-shell fallback
-         hashed asset ── current-build precache first
-         activation ── clean only app-owned older caches
+```mermaid
+flowchart TB
+  Before[Current: network first for all GET requests]
+  Before -. replace policy .-> Kind{Request kind}
+  Kind -->|Navigation| Network[Bounded network attempt]
+  Network -->|Unavailable or unsuitable response| Shell[Consistent cached app shell]
+  Kind -->|Hashed asset| Precache[Current-build precache first]
+  Activate[Activation] --> Cleanup[Delete only app-owned older caches]
 ```
 
 Account for the existing GitHub Pages fallback: deep routes intentionally receive the app shell with a 404 status. Distinguish that navigation case from missing asset requests. Keep the app shell and its referenced assets consistent; tie background cache writes to `event.waitUntil`. **Acceptance:** test first visit, offline reload, cached navigation during 503, and deployment followed by going offline before accepting the update.
@@ -197,23 +197,106 @@ The app now distinguishes sessions by ID, but comparison helpers still use dates
 
 **Proposed change:** pass a session cursor containing ID, start time, and logical date; select the prior session first, then its best set. Use a deterministic date/created-time fallback for legacy sets. **Acceptance:** two or three same-day sessions remain correctly ordered and historical views exclude later sessions.
 
+### F8 · P2 · Rep-only volume is displayed and converted as weight
+
+**Evidence:** [setAggregation.ts:44](../src/shared/setAggregation.ts#L44), [ProgressChartScreen.vue:158](../src/features/progress/ProgressChartScreen.vue#L158).
+
+`computeSetVolume` returns raw reps for mobility, bodyweight without a recorded body weight, and bands without recorded colors. The view always passes that number through `formatWeight` and labels it lbs/kg. A 12-rep mobility set therefore displays **12 lbs volume**, or **5.4 kg volume** after changing units. This arithmetic was reproduced using the actual extracted volume function. Adding body-weight logs also makes a bodyweight series mix rep counts and mass-times-reps across dates.
+
+**Proposed change:** retain measurement kind with the value; never convert reps to kg. Keep rep-only points separate from loaded-volume points, or use a consistently rep-based series when load is unavailable. Loaded volume should be labeled `lb·reps` or `kg·reps`.
+
+```ts
+// Before: a bare number loses its meaning.
+volume: number
+
+// Proposed: aggregation and formatting preserve dimensions.
+type Volume =
+  | { kind: 'reps'; value: number }
+  | { kind: 'load'; valueInLbReps: number };
+```
+
+**Acceptance:** 12 mobility reps remain 12 after switching units; missing-load days are never plotted as though they were comparable loaded-volume values.
+
+### F9 · P2 · Editing history leaves derived statistics stale
+
+**Evidence:** [WorkoutSessionDetailScreen.vue:182](../src/features/history/WorkoutSessionDetailScreen.vue#L182), [WorkoutSessionDetailScreen.vue:211](../src/features/history/WorkoutSessionDetailScreen.vue#L211), [WorkoutSessionDetailScreen.vue:254](../src/features/history/WorkoutSessionDetailScreen.vue#L254).
+
+Save and delete update the visible set arrays, but `personalBests` and `volumeHistory` are fetched only on mount. For example, raise a 100 lb personal best to 110 lb: the new set is compared against the old 100 lb snapshot and loses its “Heaviest ever” badge. Delete the best set and the next-best set is not recognized. The volume sparkline remains unchanged until reopening the screen. This is source-confirmed; the UI reproduction has not been run.
+
+```mermaid
+flowchart LR
+  Before[Current: edit or delete] --> Rows[Update visible rows only]
+  After[Proposed: successful mutation] --> Refresh[Refresh affected history and aggregates]
+  Refresh --> View[Rows + PR badges + volume chart agree]
+```
+
+Reuse existing query helpers in one refresh operation, or subscribe the view to relevant database changes. **Acceptance:** badges and chart update immediately after edits/deletes without navigation.
+
+### F10 · P2 · Importing a copy retains the original group's identity
+
+**Evidence:** [sharing.ts:93](../src/shared/db/sharing.ts#L93), [sharing.ts:104](../src/shared/db/sharing.ts#L104), [exercises.ts:65](../src/shared/db/exercises.ts#L65).
+
+Copy resolution remaps exercise IDs but carries `groupId` over unchanged. Reproduce with local A/B in group G; import renamed versions of both exercises and choose Copy. Copied A′/B′ and original A/B now share G. Put all four in a routine and they render as one circuit instead of two supersets. Removing A from its original group also leaves B linked because global orphan pruning still counts the copied exercises. This is a separate copy-isolation defect beyond F2's name-only conflict check.
+
+```mermaid
+flowchart LR
+  G[Current shared group G] --> A[Original A / B]
+  G --> Copies[Copied A′ / B′]
+  G1[Proposed original group G] --> Original[Original A / B]
+  G2[Proposed fresh copied group G′] --> Independent[Copied A′ / B′]
+```
+
+**Proposed change:** when copying an independent group, map its group ID once as well as its exercise IDs. Resolve partial-copy/shared-member cases explicitly instead of blindly remapping every imported group. Longer term, routine-entry ownership removes this global coupling. **Acceptance:** copied groups can be grouped/ungrouped independently of originals.
+
+### F11 · P2 · Mixed legacy migration can overwrite an existing group
+
+**Evidence:** [schema.ts:90](../src/shared/db/schema.ts#L90).
+
+The outer migration loop skips exercises with an existing `groupId`, but its connected-component traversal does not. Given legacy A with `supersetWith: B` and modern B with an existing group, visiting A first pulls B into a newly generated group and overwrites B's group. Visiting B first preserves B and leaves A ungrouped. The extracted migration function reproduced both results. This requires a mixed-format import; it is not evidence that a clean all-legacy upgrade fails.
+
+**Proposed change:** exclude already-migrated nodes throughout traversal, including reverse-edge discovery, and specify how legacy links to modern nodes are normalized. **Acceptance:** reversing input order preserves every existing group; all-legacy connected components still migrate correctly.
+
+### F12 · P2 · A pending wake-lock request can outlive disabling it
+
+**Evidence:** [wake-lock.ts:7](../src/shared/wake-lock.ts#L7), [wake-lock.ts:33](../src/shared/wake-lock.ts#L33).
+
+Start acquiring a wake lock, then disable “Keep screen awake” or finish the workout before the request resolves. The release path sees `sentinel === null`. When acquisition later resolves, it installs the lock without checking whether it is still wanted. A mock-controlled run of the actual module confirmed zero releases after resolving a request that had been disabled. Overlapping requests and old release listeners also share a mutable sentinel.
+
+**Proposed change:** serialize acquisition, recheck current intent after awaiting it, immediately release stale results, and clear the sentinel on release only if that event belongs to the held lock.
+
+```mermaid
+sequenceDiagram
+  participant UI as Setting / workout
+  participant Manager as Wake-lock manager
+  participant Browser as Browser API
+  UI->>Manager: Enable / start
+  Manager->>Browser: Request lock
+  UI->>Manager: Disable / finish while pending
+  Browser-->>Manager: Lock granted
+  Note over Manager: Recheck current intent
+  Manager->>Browser: Release stale lock immediately
+```
+
+**Acceptance:** a delayed grant after disable/finish is released; rapid toggling cannot leave an untracked lock.
+
 ## 4. Architecture changes worth making in either framework
 
 ### Keep the DB layer; extract a session controller
 
-```text
- BEFORE                                    PROPOSED AFTER
- Screen ── validation                      Screen ── rendering + user intent
-        ├─ session resolution                    │
-        ├─ row save/update                       ▼
-        ├─ completion writes               Session controller
-        └─ resume assembly                 validate / serialize / recover
-                                                  │
-                                                  ▼
-                                           Existing domain DB helpers
-                                                  │
-                                                  ▼
-                                           Dexie / IndexedDB
+```mermaid
+flowchart LR
+  subgraph Before
+    Screen1[Screen] --> Validation[Validation]
+    Screen1 --> Resolve[Session resolution]
+    Screen1 --> Save[Row save / update]
+    Screen1 --> Finish[Completion writes]
+    Screen1 --> Resume[Resume assembly]
+  end
+  subgraph Proposed
+    Screen2[Screen: rendering and intent] --> Controller[Session controller: validate / serialize / recover]
+    Controller --> Helpers[Existing domain DB helpers]
+    Helpers --> DB[(Dexie / IndexedDB)]
+  end
 ```
 
 Reuse the existing schema and conversion helpers. Start with F1/F6; avoid a large abstraction project. A durable active/completed session record in IndexedDB would eventually let completion and lifecycle changes share a transaction, while localStorage remains appropriate for simple preferences. Keep legacy backup compatibility explicit.
@@ -246,7 +329,7 @@ Stage editor changes and commit on Save. A migration must preserve entry order, 
 | Lazy-import route screens | Avoid downloading every screen at startup; measure actual benefit | No |
 | Index `sets.sessionId` in a schema upgrade | Session detail/resume queries avoid full-table filters | No |
 | Centralize session ordering and volume policy | Same-day correctness; avoid divergent chart definitions | No |
-| Run type check in CI; add focused regression tests for F1–F7 | Prevent known failure classes from shipping | No |
+| Run type check in CI; add focused regression tests for F1–F12 | Prevent known failure classes from shipping | No |
 
 History cards are built from sets, so a finished session with zero sets is invisible ([WorkoutHistoryScreen.vue:68](../src/features/history/WorkoutHistoryScreen.vue#L68)). Decide whether to disallow empty completion or display completed session rows independently. This is a product-policy gap rather than an assumed requirement.
 
@@ -271,14 +354,14 @@ SvelteKit documents [filesystem routing](https://svelte.dev/docs/kit/routing), [
 
 **Important deployment constraint:** current modules access `localStorage`, `document`, and `window` during import. They cannot simply run unchanged during SSR. A static client-rendered SvelteKit build is viable, but gives up much of the SSR/server rationale. Browser-only persistence must be initialized on the client. Server actions require runtime hosting beyond GitHub Pages; a server also cannot directly read a user's browser IndexedDB. SvelteKit's [SPA guidance](https://svelte.dev/docs/kit/single-page-apps) describes fallback deployment and its tradeoffs.
 
-```text
- SWITCHING ONLY THE UI FRAMEWORK
- Vue screens + composables  →  Svelte screens + reactive state  [rewrite]
- Vue Router                 →  SvelteKit filesystem routes     [replace]
- Dexie + domain rules        →  Dexie + domain rules             [reuse/fix]
- localStorage/browser APIs  →  client-only initialization       [adapt]
- custom PWA policy          →  explicit PWA policy              [revalidate]
- GitHub Pages + nginx       →  static adapter + base/fallback    [adapt]
+```mermaid
+flowchart LR
+  Vue[Vue screens and composables] -->|Rewrite| Svelte[Svelte screens and reactive state]
+  Router[Vue Router] -->|Replace| Routes[SvelteKit filesystem routes]
+  DB[Dexie and domain rules] -->|Reuse and fix| DB2[Dexie and domain rules]
+  Browser[localStorage and browser APIs] -->|Adapt| Client[Client-only initialization]
+  PWA[Custom PWA policy] -->|Revalidate| PWA2[Explicit PWA policy]
+  Hosting[GitHub Pages and nginx] -->|Adapt| Static[Static adapter with base and fallback]
 ```
 
 **What switching will not automatically deliver:** sync, backups, reliable background alerts, transactional session recovery, better import validation, or corrected analytics. SSR cannot pre-render private local training data it cannot access. File-based routing is a real convenience, but this router currently has only 12 route records, so the immediate savings are modest. Nuxt is also worth comparing if future server features—not Svelte itself—become the primary motivation.
@@ -287,8 +370,25 @@ SvelteKit documents [filesystem routing](https://svelte.dev/docs/kit/routing), [
 
 1. **Protect data:** fix duplicate saves, imports, and numeric validation; verify failed-write retry.
 2. **Protect offline use:** isolate cache ownership and verify update/offline transitions on installed mobile PWAs and under `/irontrack/`.
-3. **Correct session analytics:** order by session, then address routine-entry ownership and staged editing.
+3. **Correct session analytics:** order by session, preserve measurement dimensions, and refresh derived statistics after edits; then address routine-entry ownership and staged editing.
 4. **Reduce maintenance cost:** extract the small session controller, lazy-load routes, add the session index and focused CI checks.
 5. **Only then evaluate migration:** port one representative workout flow in an isolated experiment, reusing DB helpers. Compare identical data, production bundle size, startup on the same device, offline reload, resume, same-day history, update behavior, and developer effort. Keep deployment origin stable for a real rollout.
 
 **Migration gate:** choose SvelteKit only when the experiment demonstrates a material benefit or a concrete server roadmap justifies it. The clear wins today are conventions; the urgent work is correctness and remains necessary in both stacks.
+
+
+## 7. Follow-up review assessment · GPT-6 Astra
+
+The original F1–F7 findings remain supported by the unchanged application source. The additional findings above cover measurement semantics, reactive query invalidation, group-copy isolation, migration determinism, and asynchronous resource ownership. None requires a framework switch.
+
+| Follow-up evidence | What was checked |
+|---|---|
+| Source comparison | No `src/` changes between `bd7a07e` and `5c90a75` |
+| Actual extracted volume helper | 12 mobility reps become 5.4 under the current kg formatting formula |
+| Actual extracted migration helper | Reversing mixed legacy/modern input changes whether an existing group is overwritten |
+| Actual wake-lock module with mocked APIs | Disabling during acquisition does not release the eventual grant |
+| History and copy paths | Source tracing; browser/IndexedDB acceptance tests remain outstanding |
+
+**Refinement to the migration comparison:** treat SvelteKit's conventions as an ergonomic benefit, not a unique ability to handle errors, organize screens, or load data. The existing Vue architecture can implement the proposed boundaries. A rewrite that preserves the current data contracts and async behavior preserves these bugs too.
+
+**Document presentation:** both documents contain the same report. The HTML uses a dark palette and renders Mermaid diagrams; it loads the Mermaid renderer from a CDN, so diagram rendering requires internet access. Source diagrams remain readable if the renderer cannot load. Build and type-check results are retained from the original review; only documentation changed in this follow-up.
