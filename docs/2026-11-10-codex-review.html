@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.12" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>IronTrack · Architecture &amp; Bug Review</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      color: light-dark(#1a1a1a, #fdfdfd);
+      background-color: #fdfdfd;
+      background-color: light-dark(#fdfdfd, #1a1a1a);
+      color-scheme: light dark;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        color-scheme: light only;
+      }
+      html, body, pre, code {
+        background-color: transparent;
+      }
+      body, a, a:visited, blockquote {
+        color: black;
+      }
+      pre, code {
+        padding: 0;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a, a:visited {
+      color: inherit;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid;
+      border-color: #e6e6e6;
+      border-color: light-dark(#e6e6e6, #4c4c4c);
+      color: #606060;
+      color: light-dark(#606060, #b6b6b6);
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid currentColor;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid currentColor;
+      border-bottom: 1px solid currentColor;
+    }
+    th {
+      border-top: 1px solid currentColor;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+
+<style>
+:root { color-scheme: light; --ink:#182b3a; --muted:#617382; --accent:#007b75; --line:#dce5e9; }
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; background:#edf2f4; }
+body { max-width:1120px; margin:40px auto; padding:60px 72px; background:#fff; color:var(--ink); font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; box-shadow:0 16px 64px #18324412; border-top:8px solid var(--accent); border-radius:8px; }
+header { border-bottom:1px solid var(--line); padding-bottom:20px; margin-bottom:28px; }
+header h1 { color:var(--accent); font-size:14px; letter-spacing:.15em; text-transform:uppercase; }
+h1 { font-size:40px; line-height:1.15; letter-spacing:-.035em; margin:32px 0 20px; }
+h2 { font-size:26px; line-height:1.3; margin-top:56px; padding-top:20px; border-top:2px solid var(--line); letter-spacing:-.02em; }
+h3 { font-size:20px; line-height:1.4; margin-top:36px; }
+p,li { max-width:88ch; }
+a { color:var(--accent); text-decoration-thickness:1px; text-underline-offset:3px; overflow-wrap:anywhere; }
+strong { font-weight:650; }
+blockquote { margin:28px 0; padding:14px 24px; background:#eaf7f3; border-left:4px solid var(--accent); border-radius:0 8px 8px 0; }
+blockquote p { margin:6px 0; }
+#TOC { background:#f4f7f9; border:1px solid var(--line); border-radius:10px; padding:20px 28px; margin-bottom:40px; }
+#TOC > ul { columns:2; padding-left:18px; margin:0; }
+#TOC ul ul { display:none; }
+#TOC li { break-inside:avoid; padding:4px 0; font-size:14px; }
+table { width:100%; border-collapse:collapse; font-size:14px; line-height:1.55; margin:24px 0; display:block; overflow-x:auto; }
+th { text-align:left; background:#193e48; color:white; font-weight:600; }
+th,td { padding:12px 14px; border:1px solid var(--line); vertical-align:top; min-width:120px; }
+tr:nth-child(even) td { background:#f5f8fa; }
+code { font: .86em/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; background:#edf3f5; border-radius:4px; padding:2px 5px; }
+pre { border:1px solid #d5e3e7; border-radius:9px; background:#f1f6f8; padding:22px; overflow-x:auto; line-height:1.55; }
+pre code { background:transparent; padding:0; border:0; border-radius:0; white-space:pre; font-size:12px; }
+div.sourceCode { margin:24px 0; }
+li { padding:3px 0; }
+::selection { background:#bfe9df; }
+@media(max-width:800px) { body { margin:0; padding:28px 20px; border-radius:0; } h1 { font-size:32px; } #TOC > ul { columns:1; } th,td { padding:9px; } }
+@media print { html { background:white; } body { margin:0; max-width:none; padding:0; box-shadow:none; border:0; font-size:10pt; } #TOC { display:none; } h2,h3 { break-after:avoid; } pre,blockquote,tr { break-inside:avoid; } a { color:inherit; } }
+</style>
+
+<meta name="source-sha256" content="b905ed2818513e1073aeb885fa87b7336d363c6e5cd4414af800cdfd98faf52d">
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">IronTrack · Architecture &amp; Bug Review</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#irontrack-architecture-and-bug-review"
+id="toc-irontrack-architecture-and-bug-review">IronTrack: architecture
+and bug review</a>
+<ul>
+<li><a href="#1-scope-and-evidence" id="toc-1-scope-and-evidence">1.
+Scope and evidence</a></li>
+<li><a href="#2-architecture-today" id="toc-2-architecture-today">2.
+Architecture today</a></li>
+<li><a href="#3-bugs-and-correctness-findings"
+id="toc-3-bugs-and-correctness-findings">3. Bugs and correctness
+findings</a>
+<ul>
+<li><a href="#f1--p1--a-set-can-be-saved-twice"
+id="toc-f1--p1--a-set-can-be-saved-twice">F1 · P1 · A set can be saved
+twice</a></li>
+<li><a
+href="#f2--p1--import-can-persist-malformed-data-and-silently-overwrite-changed-routines"
+id="toc-f2--p1--import-can-persist-malformed-data-and-silently-overwrite-changed-routines">F2
+· P1 · Import can persist malformed data and silently overwrite changed
+routines</a></li>
+<li><a
+href="#f3--p1--worker-activation-deletes-other-apps-caches-on-the-same-origin"
+id="toc-f3--p1--worker-activation-deletes-other-apps-caches-on-the-same-origin">F3
+· P1 · Worker activation deletes other apps' caches on the same
+origin</a></li>
+<li><a
+href="#f4--p2--cached-app-fails-during-http-errors-updates-can-mix-asset-generations"
+id="toc-f4--p2--cached-app-fails-during-http-errors-updates-can-mix-asset-generations">F4
+· P2 · Cached app fails during HTTP errors; updates can mix asset
+generations</a></li>
+<li><a
+href="#f5--p2--set-validation-permits-invalid-or-silently-altered-numbers"
+id="toc-f5--p2--set-validation-permits-invalid-or-silently-altered-numbers">F5
+· P2 · Set validation permits invalid or silently altered
+numbers</a></li>
+<li><a href="#f6--p2--a-failed-finish-leaves-the-screen-unable-to-retry"
+id="toc-f6--p2--a-failed-finish-leaves-the-screen-unable-to-retry">F6 ·
+P2 · A failed Finish leaves the screen unable to retry</a></li>
+<li><a
+href="#f7--p2--last-workout-calculations-confuse-multiple-same-day-sessions"
+id="toc-f7--p2--last-workout-calculations-confuse-multiple-same-day-sessions">F7
+· P2 · “Last workout” calculations confuse multiple same-day
+sessions</a></li>
+</ul></li>
+<li><a href="#4-architecture-changes-worth-making-in-either-framework"
+id="toc-4-architecture-changes-worth-making-in-either-framework">4.
+Architecture changes worth making in either framework</a>
+<ul>
+<li><a href="#keep-the-db-layer-extract-a-session-controller"
+id="toc-keep-the-db-layer-extract-a-session-controller">Keep the DB
+layer; extract a session controller</a></li>
+<li><a href="#put-routine-specific-metadata-on-routine-entries"
+id="toc-put-routine-specific-metadata-on-routine-entries">Put
+routine-specific metadata on routine entries</a></li>
+<li><a href="#low-cost-delivery-and-query-improvements"
+id="toc-low-cost-delivery-and-query-improvements">Low-cost delivery and
+query improvements</a></li>
+</ul></li>
+<li><a href="#5-sveltekit-switch-or-maintain"
+id="toc-5-sveltekit-switch-or-maintain">5. SvelteKit: switch or
+maintain?</a></li>
+<li><a href="#6-suggested-order" id="toc-6-suggested-order">6. Suggested
+order</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="irontrack-architecture-and-bug-review">IronTrack: architecture
+and bug review</h1>
+<p><strong>10 November 2026 · Codex · Quick review · Commit
+<code>bd7a07e</code></strong></p>
+<blockquote>
+<p><strong>Recommendation: maintain Vue and fix data integrity and
+offline delivery first.</strong> SvelteKit offers useful routing and
+deployment conventions, but no demonstrated benefit here large enough to
+justify a full UI rewrite. The highest-priority bugs survive a framework
+migration unless explicitly fixed.</p>
+</blockquote>
+<h2 id="1-scope-and-evidence">1. Scope and evidence</h2>
+<p>Reviewed routing, workout logging/resume/finish, history, routine
+editing/sharing, backup import, Dexie schema, preferences, timers,
+service worker, and deployment. This is a targeted source review, not an
+exhaustive audit or a mobile/browser acceptance test. No application
+code was changed; proposed snippets below are illustrative.</p>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run type-check</code></td>
+<td>Passed</td>
+</tr>
+<tr>
+<td><code>npm run build -- --outDir /private/tmp/irontrack-review-build</code></td>
+<td>Passed; existing <code>dist/</code> left untouched</td>
+</tr>
+<tr>
+<td>Production output</td>
+<td>One application JS bundle: <strong>278.02 kB / 90.78 kB
+gzip</strong>; CSS: 25.62 kB / 5.66 kB gzip</td>
+</tr>
+<tr>
+<td>Targeted in-memory harness</td>
+<td>Actual <code>checkRow</code> function with delayed mocked
+persistence: two overlapping calls produced <strong>two
+writes</strong></td>
+</tr>
+<tr>
+<td>Actual service worker in a VM with mocked browser APIs</td>
+<td>Activation deleted an unrelated cache; a network 503 was returned
+unchanged</td>
+</tr>
+<tr>
+<td>Numeric parser examples</td>
+<td>Negative values, trailing text, fractional reps, and infinite weight
+are accepted/truncated</td>
+</tr>
+<tr>
+<td>Automated regression coverage</td>
+<td>No test script in <code>package.json</code>; Pages workflow builds
+without running the separate type check</td>
+</tr>
+</tbody>
+</table>
+<p>The harness verified control flow with mocks, not real IndexedDB or
+service-worker lifecycle behavior. Other findings below are
+source-confirmed paths with reproduction recipes, not claims of
+end-to-end execution. The build also emitted a PWA toolchain deprecation
+warning about <code>inlineDynamicImports</code>; it did not fail.</p>
+<h2 id="2-architecture-today">2. Architecture today</h2>
+<pre class="text"><code>                         BROWSER / INSTALLED PWA
+ ┌─────────────────────────────────────────────────────────────────┐
+ │ Vue Router → App.vue → feature screens → reusable UI components │
+ │                          │                      │               │
+ │                          ▼                      ▼               │
+ │                 shared/db helpers       Vue reactive singletons │
+ │                 units + aggregation     preferences / session   │
+ │                          │               rest deadline          │
+ │                          ▼                      ▼               │
+ │                 Dexie / IndexedDB           localStorage        │
+ │                 6 tables, schema v4                             │
+ └─────────────────────────────────────────────────────────────────┘
+            ▲
+            │ app shell + assets
+    Custom service worker / Cache Storage
+            ▲
+            │
+    Vite + PWA build → GitHub Pages (/irontrack/)
+                    ↘ Docker / nginx (/)</code></pre>
+<p><strong>Good foundations.</strong> Feature folders are easy to
+navigate; the domain DB helpers centralize writes and weight conversion;
+backup writes are transactional; routine sharing excludes workout and
+body-metric history. Timestamp-based rest timers tolerate delayed
+background ticks better than decrementing counters. <code>App.vue</code>
+keys screens by <code>route.fullPath</code>, so route changes remount
+their setup state; the workout screen's read-once route parameters are
+supported by that design.</p>
+<p><strong>Main architectural pressure points:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Boundary</th>
+<th>Current behavior</th>
+<th>Consequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Workout lifecycle</td>
+<td>Sets in IndexedDB; active marker in localStorage; completion in
+another table</td>
+<td>No atomic session lifecycle; failure and multi-tab recovery need
+explicit policy</td>
+</tr>
+<tr>
+<td>Domain vs screen</td>
+<td><code>ActiveWorkoutScreen.vue</code> is 585 lines and owns
+validation, persistence, grouping, resume, and UI</td>
+<td>Async correctness is difficult to isolate and verify</td>
+</tr>
+<tr>
+<td>Routine vs exercise</td>
+<td>Group and warmup/resistance metadata live on shared exercise
+records</td>
+<td>Editing one routine changes other routines using those records</td>
+</tr>
+<tr>
+<td>Queries</td>
+<td><code>sessionId</code> is unindexed; history loads all sets; some
+views repeat exercise-history scans</td>
+<td>Acceptable at small scale, but grows with lifetime history rather
+than the requested session</td>
+</tr>
+<tr>
+<td>Delivery</td>
+<td>All screens imported eagerly; custom network-first worker</td>
+<td>Initial download includes all screens; cache/update policy is
+hand-maintained</td>
+</tr>
+</tbody>
+</table>
+<p>The app has three runtime dependencies: Vue, Vue Router, and Dexie.
+Its current size and local-only storage favor targeted improvements over
+adding a server framework solely for organization.</p>
+<h2 id="3-bugs-and-correctness-findings">3. Bugs and correctness
+findings</h2>
+<p><strong>Priority:</strong> P1 = fix before feature expansion; P2 =
+user-visible correctness/reliability fix. No critical security exploit
+was established.</p>
+<h3 id="f1--p1--a-set-can-be-saved-twice">F1 · P1 · A set can be saved
+twice</h3>
+<p><strong>Evidence:</strong> <a
+href="../src/features/workout/ActiveWorkoutScreen.vue#L285">ActiveWorkoutScreen.vue:285</a>,
+<a href="../src/features/workout/SetRow.vue#L91">SetRow.vue:91</a>.</p>
+<p><code>checkRow</code> checks <code>row.checked</code>, then awaits
+persistence before setting either <code>loggedSetId</code> or
+<code>checked</code>. The reps input's <code>change</code> event and the
+save button both call it. Two calls before the first write resolves both
+take the insert path. The harness using the extracted function confirmed
+two writes for one row.</p>
+<p><strong>Reproduce:</strong> enter reps and quickly tap Log set, or
+double-tap it with persistence delayed. Check the stored set count, not
+just the single visible checked row. Event timing determines how often
+normal input triggers this.</p>
+<p><strong>Before → proposed after:</strong></p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode ts"><code class="sourceCode typescript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Before: neither field changes until after the asynchronous insert.</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (row<span class="op">.</span><span class="at">checked</span>) <span class="cf">return</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> <span class="kw">set</span> <span class="op">=</span> <span class="cf">await</span> <span class="fu">logSet</span>(input)<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>row<span class="op">.</span><span class="at">loggedSetId</span> <span class="op">=</span> <span class="kw">set</span><span class="op">.</span><span class="at">id</span><span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>row<span class="op">.</span><span class="at">checked</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co">// After: serialize saves for this row; expose failure and allow retry.</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (row<span class="op">.</span><span class="at">checked</span> <span class="op">||</span> row<span class="op">.</span><span class="at">saving</span>) <span class="cf">return</span><span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>row<span class="op">.</span><span class="at">saving</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span> {</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">await</span> <span class="fu">saveOrUpdateRow</span>(row<span class="op">,</span> validatedInput)<span class="op">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  row<span class="op">.</span><span class="at">checked</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>} <span class="cf">catch</span> (error) {</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">showSaveFailure</span>(error)<span class="op">;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>} <span class="cf">finally</span> {</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  row<span class="op">.</span><span class="at">saving</span> <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Disable editing/save while pending. For retry safety across
+interruption, also consider assigning a stable set ID before insertion.
+<strong>Acceptance:</strong> two concurrent saves produce one record; a
+failed save leaves the row editable and retryable.</p>
+<h3
+id="f2--p1--import-can-persist-malformed-data-and-silently-overwrite-changed-routines">F2
+· P1 · Import can persist malformed data and silently overwrite changed
+routines</h3>
+<p><strong>Evidence:</strong> <a
+href="../src/shared/db/backup.ts#L31">backup.ts:31</a>, <a
+href="../src/shared/db/sharing.ts#L17">sharing.ts:17</a>, <a
+href="../src/shared/db/sharing.ts#L60">sharing.ts:60</a>, <a
+href="../src/shared/db/sharing.ts#L97">sharing.ts:97</a>.</p>
+<p>There are two distinct defects:</p>
+<ul>
+<li><strong>Shape checking stops at arrays.</strong> A backup set with
+an ID but missing <code>date</code> can be stored, then crash
+<code>getAllSets()</code> at <code>date.localeCompare</code>. Imports
+also trust derived weight values, enum values, references, and version
+numbers. TypeScript assertions do not validate imported JSON.</li>
+<li><strong>Conflict checking compares names only.</strong> Import an
+older copy of a routine with the same ID/name but a different exercise
+list: no conflict appears, and <code>bulkPut</code> replaces the local
+list. The same problem applies to exercise type/group changes. The
+comment says a same-name record is reused, but the implementation
+overwrites it.</li>
+</ul>
+<pre class="text"><code> BEFORE                                 PROPOSED AFTER
+ JSON → arrays? → bulkPut               JSON → supported format/version?
+                                                  ↓
+                                        validate every row + references
+                                                  ↓
+                                        normalize canonical units
+                                                  ↓
+                                        compare meaningful fields
+                                                  ↓
+                                        preview conflicts → transaction</code></pre>
+<p>Keep legacy formats supported through explicit normalization. Compare
+semantic content while excluding export timestamps; apply user
+resolutions before committing. Treat invalid optional tables as errors
+rather than silently substituting empty arrays when present with the
+wrong type. <strong>Acceptance:</strong> invalid imports write nothing;
+changed same-name records require an explicit resolution; valid legacy
+backups still load.</p>
+<h3
+id="f3--p1--worker-activation-deletes-other-apps-caches-on-the-same-origin">F3
+· P1 · Worker activation deletes other apps' caches on the same
+origin</h3>
+<p><strong>Evidence:</strong> <a
+href="../src/sw.js#L47">sw.js:47</a>.</p>
+<p>Cache Storage is origin-wide. Activation deletes every cache except
+the current IronTrack cache, regardless of service-worker scope. This is
+especially relevant to GitHub Pages project apps sharing
+<code>hk0i.github.io</code>.</p>
+<p><strong>Confirmed in harness:</strong> keys
+<code>irontrack-precache-old</code> and <code>other-app-cache</code>
+were both deleted.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Before</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>keys<span class="op">.</span><span class="fu">filter</span>(key <span class="kw">=&gt;</span> key <span class="op">!==</span> CACHE_NAME)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co">// After: delete only caches owned by this app.</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>keys<span class="op">.</span><span class="fu">filter</span>(key <span class="kw">=&gt;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  key<span class="op">.</span><span class="fu">startsWith</span>(<span class="st">&#39;irontrack-precache-&#39;</span>) <span class="op">&amp;&amp;</span> key <span class="op">!==</span> CACHE_NAME</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<p>If multiple IronTrack installations share an origin, namespace by
+deployment scope too. <strong>Acceptance:</strong> old app caches are
+removed and unrelated cache keys survive activation.</p>
+<h3
+id="f4--p2--cached-app-fails-during-http-errors-updates-can-mix-asset-generations">F4
+· P2 · Cached app fails during HTTP errors; updates can mix asset
+generations</h3>
+<p><strong>Evidence:</strong> <a href="../src/sw.js#L56">sw.js:56</a>,
+<a href="../src/shared/app-update.ts#L83">app-update.ts:83</a>.</p>
+<p><code>fetch</code> resolves on HTTP 404/503, so the
+<code>.catch</code> fallback only covers network rejection. A transient
+HTTP error prevents use of an available cached page/asset. The VM
+harness confirmed that a 503 is returned unchanged.</p>
+<p>Separately, successful network responses overwrite entries inside the
+active build's cache. After a deployment, an old worker can cache the
+new <code>index.html</code> before the new hashed JS has been cached.
+Going offline at that point can leave an HTML/asset generation mismatch.
+This is a source-derived lifecycle risk; it was not reproduced in a
+browser.</p>
+<pre class="text"><code> BEFORE: one network-first policy for all GET requests
+
+ AFTER:  navigation ── bounded network attempt ── app-shell fallback
+         hashed asset ── current-build precache first
+         activation ── clean only app-owned older caches</code></pre>
+<p>Account for the existing GitHub Pages fallback: deep routes
+intentionally receive the app shell with a 404 status. Distinguish that
+navigation case from missing asset requests. Keep the app shell and its
+referenced assets consistent; tie background cache writes to
+<code>event.waitUntil</code>. <strong>Acceptance:</strong> test first
+visit, offline reload, cached navigation during 503, and deployment
+followed by going offline before accepting the update.</p>
+<h3
+id="f5--p2--set-validation-permits-invalid-or-silently-altered-numbers">F5
+· P2 · Set validation permits invalid or silently altered numbers</h3>
+<p><strong>Evidence:</strong> <a
+href="../src/features/workout/ActiveWorkoutScreen.vue#L291">ActiveWorkoutScreen.vue:291</a>,
+<a
+href="../src/features/history/WorkoutSessionDetailScreen.vue#L175">WorkoutSessionDetailScreen.vue:175</a>,
+<a href="../src/shared/db/sets.ts#L28">sets.ts:28</a>.</p>
+<p>Inputs are text fields. <code>parseInt('3.9', 10)</code> becomes
+<code>3</code>; <code>parseInt('12abc', 10)</code> becomes
+<code>12</code>; negative reps and weight pass;
+<code>parseFloat('Infinity')</code> passes the weight <code>isNaN</code>
+check. Domain write helpers provide no second validation boundary.
+Invalid values pollute charts and totals.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode ts"><code class="sourceCode typescript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Before</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> reps <span class="op">=</span> <span class="pp">parseInt</span>(text<span class="op">,</span> <span class="dv">10</span>)<span class="op">;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> valid <span class="op">=</span> <span class="op">!</span><span class="bu">Number</span><span class="op">.</span><span class="fu">isNaN</span>(reps)<span class="op">;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co">// After: full-string numeric conversion plus an explicit domain rule.</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> reps <span class="op">=</span> <span class="bu">Number</span>(text)<span class="op">;</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> valid <span class="op">=</span> text<span class="op">.</span><span class="fu">trim</span>() <span class="op">!==</span> <span class="st">&#39;&#39;</span> <span class="op">&amp;&amp;</span> <span class="bu">Number</span><span class="op">.</span><span class="fu">isSafeInteger</span>(reps) <span class="op">&amp;&amp;</span> reps <span class="op">&gt;</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Weight: blank → 0; otherwise finite, nonnegative numeric value.</span></span></code></pre></div>
+<p>Share validation between live entry, history edits, and imports.
+<strong>Acceptance:</strong> reject fractional/negative reps, trailing
+text, and non-finite numbers; preserve optional zero weight. Decide
+explicitly whether zero reps is meaningful before enforcing that
+policy.</p>
+<h3 id="f6--p2--a-failed-finish-leaves-the-screen-unable-to-retry">F6 ·
+P2 · A failed Finish leaves the screen unable to retry</h3>
+<p><strong>Evidence:</strong> <a
+href="../src/features/workout/ActiveWorkoutScreen.vue#L357">ActiveWorkoutScreen.vue:357</a>.</p>
+<p><code>finishing</code> is set before <code>logWorkoutSession</code>,
+with no catch/finally. If IndexedDB rejects the write, the modal has
+closed, Finish remains disabled, and no useful recovery is presented.
+The active marker remains, so reload may recover, but the current screen
+cannot retry.</p>
+<p><strong>Reproduce:</strong> reject the completion write, for example
+with a mocked storage failure. <strong>Proposed change:</strong> handle
+the error, preserve the active marker, and reset <code>finishing</code>
+on failure; clear the marker only after durable completion. Make retry
+idempotent by session ID, including recovery after a completion write
+succeeded but clearing localStorage failed. <strong>Acceptance:</strong>
+failed finish can be retried without losing sets or duplicating
+completion.</p>
+<h3
+id="f7--p2--last-workout-calculations-confuse-multiple-same-day-sessions">F7
+· P2 · “Last workout” calculations confuse multiple same-day
+sessions</h3>
+<p><strong>Evidence:</strong> <a
+href="../src/shared/db/sets.ts#L104">sets.ts:104</a>, <a
+href="../src/shared/db/sets.ts#L133">sets.ts:133</a>, <a
+href="../src/shared/db/sets.ts#L156">sets.ts:156</a>.</p>
+<p>The app now distinguishes sessions by ID, but comparison helpers
+still use dates:</p>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Current result</th>
+<th>Expected session-based result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Morning 200 lb; afternoon 150 lb; start evening workout</td>
+<td>Ghost text shows 200</td>
+<td>Most recent prior session: 150</td>
+</tr>
+<tr>
+<td>Open afternoon session detail</td>
+<td>Morning workout excluded by <code>date &lt; beforeDate</code></td>
+<td>Compare with morning session</td>
+</tr>
+<tr>
+<td>Open morning session sparkline</td>
+<td>Later same-day sessions can be included; equal-date ordering lacks a
+timestamp tie-breaker</td>
+<td>End at the viewed session</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Proposed change:</strong> pass a session cursor containing
+ID, start time, and logical date; select the prior session first, then
+its best set. Use a deterministic date/created-time fallback for legacy
+sets. <strong>Acceptance:</strong> two or three same-day sessions remain
+correctly ordered and historical views exclude later sessions.</p>
+<h2 id="4-architecture-changes-worth-making-in-either-framework">4.
+Architecture changes worth making in either framework</h2>
+<h3 id="keep-the-db-layer-extract-a-session-controller">Keep the DB
+layer; extract a session controller</h3>
+<pre class="text"><code> BEFORE                                    PROPOSED AFTER
+ Screen ── validation                      Screen ── rendering + user intent
+        ├─ session resolution                    │
+        ├─ row save/update                       ▼
+        ├─ completion writes               Session controller
+        └─ resume assembly                 validate / serialize / recover
+                                                  │
+                                                  ▼
+                                           Existing domain DB helpers
+                                                  │
+                                                  ▼
+                                           Dexie / IndexedDB</code></pre>
+<p>Reuse the existing schema and conversion helpers. Start with F1/F6;
+avoid a large abstraction project. A durable active/completed session
+record in IndexedDB would eventually let completion and lifecycle
+changes share a transaction, while localStorage remains appropriate for
+simple preferences. Keep legacy backup compatibility explicit.</p>
+<h3 id="put-routine-specific-metadata-on-routine-entries">Put
+routine-specific metadata on routine entries</h3>
+<p><code>duplicateRoutine</code> shares exercise IDs, while the builder
+immediately writes exercise type and group changes to those shared
+records—even before Save. Grouping a duplicated routine can therefore
+alter the original routine; leaving the editor does not undo those
+changes. Whether global resistance metadata is desirable is a product
+decision, but workout grouping and warmup designation usually belong to
+the routine placement.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode ts"><code class="sourceCode typescript"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Before: grouping and warmup are shared everywhere this exercise appears.</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>Routine  { exerciseIds<span class="op">:</span> <span class="dt">string</span>[] }</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>Exercise { id<span class="op">,</span> name<span class="op">,</span> groupId<span class="op">?,</span> exerciseType<span class="op">?,</span> resistanceType<span class="op">?</span> }</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Proposed shape: catalog identity remains shared; placement is local.</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>Routine {</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  entries<span class="op">:</span> <span class="bu">Array</span><span class="op">&lt;</span>{</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    id<span class="op">:</span> <span class="dt">string</span><span class="op">;</span> exerciseId<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    groupId<span class="op">:</span> <span class="dt">string</span> <span class="op">|</span> <span class="dt">null</span><span class="op">;</span> exerciseType<span class="op">:</span> <span class="st">&#39;warmup&#39;</span> <span class="op">|</span> <span class="st">&#39;regular&#39;</span><span class="op">;</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  }<span class="op">&gt;;</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>Exercise { id<span class="op">,</span> name<span class="op">,</span> resistanceType<span class="op">?</span> }</span></code></pre></div>
+<p>Stage editor changes and commit on Save. A migration must preserve
+entry order, existing groups, legacy imports, and exercise IDs used by
+historical sets. Decide whether historical resistance type should be
+snapshotted too: current history reads present-day exercise metadata, so
+later edits can change how old sets are interpreted.</p>
+<h3 id="low-cost-delivery-and-query-improvements">Low-cost delivery and
+query improvements</h3>
+<table>
+<thead>
+<tr>
+<th>Proposed change</th>
+<th>Concrete payoff</th>
+<th>Framework switch needed?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lazy-import route screens</td>
+<td>Avoid downloading every screen at startup; measure actual
+benefit</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Index <code>sets.sessionId</code> in a schema upgrade</td>
+<td>Session detail/resume queries avoid full-table filters</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Centralize session ordering and volume policy</td>
+<td>Same-day correctness; avoid divergent chart definitions</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Run type check in CI; add focused regression tests for F1–F7</td>
+<td>Prevent known failure classes from shipping</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p>History cards are built from sets, so a finished session with zero
+sets is invisible (<a
+href="../src/features/history/WorkoutHistoryScreen.vue#L68">WorkoutHistoryScreen.vue:68</a>).
+Decide whether to disallow empty completion or display completed session
+rows independently. This is a product-policy gap rather than an assumed
+requirement.</p>
+<h2 id="5-sveltekit-switch-or-maintain">5. SvelteKit: switch or
+maintain?</h2>
+<p><strong>Decision for the current product: maintain Vue.</strong>
+There is no measured performance, reliability, or offline capability win
+that requires SvelteKit. Reconsider if server-backed features become a
+committed requirement or the team strongly prefers Svelte enough to fund
+a rewrite.</p>
+<table>
+<thead>
+<tr>
+<th>Dimension</th>
+<th>Maintain Vue + Vite</th>
+<th>Switch to SvelteKit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Offline local workout logging</td>
+<td>Already implemented; fix worker/lifecycle defects</td>
+<td>Dexie and the same lifecycle rules still required</td>
+</tr>
+<tr>
+<td>Routing and layouts</td>
+<td>Explicit Vue Router configuration; add lazy imports</td>
+<td><strong>Clear convention win:</strong> file-based routes and nested
+layouts reduce manual route wiring</td>
+</tr>
+<tr>
+<td>Route loading and errors</td>
+<td>Add consistent screen loading/error handling</td>
+<td><strong>Clear convention win:</strong> generated route types and
+built-in route error/loading structure; DB validation still
+separate</td>
+</tr>
+<tr>
+<td>Server features later</td>
+<td>Add an API or adopt a Vue-oriented full-stack framework</td>
+<td><strong>Conditional win:</strong> server routes, actions, and SSR
+fit naturally if a server is actually deployed</td>
+</tr>
+<tr>
+<td>Static hosting</td>
+<td>Working Pages and nginx workflows</td>
+<td>Supported through <code>adapter-static</code>; configure base path
+and dynamic-route fallback carefully</td>
+</tr>
+<tr>
+<td>PWA</td>
+<td>Existing Vite PWA integration</td>
+<td>Service-worker support exists; custom offline/update policy still
+needs engineering</td>
+</tr>
+<tr>
+<td>Bundle/runtime</td>
+<td>Measured baseline: 90.78 kB JS gzip</td>
+<td>Potential improvement, <strong>unproven</strong> until an equivalent
+production build is compared</td>
+</tr>
+<tr>
+<td>UI and browser integrations</td>
+<td>Existing components, composables, gestures, audio, wake lock</td>
+<td>Rewrite Vue components/composables and revalidate mobile
+behavior</td>
+</tr>
+<tr>
+<td>Data continuity</td>
+<td>Existing origin and DB remain</td>
+<td>Preserve origin, DB name/schema, IDs, and storage keys; changing
+origin requires export/import or another transfer path</td>
+</tr>
+<tr>
+<td>Delivery risk</td>
+<td>Incremental fixes; narrower regression surface</td>
+<td>Broad rewrite with high risk around resume, groups, history editing,
+and updates</td>
+</tr>
+</tbody>
+</table>
+<p>SvelteKit documents <a
+href="https://svelte.dev/docs/kit/routing">filesystem routing</a>, <a
+href="https://svelte.dev/docs/kit/types">route types</a>, <a
+href="https://svelte.dev/docs/kit/adapter-static">static deployment</a>,
+<a href="https://svelte.dev/docs/kit/page-options">page rendering
+options</a>, and <a
+href="https://svelte.dev/docs/kit/service-workers">service-worker
+support</a>. These are framework capabilities; the payoff assessment
+above is specific to this repository.</p>
+<p><strong>Important deployment constraint:</strong> current modules
+access <code>localStorage</code>, <code>document</code>, and
+<code>window</code> during import. They cannot simply run unchanged
+during SSR. A static client-rendered SvelteKit build is viable, but
+gives up much of the SSR/server rationale. Browser-only persistence must
+be initialized on the client. Server actions require runtime hosting
+beyond GitHub Pages; a server also cannot directly read a user's browser
+IndexedDB. SvelteKit's <a
+href="https://svelte.dev/docs/kit/single-page-apps">SPA guidance</a>
+describes fallback deployment and its tradeoffs.</p>
+<pre class="text"><code> SWITCHING ONLY THE UI FRAMEWORK
+ Vue screens + composables  →  Svelte screens + reactive state  [rewrite]
+ Vue Router                 →  SvelteKit filesystem routes     [replace]
+ Dexie + domain rules        →  Dexie + domain rules             [reuse/fix]
+ localStorage/browser APIs  →  client-only initialization       [adapt]
+ custom PWA policy          →  explicit PWA policy              [revalidate]
+ GitHub Pages + nginx       →  static adapter + base/fallback    [adapt]</code></pre>
+<p><strong>What switching will not automatically deliver:</strong> sync,
+backups, reliable background alerts, transactional session recovery,
+better import validation, or corrected analytics. SSR cannot pre-render
+private local training data it cannot access. File-based routing is a
+real convenience, but this router currently has only 12 route records,
+so the immediate savings are modest. Nuxt is also worth comparing if
+future server features—not Svelte itself—become the primary
+motivation.</p>
+<h2 id="6-suggested-order">6. Suggested order</h2>
+<ol type="1">
+<li><strong>Protect data:</strong> fix duplicate saves, imports, and
+numeric validation; verify failed-write retry.</li>
+<li><strong>Protect offline use:</strong> isolate cache ownership and
+verify update/offline transitions on installed mobile PWAs and under
+<code>/irontrack/</code>.</li>
+<li><strong>Correct session analytics:</strong> order by session, then
+address routine-entry ownership and staged editing.</li>
+<li><strong>Reduce maintenance cost:</strong> extract the small session
+controller, lazy-load routes, add the session index and focused CI
+checks.</li>
+<li><strong>Only then evaluate migration:</strong> port one
+representative workout flow in an isolated experiment, reusing DB
+helpers. Compare identical data, production bundle size, startup on the
+same device, offline reload, resume, same-day history, update behavior,
+and developer effort. Keep deployment origin stable for a real
+rollout.</li>
+</ol>
+<p><strong>Migration gate:</strong> choose SvelteKit only when the
+experiment demonstrates a material benefit or a concrete server roadmap
+justifies it. The clear wins today are conventions; the urgent work is
+correctness and remains necessary in both stacks.</p>
+</body>
+</html>
