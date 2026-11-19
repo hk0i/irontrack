@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.12" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>IronTrack · Product Evolution</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      color: light-dark(#1a1a1a, #fdfdfd);
+      background-color: #fdfdfd;
+      background-color: light-dark(#fdfdfd, #1a1a1a);
+      color-scheme: light dark;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        color-scheme: light only;
+      }
+      html, body, pre, code {
+        background-color: transparent;
+      }
+      body, a, a:visited, blockquote {
+        color: black;
+      }
+      pre, code {
+        padding: 0;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a, a:visited {
+      color: inherit;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid;
+      border-color: #e6e6e6;
+      border-color: light-dark(#e6e6e6, #4c4c4c);
+      color: #606060;
+      color: light-dark(#606060, #b6b6b6);
+    }
+    code {
+      white-space: pre-wrap;
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid currentColor;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid currentColor;
+      border-bottom: 1px solid currentColor;
+    }
+    th {
+      border-top: 1px solid currentColor;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: 1.5em;}
+    div.column{flex: auto;}
+    @media screen {
+    div.columns{gap: min(4vw, 1.5em);}
+    div.column{overflow-x: auto;}
+    }
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+      }
+    pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+    div.sourceCode
+      { color: #cccccc; background-color: #303030; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ffcfaf; } /* Alert */
+    code span.an { color: #7f9f7f; font-weight: bold; } /* Annotation */
+    code span.at { } /* Attribute */
+    code span.bn { color: #dca3a3; } /* BaseN */
+    code span.bu { } /* BuiltIn */
+    code span.cf { color: #f0dfaf; } /* ControlFlow */
+    code span.ch { color: #dca3a3; } /* Char */
+    code span.cn { color: #dca3a3; font-weight: bold; } /* Constant */
+    code span.co { color: #7f9f7f; } /* Comment */
+    code span.cv { color: #7f9f7f; font-weight: bold; } /* CommentVar */
+    code span.do { color: #7f9f7f; } /* Documentation */
+    code span.dt { color: #dfdfbf; } /* DataType */
+    code span.dv { color: #dcdccc; } /* DecVal */
+    code span.er { color: #c3bf9f; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #c0bed1; } /* Float */
+    code span.fu { color: #efef8f; } /* Function */
+    code span.im { } /* Import */
+    code span.in { color: #7f9f7f; font-weight: bold; } /* Information */
+    code span.kw { color: #f0dfaf; } /* Keyword */
+    code span.op { color: #f0efd0; } /* Operator */
+    code span.ot { color: #efef8f; } /* Other */
+    code span.pp { color: #ffcfaf; font-weight: bold; } /* Preprocessor */
+    code span.sc { color: #dca3a3; } /* SpecialChar */
+    code span.ss { color: #cc9393; } /* SpecialString */
+    code span.st { color: #cc9393; } /* String */
+    code span.va { } /* Variable */
+    code span.vs { color: #cc9393; } /* VerbatimString */
+    code span.wa { color: #7f9f7f; font-weight: bold; } /* Warning */
+  </style>
+<style>
+:root { color-scheme: dark; --ink:#d6e1e9; --muted:#a1b2c0; --accent:#76d7c8; --line:#334452; }
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; background:#0c121a; }
+body { max-width:1120px; margin:40px auto; padding:60px 72px; background:#141e29; color:var(--ink); font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; box-shadow:0 16px 64px #18324412; border-top:8px solid var(--accent); border-radius:8px; }
+header { border-bottom:1px solid var(--line); padding-bottom:20px; margin-bottom:28px; }
+header h1 { color:var(--accent); font-size:14px; letter-spacing:.15em; text-transform:uppercase; }
+h1 { font-size:40px; line-height:1.15; letter-spacing:-.035em; margin:32px 0 20px; }
+h2 { font-size:26px; line-height:1.3; margin-top:56px; padding-top:20px; border-top:2px solid var(--line); letter-spacing:-.02em; }
+h3 { font-size:20px; line-height:1.4; margin-top:36px; }
+p,li { max-width:88ch; }
+a { color:var(--accent); text-decoration-thickness:1px; text-underline-offset:3px; overflow-wrap:anywhere; }
+strong { font-weight:650; }
+blockquote { margin:28px 0; padding:14px 24px; background:#19332f; border-left:4px solid var(--accent); border-radius:0 8px 8px 0; }
+blockquote p { margin:6px 0; }
+#TOC { background:#1a2734; border:1px solid var(--line); border-radius:10px; padding:20px 28px; margin-bottom:40px; }
+#TOC > ul { columns:2; padding-left:18px; margin:0; }
+#TOC ul ul { display:none; }
+#TOC li { break-inside:avoid; padding:4px 0; font-size:14px; }
+table { width:100%; border-collapse:collapse; font-size:14px; line-height:1.55; margin:24px 0; display:block; overflow-x:auto; }
+th { text-align:left; background:#203b46; color:white; font-weight:600; }
+th,td { padding:12px 14px; border:1px solid var(--line); vertical-align:top; min-width:120px; }
+tr:nth-child(even) td { background:#192532; }
+code { font: .86em/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; background:#223140; border-radius:4px; padding:2px 5px; }
+pre { border:1px solid #334452; border-radius:9px; background:#101923; padding:22px; overflow-x:auto; line-height:1.55; }
+pre code { background:transparent; padding:0; border:0; border-radius:0; white-space:pre; font-size:12px; }
+div.sourceCode { margin:24px 0; }
+li { padding:3px 0; }
+::selection { background:#305e62; }
+@media(max-width:800px) { body { margin:0; padding:28px 20px; border-radius:0; } h1 { font-size:32px; } #TOC > ul { columns:1; } th,td { padding:9px; } }
+@media print { html { background:white; } body { margin:0; max-width:none; padding:0; box-shadow:none; border:0; font-size:10pt; } #TOC { display:none; } h2,h3 { break-after:avoid; } pre,blockquote,tr { break-inside:avoid; } a { color:inherit; } }
+
+html { color:var(--ink); }
+pre, pre code { color:#d6e1e9; }
+div.sourceCode { background:transparent; }
+.mermaid-diagram { margin:26px 0; padding:18px; border:1px solid var(--line); background:#101923; border-radius:10px; overflow-x:auto; text-align:center; }
+.mermaid-diagram svg { height:auto; max-width:100%; }
+@media print { :root { --ink:#172630; --accent:#00665e; --line:#ccd4db; } html,body { color:#172630; background:white; } pre,pre code { color:#172630; } }
+</style>
+<meta name="source-sha256" content="d1da971f8d449d3590c9efd6a9ece3da616c802e6560f453d31f604c2dbfeacd">
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">IronTrack · Product Evolution</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a
+href="#from-workout-prototype-to-a-combined-training-and-nutrition-app"
+id="toc-from-workout-prototype-to-a-combined-training-and-nutrition-app">From
+workout prototype to a combined training and nutrition app</a>
+<ul>
+<li><a href="#1-the-original-goal-changes-the-recommendation"
+id="toc-1-the-original-goal-changes-the-recommendation">1. The original
+goal changes the recommendation</a></li>
+<li><a href="#2-home-and-travel-use-a-routine-collection"
+id="toc-2-home-and-travel-use-a-routine-collection">2. Home and Travel:
+use a routine collection</a></li>
+<li><a href="#3-changing-weight-mid-set-a-set-has-segments"
+id="toc-3-changing-weight-mid-set-a-set-has-segments">3. Changing weight
+mid-set: a set has segments</a></li>
+<li><a
+href="#4-mixed-pull-ups-use-those-same-segments-with-structured-variations"
+id="toc-4-mixed-pull-ups-use-those-same-segments-with-structured-variations">4.
+Mixed pull-ups: use those same segments with structured
+variations</a></li>
+<li><a href="#5-combining-nutrition-and-training"
+id="toc-5-combining-nutrition-and-training">5. Combining nutrition and
+training</a></li>
+<li><a
+href="#6-preserve-the-prototypes-data-without-preserving-its-limitations"
+id="toc-6-preserve-the-prototypes-data-without-preserving-its-limitations">6.
+Preserve the prototype's data without preserving its
+limitations</a></li>
+<li><a href="#7-useful-order-of-work" id="toc-7-useful-order-of-work">7.
+Useful order of work</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1
+id="from-workout-prototype-to-a-combined-training-and-nutrition-app">From
+workout prototype to a combined training and nutrition app</h1>
+<p><strong>Author: GPT-6 Astra · 10 November 2026 · Architecture
+discussion, not an implementation commitment</strong></p>
+<blockquote>
+<p><strong>All three features are feasible. The important change is to
+model a workout as a durable record of what happened, independent of the
+routine template.</strong> Add a parent collection for routines, and
+represent each performed set as one or more ordered segments. Resolve
+the iOS direction before spending effort on a web-framework rewrite.</p>
+</blockquote>
+<p>This discussion builds on the <a href="../codex-gpt-6-review.md">code
+review</a>. The workout source was inspected; the separate nutrition app
+was not available in this repository, so integration scope remains
+conditional. No application code was changed. Shapes below illustrate
+contracts rather than finalized schemas.</p>
+<h2 id="1-the-original-goal-changes-the-recommendation">1. The original
+goal changes the recommendation</h2>
+<p>The existing Vue app has already served a valuable purpose: it
+exposed actual logging behavior and where the first data model is too
+restrictive. Preserving every component is less important than carrying
+those lessons into the intended product.</p>
+<p>The prior “maintain Vue” recommendation applies to improving the
+current web app. For a combined app with an iOS-native experience, the
+first decision is <strong>the presentation/runtime target</strong>,
+followed by the data model. Switching Vue to SvelteKit does not itself
+resolve the native experience or any of these structural
+requirements.</p>
+<table>
+<thead>
+<tr>
+<th>Product priority</th>
+<th>Direction worth exploring</th>
+<th>What carries forward</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Native iOS controls, navigation, accessibility, and deep Apple
+integration are central</td>
+<td>SwiftUI app with native persistence</td>
+<td>Product behavior, IDs, export contracts, domain rules, migration
+fixtures; most UI and DB access are rewritten</td>
+</tr>
+<tr>
+<td>Fastest path to a combined app with substantial web-code reuse</td>
+<td>Existing Vue UI in a Capacitor iOS shell</td>
+<td>Most Vue/TypeScript; native integrations and mobile polish still
+require work</td>
+</tr>
+<tr>
+<td>A substantial web product with future server-rendered/public
+features</td>
+<td>Revisit SvelteKit or a Vue full-stack option</td>
+<td>Separate decision from native packaging; no established benefit for
+the logging model</td>
+</tr>
+</tbody>
+</table>
+<p>SwiftUI provides Apple's declarative UI framework and interoperates
+with UIKit. Capacitor provides an iOS runtime and a JavaScript-to-native
+bridge, and copies a built web bundle into a native project. Those are
+materially different reuse paths. <a
+href="https://developer.apple.com/swiftui/">SwiftUI</a>, <a
+href="https://capacitorjs.com/docs/ios">Capacitor iOS</a>, <a
+href="https://capacitorjs.com/docs/getting-started">Capacitor
+installation</a>.</p>
+<p><strong>My recommendation:</strong> if “native” describes the product
+quality and controls you want, prototype the workout-entry flow in
+SwiftUI before doing another web rewrite. If it primarily means an
+installable App Store app that shares a web codebase, evaluate Capacitor
+first. The existing prototype can remain useful while that decision is
+made; it does not need every architectural improvement before
+exploration begins.</p>
+<p>An iOS experiment should include numeric entry, keyboard dismissal,
+segmented-set editing, app suspension/resume, persistent storage, and
+rest completion while locked. A wrapper alone does not establish these
+behaviors. Choose native notification/lifecycle integrations where
+needed; do not assume JavaScript intervals will run while suspended.
+Keep the native bundled-asset/update lifecycle separate from the PWA
+service-worker lifecycle.</p>
+<h2 id="2-home-and-travel-use-a-routine-collection">2. Home and Travel:
+use a routine collection</h2>
+<p><strong>Suggested UI name: “Routine collections.” Suggested domain
+name: <code>RoutineCollection</code>.</strong> Home and Travel describe
+contexts containing routines. “Schedule” implies dates or weekdays;
+reserve that for actual calendar assignment. “Training plan” becomes
+appropriate if the parent later owns progression, weeks, or phases.</p>
+<p>The smallest useful version is a named, ordered collection with a
+selected collection in preferences. Selecting Travel changes the routine
+list and suggestions. It does not alter previous workouts or interrupt
+an active Home workout.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode mermaid"><code class="sourceCode mermaid"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">flowchart</span> <span class="cn">TB</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Home</span>[<span class="vs">Home collection</span>] <span class="pp">--&gt;</span> <span class="dt">Push</span>[<span class="vs">Push routine</span>]</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Home</span> <span class="pp">--&gt;</span> <span class="dt">Pull</span>[<span class="vs">Pull routine</span>]</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Travel</span>[<span class="vs">Travel collection</span>] <span class="pp">--&gt;</span> <span class="dt">Hotel</span>[<span class="vs">Hotel dumbbell routine</span>]</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Travel</span> <span class="pp">--&gt;</span> <span class="dt">Bands</span>[<span class="vs">Band routine</span>]</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Push</span> <span class="pp">--&gt;</span> <span class="dt">Entries</span>[<span class="vs">Routine entries: local order / groups / warmup role</span>]</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Pull</span> <span class="pp">--&gt;</span> <span class="dt">Entries</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Entries</span> <span class="pp">--&gt;</span> <span class="dt">Catalog</span>[<span class="vs">Shared exercise catalog</span>]</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Start</span>[<span class="vs">Start workout</span>] <span class="pp">--&gt;</span> <span class="dt">Snapshot</span>[<span class="vs">Session snapshot of chosen collection and routine</span>]</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Snapshot</span> <span class="pp">--&gt;</span> <span class="dt">Actual</span>[<span class="vs">Performed exercises and sets</span>]</span></code></pre></div>
+<p><strong>Recommended first version: one collection owns each
+routine.</strong> This avoids accidental linked edits across Home and
+Travel. “Copy to another collection” creates a new routine and new
+routine-entry IDs but reuses exercise catalog IDs. A future membership
+table can support deliberate reuse if that need appears; do not
+introduce it just to organize two lists.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode ts"><code class="sourceCode typescript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Current</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>Routine { id<span class="op">,</span> name<span class="op">,</span> exerciseIds<span class="op">,</span> sortOrder }</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Proposed, abbreviated</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>RoutineCollection { id<span class="op">,</span> name<span class="op">,</span> sortOrder<span class="op">,</span> archivedAt<span class="op">?</span> }</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>Routine { id<span class="op">,</span> collectionId<span class="op">,</span> name<span class="op">,</span> entries<span class="op">:</span> RoutineEntry[]<span class="op">,</span> sortOrder }</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>RoutineEntry { id<span class="op">,</span> exerciseId<span class="op">,</span> groupId<span class="op">,</span> exerciseType<span class="op">,</span> order }</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Preferences: selectedCollectionId</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="co">// Session: collectionId + routineId + labels/entry snapshot at start</span></span></code></pre></div>
+<p>Move group and warmup metadata from shared exercises to routine
+entries as part of this boundary change. Otherwise a different grouping
+or warmup role in Travel still changes Home—the coupling already
+identified in the review.</p>
+<table>
+<thead>
+<tr>
+<th>Behavior</th>
+<th>Proposed rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Suggested next routine</td>
+<td>Rotate within the selected collection, based on completed sessions
+in that collection</td>
+</tr>
+<tr>
+<td>Switch collections during a workout</td>
+<td>Keep one active workout; show its originating collection in
+Resume</td>
+</tr>
+<tr>
+<td>Copy routine</td>
+<td>Independent entry metadata; shared exercise identity for progress
+tracking</td>
+</tr>
+<tr>
+<td>Archive collection or routine</td>
+<td>Preserve history and snapshots; exclude from new-workout
+selection</td>
+</tr>
+<tr>
+<td>Routine/exercise renamed later</td>
+<td>Historical display keeps recorded labels; catalog identity still
+supports aggregated history</td>
+</tr>
+<tr>
+<td>Existing data</td>
+<td>Put existing routines in a deterministic “Default” collection and
+preserve their order</td>
+</tr>
+</tbody>
+</table>
+<p>The current dashboard derives suggestions from the latest
+<strong>set</strong>, despite its completion-oriented comment. Adding a
+collection filter alone will retain that mismatch; use completed
+sessions explicitly. Relevant files: <a
+href="../../src/features/dashboard/DashboardScreen.vue">DashboardScreen.vue</a>,
+<a href="../../src/shared/db/routines.ts">routines.ts</a>, <a
+href="../../src/shared/db/schema.ts">schema.ts</a>.</p>
+<p><strong>Scope: moderate.</strong> The list/filter UI is small;
+copying, rotation, session context, archiving, and backup compatibility
+are the real work. No equipment database or GPS-based location detection
+is necessary for the first version.</p>
+<h2 id="3-changing-weight-mid-set-a-set-has-segments">3. Changing weight
+mid-set: a set has segments</h2>
+<p>You should be able to record the whole effort as <strong>one
+set</strong> without pretending it used one weight. For example, if the
+second portion is five reps:</p>
+<table>
+<thead>
+<tr>
+<th>Set</th>
+<th>Segment</th>
+<th>Load</th>
+<th>Reps</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>25 lb</td>
+<td>3</td>
+</tr>
+<tr>
+<td>1</td>
+<td>2</td>
+<td>15 lb</td>
+<td>5</td>
+</tr>
+</tbody>
+</table>
+<p>Result: <strong>one set, eight reps, 150 lb·reps of external-load
+volume</strong> (<code>25×3 + 15×5</code>). Neither 25 lb × 8 nor two
+independent sets describes this correctly.</p>
+<p>The current <a href="../../src/shared/db/schema.ts">SetEntry</a>
+stores one load and rep count per row. Replace that assumption with a
+parent set and an ordered segment array. Most ordinary sets still have
+exactly one segment; the simple logging experience remains the
+default.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode ts"><code class="sourceCode typescript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Current, abbreviated</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>SetEntry { id<span class="op">,</span> exerciseId<span class="op">,</span> reps<span class="op">,</span> weightEntered<span class="op">,</span> unit<span class="op">,</span> weightInLbs }</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Proposed: snapshots carry the interpretation of the recorded effort.</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>PerformedSet {</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  id<span class="op">,</span> sessionId<span class="op">,</span> sessionExerciseId<span class="op">,</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  status<span class="op">:</span> <span class="st">&#39;draft&#39;</span> <span class="op">|</span> <span class="st">&#39;completed&#39;</span><span class="op">,</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  segments<span class="op">:</span> <span class="bu">Array</span><span class="op">&lt;</span>{</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    id<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    reps<span class="op">:</span> <span class="dt">number</span><span class="op">;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    variationId<span class="op">:</span> <span class="dt">string</span> <span class="op">|</span> <span class="dt">null</span><span class="op">;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    variationLabel<span class="op">:</span> <span class="dt">string</span> <span class="op">|</span> <span class="dt">null</span><span class="op">;</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    load<span class="op">:</span> LoadSnapshot<span class="op">;</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  }<span class="op">&gt;</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p><code>LoadSnapshot</code> should distinguish external weight,
+bodyweight, band resistance, and assistance. Keep entered value/unit
+plus canonical mass where appropriate. A blank legacy weight is not
+enough evidence to infer bodyweight or assistance. Assistance is a
+separate mode, not an unexplained negative weight.</p>
+<p><strong>Storage recommendation:</strong> initially embed the small
+segment array inside its parent set so updates can be atomic and the set
+remains the natural edit/delete/export unit. Give segments stable IDs
+anyway. Separate segment records become useful if independent
+synchronization or query needs justify them.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode mermaid"><code class="sourceCode mermaid"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">stateDiagram-v2</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">[*]</span> <span class="pp">--&gt;</span> <span class="dt">Draft</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Draft</span> <span class="pp">--&gt;</span> <span class="dt">Draft</span>:<span class="vs"> Record reps / change load / add segment</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Draft</span> <span class="pp">--&gt;</span> <span class="dt">Completed</span>:<span class="vs"> Finish set once</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Completed</span> <span class="pp">--&gt;</span> <span class="dt">Editing</span>:<span class="vs"> Correct recorded effort</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Editing</span> <span class="pp">--&gt;</span> <span class="dt">Completed</span>:<span class="vs"> Save correction</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Completed</span> <span class="pp">--&gt;</span> <span class="dt">Rest</span>:<span class="vs"> Start applicable rest once</span></span></code></pre></div>
+<p><strong>Interaction:</strong> a row starts with weight + reps.
+“Change weight / add segment” records the completed portion and opens
+another portion under the same set. “Finish set” completes the entire
+set. Permit splitting an already logged set afterward too; people may
+only enter the details after putting the weight down.</p>
+<p>The existing reps-field <code>change</code> handler immediately saves
+a set and can start rest. That behavior must be redesigned: autosaving a
+draft is separate from completing a set. A segment boundary must not
+trigger rest. In supersets/circuits, preserve the current
+round-completion rule, applied to completed parent sets rather than
+individual segments. Corrections must not restart rest.</p>
+<p><strong>Scope: substantial domain/UI change.</strong> Touches
+logging, draft resume, history editing, last-session hints, PRs, volume,
+set counts, import/export, and grouped exercise timing. It is still a
+straightforward model change, not a new framework problem.</p>
+<h2
+id="4-mixed-pull-ups-use-those-same-segments-with-structured-variations">4.
+Mixed pull-ups: use those same segments with structured variations</h2>
+<p>The same model records:</p>
+<table>
+<thead>
+<tr>
+<th>Set</th>
+<th>Segment</th>
+<th>Variation</th>
+<th>Reps</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>Full pull-up</td>
+<td>1</td>
+</tr>
+<tr>
+<td>1</td>
+<td>2</td>
+<td>Negative</td>
+<td>3</td>
+</tr>
+<tr>
+<td>1</td>
+<td>3</td>
+<td>Partial from standing</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<p>Store <strong>one set with an ordered breakdown</strong>. Display “1
+full · 3 negatives · 4 standing partials.” Repeating a variation later
+in the set is allowed; ordered segments preserve what happened, while a
+summary can combine counts by variation.</p>
+<p>Use stable variation IDs under the Pull-up exercise, with a readable
+label snapshot in each segment. Provide the variations you actually use
+and an optional custom label/note. A note alone cannot reliably power
+progress charts. Separate exercises for every variation would scatter
+one effort across the log and make later comparisons harder.</p>
+<p>Keep <strong>execution variation</strong> and
+<strong>load/assistance</strong> independent. A full pull-up may be
+bodyweight, weighted, or band-assisted; “negative” does not specify
+resistance. Avoid a large movement taxonomy initially. Duration/tempo
+can be an optional future segment measurement if recording the length of
+a negative becomes useful.</p>
+<p><strong>Analytics must preserve meaning:</strong></p>
+<ul>
+<li>Count parent sets as sets; sum segment reps for total reps, with the
+variation breakdown always accessible.</li>
+<li>Track full pull-up progress separately from negatives and partials.
+Eight mixed repetitions are not an eight-full-pull-up PR.</li>
+<li>Compare weighted PRs within compatible variation and assistance
+modes. Do not compare external load with assistance as if larger always
+meant stronger.</li>
+<li>Calculate external-load volume by summing compatible segment
+contributions. Do not mix raw reps and mass-times-reps in one series—the
+existing volume-unit bug becomes more serious with these features.</li>
+<li>Treat bodyweight-derived volume as an explicitly labeled estimate if
+offered; avoid claiming equal work for full, negative, and partial
+reps.</li>
+</ul>
+<p><strong>Scope: modest incremental work after segments exist.</strong>
+The variation picker and breakdown are manageable; the consequential
+decisions are historical interpretation and what counts as comparable
+progress. Implementing weight splits and pull-up annotations
+independently would duplicate much of the same machinery.</p>
+<h2 id="5-combining-nutrition-and-training">5. Combining nutrition and
+training</h2>
+<p>Use one app shell with separate training and nutrition domains,
+joined through a small shared foundation. “One app” does not require one
+generic log schema.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode mermaid"><code class="sourceCode mermaid"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">flowchart</span> <span class="cn">TB</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Shell</span>[<span class="vs">App shell: Today / Train / Nutrition / Trends</span>] <span class="pp">--&gt;</span> <span class="dt">Training</span>[<span class="vs">Training: collections / routines / sessions / segmented sets</span>]</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Shell</span> <span class="pp">--&gt;</span> <span class="dt">Nutrition</span>[<span class="vs">Nutrition: food / meals / servings / daily intake</span>]</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Training</span> <span class="pp">--&gt;</span> <span class="dt">Shared</span>[<span class="vs">Shared profile / units / body measurements / time policy</span>]</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Nutrition</span> <span class="pp">--&gt;</span> <span class="dt">Shared</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Training</span> <span class="pp">--&gt;</span> <span class="dt">Local</span>[<span class="vs">Local persistence and versioned backup</span>]</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Nutrition</span> <span class="pp">--&gt;</span> <span class="dt">Local</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Shared</span> <span class="pp">--&gt;</span> <span class="dt">Local</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Local</span> <span class="pp">--&gt;</span> <span class="dt">Adapters</span>[<span class="vs">Optional sync and Apple Health adapters</span>]</span></code></pre></div>
+<p>Body weight should have one owner and one history; both domains
+consume it. Share unit conversion and local-day/timezone policy, but
+keep meal quantities separate from exercise loads. Snapshots matter in
+both domains: changing a food's current nutrition values should not
+silently rewrite an old meal, just as editing a routine should not
+rewrite a workout.</p>
+<p>Start with <strong>Today</strong> as a composition of the two
+domains' summaries, rather than merging their write paths. Combining the
+domains does not automatically require accounts, a backend, or sync. If
+multi-device use becomes a requirement, add stable record ownership,
+revision/conflict policy, deletion tombstones, and sync status
+deliberately; UUIDs alone do not solve synchronization.</p>
+<p>HealthKit is an optional integration boundary, not the primary
+storage model for routines or detailed segmented sets. Request the
+specific read/write types when needed, and keep core logging functional
+without authorization. Apple requires per-type authorization and
+intentionally does not expose whether a read permission was denied. <a
+href="https://developer.apple.com/documentation/healthkit/authorizing-access-to-health-data">HealthKit
+authorization</a>.</p>
+<p>Before estimating the merge, inspect the nutrition app's stack,
+storage, units, date handling, identity model, and food-source
+contracts. Its existing architecture may materially change the UI reuse
+decision.</p>
+<h2
+id="6-preserve-the-prototypes-data-without-preserving-its-limitations">6.
+Preserve the prototype's data without preserving its limitations</h2>
+<table>
+<thead>
+<tr>
+<th>Transition</th>
+<th>Proposed approach</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Existing routines → collections</td>
+<td>One Default collection; stable IDs and original ordering</td>
+</tr>
+<tr>
+<td>Shared exercise grouping → routine entries</td>
+<td>Copy grouping and warmup metadata into each routine's entries;
+retain exercise IDs</td>
+</tr>
+<tr>
+<td>Existing sets → segmented sets</td>
+<td>Preserve set ID; normalize to one segment with existing
+reps/load/bands</td>
+</tr>
+<tr>
+<td>Missing historical variation</td>
+<td>Mark as unspecified; never infer that old pull-ups were full
+reps</td>
+</tr>
+<tr>
+<td>Missing historical names/types</td>
+<td>Best-effort snapshot from available metadata, explicitly unknown
+where unrecoverable</td>
+</tr>
+<tr>
+<td>New records → export</td>
+<td>New payload version, runtime validation, and round-trip tests
+including drafts and segments</td>
+</tr>
+<tr>
+<td>Old app reads new backup</td>
+<td>Reject unsupported versions clearly; never silently flatten
+segments</td>
+</tr>
+<tr>
+<td>Browser PWA → native installation</td>
+<td>Explicit export/import or designed sync; do not assume browser
+IndexedDB is accessible to the native app</td>
+</tr>
+</tbody>
+</table>
+<p>Persist active sessions and draft sets in the durable domain store,
+with explicit status. Current active-session localStorage is outside the
+backup payload and does not provide a complete transferable session.
+Starting a workout should capture its routine context; completion should
+be retry-safe and should await pending set writes. Keep an original
+backup before migration, and make the migration atomic and
+repeatable.</p>
+<h2 id="7-useful-order-of-work">7. Useful order of work</h2>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Deliverable / decision</th>
+<th>Why first</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Agree on collection ownership, segment semantics, and comparison
+rules using the examples above</td>
+<td>Stabilizes the contracts across any frontend</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Inspect nutrition app; test one real iOS entry/resume flow in the
+likely runtime</td>
+<td>Prevents choosing a stack based only on this prototype</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Fix duplicate writes/import validation and define versioned
+migration fixtures</td>
+<td>Protects data before changing its structure</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Add collections plus routine-entry ownership</td>
+<td>Separates templates/context from historical workouts</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Build segmented sets and variations together, including draft
+recovery and analytics</td>
+<td>Implements both new logging scenarios coherently</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Compose training and nutrition in the app shell</td>
+<td>Reuse shared units/measurements without coupling domain logic</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Add native integrations and sync only to the required depth</td>
+<td>Keeps early work grounded in demonstrated product needs</td>
+</tr>
+</tbody>
+</table>
+<p>This is a suggested dependency order, not a requirement to implement
+everything in Vue before building native. If the iOS experiment chooses
+SwiftUI, implement the agreed contracts in the native app and keep the
+web prototype as a behavior reference.</p>
+<p><strong>Decisions worth discussing next:</strong></p>
+<ol type="1">
+<li>Does “native” mean Apple-native controls and interactions, or
+primarily an App Store app with web reuse? My leaning is SwiftUI
+exploration if the former is the intended destination.</li>
+<li>Should the same routine ever be intentionally linked between Home
+and Travel? Default to independent copies until that need is
+demonstrated.</li>
+<li>Is exact segment order valuable, or mainly per-variation totals?
+Store ordered segments either way; show a compact total by default.</li>
+<li>Must the first combined version sync across devices? Default to
+local-first with reliable export/import until the requirement is
+explicit.</li>
+</ol>
+<p><strong>Recommended foundation:</strong> collection → routine entries
+→ session snapshot → performed sets → ordered segments. That supports
+all three requests and is reusable as a product/data contract even if
+the final UI is completely native.</p>
+<script type="module">
+try {
+  const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.esm.min.mjs');
+  mermaid.initialize({ startOnLoad:false, securityLevel:'strict', theme:'dark',
+    themeVariables:{ background:'#101923', primaryColor:'#203b46', primaryTextColor:'#d6e1e9', primaryBorderColor:'#76d7c8', lineColor:'#a1b2c0', secondaryColor:'#233044', tertiaryColor:'#19332f', fontFamily:'system-ui, sans-serif' } });
+  let i=0;
+  for (const pre of document.querySelectorAll('pre.mermaid')) {
+    try {
+      const {svg} = await mermaid.render('review-diagram-' + i++, pre.textContent);
+      const figure = document.createElement('figure');
+      figure.className='mermaid-diagram';
+      figure.innerHTML=svg;
+      pre.replaceWith(figure);
+    } catch(error) { console.warn('Diagram source retained:', error); }
+  }
+} catch(error) { console.warn('Mermaid unavailable; diagram source retained:', error); }
+</script>
+</body>
+</html>
