@@ -31,7 +31,7 @@ function toggle(color: string) {
 </script>
 
 <template>
-  <div class="flex flex-wrap gap-1">
+  <div class="grid grid-cols-4 gap-2">
     <button
       v-for="color in THERABAND_COLORS"
       :key="color"
@@ -52,9 +52,10 @@ function toggle(color: string) {
       @click="emit('update:modelValue', [])"
       :disabled="disabled"
       aria-label="Clear band selection"
-      class="px-2 h-7 rounded-full border border-border-strong text-[10px] font-semibold text-foreground-muted disabled:opacity-50"
+      title="Reset"
+      class="w-7 h-7 flex items-center justify-center rounded-full border border-border-strong text-sm text-foreground-muted disabled:opacity-50"
     >
-      Reset
+      &#8634;
     </button>
   </div>
 </template>
