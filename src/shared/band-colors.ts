@@ -6,6 +6,21 @@
 export const THERABAND_COLORS: string[] = ['Yellow', 'Red', 'Green', 'Blue', 'Black', 'Silver', 'Gold'];
 
 /**
+ * CSS `background` values, not theme tokens — these depict physical bands,
+ * so they must look the same under every theme. Silver and Gold are
+ * gradients because flat they read as disabled gray and as Yellow.
+ */
+export const BAND_SWATCH_BACKGROUND: Record<string, string> = {
+  Yellow: '#f5d90a',
+  Red: '#d62828',
+  Green: '#2e9e44',
+  Blue: '#1f5fbf',
+  Black: '#111111',
+  Silver: 'linear-gradient(135deg, #e5e7eb, #9ca3af)',
+  Gold: 'linear-gradient(135deg, #f7d774, #b8860b)',
+};
+
+/**
  * Approximate average resistance in lbs per Thera-Band's published chart
  * (light to heavy, same order as THERABAND_COLORS). Used only to give the
  * volume metric a real load figure for banded sets — not a per-user

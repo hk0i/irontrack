@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { THERABAND_COLORS } from '../band-colors';
+import { BAND_SWATCH_BACKGROUND, THERABAND_COLORS } from '../band-colors';
 
 const props = withDefaults(
   defineProps<{
@@ -12,9 +12,9 @@ const props = withDefaults(
      */
     showReset?: boolean;
     /**
-     * The chip's inactive background needs to contrast with whatever
-     * surface it sits on — SetRow's cards are `bg-surface`, History's edit
-     * row is `bg-surface-2`, so each picks the other for its "off" chips.
+     * The surface the picker sits on — SetRow's cards are `bg-surface`,
+     * History's edit row is `bg-surface-2`. The selection ring's offset gap
+     * must match it to read as a gap rather than a second ring.
      */
     variant?: 'surface' | 'surface-2';
   }>(),
@@ -39,17 +39,14 @@ function toggle(color: string) {
       :disabled="disabled"
       :aria-label="color + ' band'"
       :aria-pressed="modelValue.includes(color)"
-      class="px-2 h-7 rounded-full border text-[10px] font-semibold disabled:opacity-50"
-      :class="
-        modelValue.includes(color)
-          ? 'bg-primary border-primary text-on-primary'
-          : variant === 'surface'
-            ? 'bg-surface border-border-strong text-foreground-subtle'
-            : 'bg-surface-2 border-border-strong text-foreground-subtle'
-      "
-    >
-      {{ color }}
-    </button>
+      :title="color"
+      :style="{ background: BAND_SWATCH_BACKGROUND[color] }"
+      class="h-7 w-7 rounded-full border border-border-strong disabled:opacity-50"
+      :class="[
+        modelValue.includes(color) && 'ring-2 ring-primary ring-offset-2',
+        variant === 'surface' ? 'ring-offset-surface' : 'ring-offset-surface-2',
+      ]"
+    ></button>
     <button
       v-if="showReset && modelValue.length"
       @click="emit('update:modelValue', [])"
