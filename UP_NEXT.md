@@ -22,3 +22,15 @@ When toying with the app it's common to start a workout that we won't finish, tr
 # Rest Timer Alerts (`docs/2026-10-05-Rest-Timer-Alerts.edd.md`)
 1. Steps 2–6 of the EDD sequence remain: Wake Lock, vibrate, Settings toggles + Test alert button, notification permission from a tap, CHANGELOG.
 2. Tune beep loudness: step 1 works on iOS (ducks music) but gain is a bit low — raise the `0.2` gain in `playRestSound()` and re-check on device. Consider a volume setting alongside the step 4 toggles.
+
+# Double Weights Checkbox
+
+Have a way to track number of dumbbells -- maybe a checkbox to say x2, so if we have 35lbs on a lift we can say x2 to make sure we know it's 2dbs at 35 lbs each
+
+# Change resistance band buttons to color swatches to save space.
+
+Use color swatches instead of text labels on the UI to save horizontal space.
+
+# Target weight/auto warm up weight feature
+
+Set target weight and autofill warm up set weight and number of warm up sets and stylize them differently so we can tell them apart at a glance.
