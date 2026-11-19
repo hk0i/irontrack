@@ -2,8 +2,12 @@
 
 User-facing changes only — internal refactors, the TypeScript migration, and the Vue SFC rewrite aren't listed individually here, but are the main reason this release is versioned as a major bump rather than a minor one.
 
-## Unreleased
+## v2.5.0
 
+- **Circuits**: group up to 5 exercises together, not just pairs — groups of 3 or more show as a Circuit, pairs still show as a Superset. In the routine builder, tap Select, pick the exercises, then Group Selected; each grouped exercise has its own button to take it back out. This replaces the old one-at-a-time link pairing. Existing supersets carry over automatically, including in older backup and shared-routine files.
+- **Rest timer**: the rest-over beep now plays reliably on iPhone.
+- **Rest timer**: the screen stays awake during an active workout so the rest alert fires on time, and phones that support it (Android) vibrate when rest is over.
+- **Settings**: new toggles for the rest-over sound, vibration, and keeping the screen awake, plus a Test rest alert button to check sound and vibration before a workout.
 - **Bands**: band color chips are now color swatches instead of text labels, laid out in a compact 4×2 grid so the set row fits on a phone without wrapping. Silver and Gold use a metallic gradient so they're easy to tell apart from gray and Yellow.
 
 ## v2.4.1
