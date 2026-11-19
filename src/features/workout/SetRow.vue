@@ -83,7 +83,7 @@ const isEmpty = computed(
       </button>
     </template>
 
-    <BandColorPicker v-else-if="resistanceType === 'bands'" v-model="row.bandColors" :disabled="row.checked" class="max-w-[220px]" />
+    <BandColorPicker v-else-if="resistanceType === 'bands'" v-model="row.bandColors" :disabled="row.checked" />
 
     <input
       v-model="row.reps"

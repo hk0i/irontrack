@@ -371,7 +371,6 @@ onMounted(async () => {
                     @update:model-value="set._editBandColors = $event"
                     :show-reset="false"
                     variant="surface"
-                    class="max-w-[180px]"
                   />
 
                   <input
