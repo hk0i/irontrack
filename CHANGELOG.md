@@ -2,6 +2,10 @@
 
 User-facing changes only — internal refactors, the TypeScript migration, and the Vue SFC rewrite aren't listed individually here, but are the main reason this release is versioned as a major bump rather than a minor one.
 
+## Unreleased
+
+- **Bands**: band color chips are now color swatches instead of text labels, laid out in a compact 4×2 grid so the set row fits on a phone without wrapping. Silver and Gold use a metallic gradient so they're easy to tell apart from gray and Yellow.
+
 ## v2.4.1
 
 - **Mobile**: pinch-to-zoom and double-tap-to-zoom are now disabled app-wide — accidental zooming during a workout (e.g. double-tapping a set) no longer happens.
